@@ -7,6 +7,7 @@ export const FEATURED_RECIPES=Object.freeze([{
  sourceName:"The Meal Prep Manual",sourceUrl:"https://mealprepmanual.com/creamy-cilantro-lime-chicken-bowls/",
  reviewStatus:"source-linked-awaiting-nutrition-and-rights-review",imageStatus:"awaiting-unique-ingredient-accurate-image",
  publishedEstimate:{calories:490,protein:43,carbs:46,fat:15,fiber:4.8},
+ sourceUserRating:{rating:4.78,votes:18},
  groups:[
  {label:"Seasoned chicken",ingredients:[
   {food:"Chicken thighs, boneless skinless, raw",grams:908,unit:"g"},
