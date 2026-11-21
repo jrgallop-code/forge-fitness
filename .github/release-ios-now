@@ -717,3 +717,5 @@ Release request 2026-11-21: Meal Prep Planner batch schedule beta, iOS Food Log 
 - This file update explicitly triggers the protected App Store Connect upload workflow.
 
 Release refresh 2026-11-21: include photo sprite attribute quoting fix from 2818b6e7; rebuild latest iOS branch.
+
+2026-11-21: Retry TestFlight with Xcode-managed automatic signing (no certificate revocations), workflow commit e876a953.
