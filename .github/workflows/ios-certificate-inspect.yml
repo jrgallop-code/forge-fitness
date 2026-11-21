@@ -32,4 +32,4 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
           node scripts/app-store-signing.mjs inspect-certificates
 
-# Inspect signing inventory for dedicated Photos navigation release, 2026-11-19.
+# Inspect current Apple CI certificate before iOS Nutrition redesign release, 2026-11-21.
