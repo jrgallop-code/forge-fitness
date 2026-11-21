@@ -1,6 +1,5 @@
-// Original Level Up meal-prep adaptations inspired by meal categories on mealprepmanual.com.
-// Ingredient weights are planning estimates per portion, NOT tested recipes or verified nutrition.
-// Do not present these as copied instructions or verified macros.
+// Level Up original meal-prep adaptations. Not a verbatim reproduction of third-party recipes.
+// Ingredient amounts are per serving; recipes are NOT kitchen-tested or independently nutrition-verified.
 export const mealPrepRecipes = [
   {
     "id": "cilantro-lime-chicken",
@@ -228,7 +227,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly sesame korean beef rice bowls meal with measured ingredients and seasonings."
+    "description": "Sesame Korean Beef Rice Bowls prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Rinse rice, then cook it according to its package directions.",
+      "Mix soy sauce, honey, grated ginger, minced garlic, sesame oil and chili flakes in a small bowl.",
+      "Brown the lean ground beef in a skillet over medium heat, breaking it into small pieces; cook thoroughly to 71°C.",
+      "Stir the sauce into the beef and simmer until it lightly coats the meat.",
+      "Slice cucumber, shred carrot and chop green onions. Divide cooked rice and beef among containers; keep fresh vegetables separate until serving and sprinkle with sesame seeds."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "teriyaki-chicken",
@@ -315,7 +323,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly teriyaki chicken & vegetable rice bowls meal with measured ingredients and seasonings."
+    "description": "Teriyaki Chicken & Vegetable Rice Bowls prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Cook the rice following package directions.",
+      "Whisk soy sauce, honey, rice vinegar, ginger and garlic together. Dissolve the cornstarch in a little cold water separately.",
+      "Cut chicken into bite-size pieces and cook in sesame oil over medium-high heat until it reaches 74°C.",
+      "Steam or sauté broccoli, carrots and bell pepper until tender-crisp.",
+      "Add sauce and cornstarch slurry to the chicken; simmer until thickened. Pack chicken, vegetables and rice into containers."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "med-chicken-wrap",
@@ -401,7 +418,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly mediterranean chicken & feta wraps meal with measured ingredients and seasonings."
+    "description": "Mediterranean Chicken & Feta Wraps prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Season chicken with oregano, garlic and olive oil. Cook until the thickest part reaches 74°C, then rest and slice.",
+      "Mix plain Greek yogurt with lemon juice and a little minced garlic for a tangy sauce.",
+      "Wash and chop lettuce, cucumber, tomatoes and red onion; crumble the feta.",
+      "Lay out tortillas and distribute the sliced chicken, vegetables and feta evenly.",
+      "Keep the yogurt sauce separate if making ahead; add it just before rolling the wraps to prevent sogginess."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "taco-mac",
@@ -482,7 +508,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly cheesy taco beef macaroni meal with measured ingredients and seasonings."
+    "description": "Cheesy Taco Beef Macaroni prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Boil macaroni in lightly salted water until just tender, then drain, reserving a little cooking water.",
+      "Cook ground beef in a large skillet until browned and fully cooked to 71°C.",
+      "Add diced onion and pepper; cook until softened. Stir in minced garlic, chili powder, cumin and smoked paprika.",
+      "Stir in tomato paste and crushed tomatoes, then simmer for several minutes. Loosen with a splash of reserved pasta water if needed.",
+      "Fold macaroni into the beef sauce and top with grated cheddar. Divide into meal-prep containers once cooled slightly."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "turkey-chili",
@@ -563,7 +598,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly smoky turkey & sweet potato chili meal with measured ingredients and seasonings."
+    "description": "Smoky Turkey & Sweet Potato Chili prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Dice sweet potato, onion and bell pepper into small, even pieces; mince the garlic.",
+      "Warm olive oil in a heavy pot, then brown ground turkey until cooked through to 74°C.",
+      "Add onion, pepper and garlic; cook until fragrant, then stir in chili powder, cumin and smoked paprika.",
+      "Add sweet potato cubes, drained kidney beans and crushed tomatoes, plus water as needed. Simmer until the sweet potato is tender.",
+      "Taste and adjust seasoning; divide into containers. Freeze portions that will not be eaten within 2–3 days."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "breakfast-burrito",
@@ -631,7 +675,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly egg, turkey sausage & potato breakfast wrap meal with measured ingredients and seasonings."
+    "description": "Egg, Turkey Sausage & Potato Breakfast Wrap prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Dice potatoes and cook them in a little olive oil with smoked paprika until tender and lightly browned.",
+      "Cook turkey sausage according to its package instructions, ensuring poultry sausage reaches 74°C.",
+      "Sauté the pepper and onion. Beat eggs, then scramble gently until completely set.",
+      "Warm the tortillas briefly, then layer potato, sausage, vegetables, scrambled egg and grated cheddar.",
+      "Roll tightly, let fillings cool before wrapping for storage, and freeze later servings. Reheat until piping hot, ideally 74°C."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "protein-oats",
@@ -693,7 +746,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly banana cinnamon baked protein oats meal with measured ingredients and seasonings."
+    "description": "Banana Cinnamon Baked Protein Oats prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Preheat the oven to 180°C and lightly grease an appropriately sized baking dish.",
+      "Mash banana and whisk it with milk, Greek yogurt, egg and peanut butter until combined.",
+      "Mix in rolled oats, baking powder and cinnamon; rest for a few minutes so the oats absorb some liquid.",
+      "Spread mixture into the baking dish and bake until the centre is set and no wet batter remains, about 25–35 minutes depending on the pan.",
+      "Cool, slice into six portions and refrigerate. Reheat with a splash of milk if desired."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "peanut-noodles",
@@ -774,7 +836,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly ginger peanut chicken noodles meal with measured ingredients and seasonings."
+    "description": "Ginger Peanut Chicken Noodles prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Cook rice noodles according to the package instructions, rinse briefly and drain.",
+      "Whisk peanut butter with soy sauce, lime juice, honey, grated ginger and minced garlic. Add warm water a little at a time to make a pourable sauce.",
+      "Cook sliced chicken breast until it reaches 74°C; cut into thin strips.",
+      "Thinly slice the carrot and red cabbage, and chop green onions.",
+      "Toss noodles and chicken with sauce. Add vegetables and green onions; pack cold vegetables separately if planning to reheat the chicken noodles."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "med-chickpea",
@@ -849,7 +920,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly lemon herb chickpea & quinoa bowls meal with measured ingredients and seasonings."
+    "description": "Lemon Herb Chickpea & Quinoa Bowls prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Rinse quinoa and cook according to package instructions, then fluff and cool.",
+      "Drain and rinse chickpeas. Toss them with a little olive oil and dried oregano.",
+      "Chop cucumber and tomatoes; wash and dry spinach.",
+      "Combine yogurt and lemon juice to make a light dressing. Crumble feta.",
+      "Portion quinoa, chickpeas, spinach, cucumber, tomatoes and feta into bowls; store yogurt dressing separately until eating."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "bbq-burger-bowl",
@@ -924,7 +1004,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly bbq cheddar burger & potato bowls meal with measured ingredients and seasonings."
+    "description": "BBQ Cheddar Burger & Potato Bowls prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Preheat the oven to 220°C. Dice potatoes into bite-size pieces and roast, turning once, until golden and tender.",
+      "Brown ground beef in a skillet until it reaches 71°C; season with smoked paprika.",
+      "Chop lettuce, tomato, pickles and red onion.",
+      "Mix Greek yogurt with a little BBQ sauce to make a creamy dressing; keep remaining sauce for the beef.",
+      "Portion potatoes and beef into heat-safe containers, then top with cheddar. Pack lettuce and fresh toppings separately to add after reheating."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   },
   {
     "id": "chicken-curry",
@@ -999,7 +1088,16 @@ export const mealPrepRecipes = [
       ]
     ],
     "verified": false,
-    "description": "A batch-friendly tomato coconut chicken curry & rice meal with measured ingredients and seasonings."
+    "description": "Tomato Coconut Chicken Curry & Rice prepared as a measured, make-ahead meal with individual ingredients and seasonings.",
+    "instructions": [
+      "Cook white rice according to the package directions.",
+      "Dice chicken and cook in olive oil until lightly golden; continue cooking thoroughly to 74°C.",
+      "Add chopped onion, garlic, ginger and curry powder; cook briefly until fragrant.",
+      "Pour in crushed tomatoes and coconut milk, then simmer gently until the sauce thickens and chicken is fully cooked.",
+      "Stir in spinach until wilted. Divide curry and rice among containers, keeping portions intended for later in the freezer."
+    ],
+    "instructionsStatus": "Original adaptation; kitchen testing pending",
+    "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C."
   }
 ];
 export const getMealPrepRecipe = id => mealPrepRecipes.find(r => r.id === id);
