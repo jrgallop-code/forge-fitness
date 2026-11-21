@@ -158,10 +158,15 @@ export function generatePlan(options={},startDate=new Date().toLocaleDateString(
 export function groceryList(plan){
  const quantities=new Map();
  for(const meal of plan?.entries||[])for(const item of meal.ingredients||[]){
-  const servings=Math.max(1,Math.min(12,Number(meal.servings)||1));
-  quantities.set(item.food,(quantities.get(item.food)||0)+Math.max(0,Number(item.grams)||0)*servings);
+   const servings=Math.max(1,Math.min(12,Number(meal.servings)||1));
+   const unit=item.unit==="mL"?"mL":"g";
+   const key=item.food+"::"+unit;
+   const row=quantities.get(key)||{food:item.food,unit,grams:0};
+   row.grams+=Math.max(0,Number(item.grams)||0)*servings;
+   quantities.set(key,row);
  }
- return [...quantities].map(([food,grams])=>({food,grams:Math.round(grams)})).sort((a,b)=>a.food.localeCompare(b.food));
+ return [...quantities.values()].map(item=>({...item,grams:Math.round(item.grams*100)/100}))
+   .sort((a,b)=>a.food.localeCompare(b.food)||a.unit.localeCompare(b.unit));
 }
 export function replacePlannedMeal(plan,date,slot,recipeId){
  const recipe=MEAL_CATALOG.find(x=>x.id===recipeId);if(!recipe)return plan;
