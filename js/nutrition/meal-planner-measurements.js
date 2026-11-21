@@ -29,7 +29,7 @@ const SPOON_GRAMS = Object.freeze([
 ]);
 const SPOON_FRACTIONS = ["","⅛","¼","⅜","½","⅝","¾","⅞"];
 function amount(value){
-  const rounded=Math.round(value*8)/8;
+  const rounded=(value<0.25?Math.round(value*8)/8:Math.round(value*4)/4);
   const whole=Math.floor(rounded), numerator=Math.round((rounded-whole)*8);
   if(numerator===8)return String(whole+1);
   return (whole?String(whole):"")+(numerator?(whole?" ":"")+SPOON_FRACTIONS[numerator]:"")||"⅛";
@@ -51,7 +51,7 @@ export function cookingMeasure(food,quantity,unit="g"){
   const tsp=grams/gramsPerTsp;
   if(tsp<0.12)return original;
   let value,label;
-  if(tsp>=48){value=tsp/48;label="cup";}
+  if(tsp>=12){value=tsp/48;label="cup";}
   else if(tsp>=3){value=tsp/3;label="tbsp";}
   else {value=tsp;label="tsp";}
   // Show useful kitchen increments without implying lab precision.
