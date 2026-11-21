@@ -1,5 +1,6 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
+import {getReviewDecision,saveReviewDecision} from "./mpm-review-first-100.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites} from "./meal-planner-catalog-ui.js?v=2";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
@@ -96,7 +97,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="catalog",catalogSlot="All",catalogFilter="All recipes",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let plannerScreen="catalog",catalogSlot="All",catalogFilter="Review first 100",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -222,6 +223,18 @@ function render(root){
   else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
  }));
  root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";render(root);}));
+ root.querySelectorAll("[data-mp-review-decision]").forEach(button=>button.addEventListener("click",()=>{
+   const id=button.dataset.mpReviewId,decision=button.dataset.mpReviewDecision;
+   const notes=root.querySelector("[data-mp-review-notes]")?.value??getReviewDecision(id).notes;
+   if(saveReviewDecision(id,{decision,notes}))render(root);
+   else window.alert("Could not save review feedback on this device.");
+ }));
+ root.querySelector("[data-mp-review-notes]")?.addEventListener("change",event=>{
+   const id=event.target.dataset.mpReviewNotes;
+   const previous=getReviewDecision(id);
+   if(!saveReviewDecision(id,{decision:previous.decision,notes:event.target.value}))window.alert("Could not save review notes on this device.");
+ });
+
  root.querySelectorAll("[data-mp-schedule]").forEach(button=>button.addEventListener("click",()=>{
    catalogRecipeId=button.dataset.mpSchedule;
    const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
@@ -491,6 +504,18 @@ export function renderMealPlannerShell(){return `
 .mp-schedule-summary small{opacity:.72}
 .mp-schedule-submit{width:100%;margin-top:14px;padding:13px}
 .mp-schedule-error{color:#e98d8d}
+.mp-first100-progress{margin:14px 0 18px;padding:14px 16px;border:1px solid var(--border-color,#7776);border-radius:15px;background:var(--card-bg,#7771);display:flex;flex-direction:column;gap:5px}
+.mp-first100-progress span{font-size:13px;font-weight:600;color:var(--text-primary,inherit)}
+.mp-first100-progress small{font-size:12px;opacity:.75}
+.mp-review-section{margin-top:22px;border:1px solid var(--border-color,#7776);padding:16px;border-radius:15px;background:var(--card-bg,#7771)}
+.mp-review-section h3{margin:0 0 8px}
+.mp-review-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.mp-review-actions button{padding:11px 9px;color:inherit;background:var(--surface-2,#7772);border:1px solid var(--border-color,#7777);border-radius:10px;font:inherit;font-size:13px}
+.mp-review-actions button.active{background:var(--accent,#287d5c);color:#fff;border-color:transparent}
+.mp-review-actions button:last-child{grid-column:span 2}
+.mp-review-section label{display:block;font-weight:600;margin-bottom:8px}
+.mp-review-section textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:100px;border-radius:10px;border:1px solid var(--border-color,#7777);background:var(--surface-2,#7772);color:inherit;padding:12px;font:inherit}
+
 @media(max-width:390px){.mp-catalog-primary-actions{grid-template-columns:1fr 1fr}.mp-catalog-primary-actions button:last-child{grid-column:span 2}}
 
 </style><div data-meal-planner-root></div>`;}
