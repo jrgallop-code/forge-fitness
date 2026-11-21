@@ -3,7 +3,7 @@ import { mealPrepRecipes, getMealPrepRecipe } from "./meal-prep-recipes.js";
 const KEY="level_up_meal_prep_beta_v1";
 const FAV_KEY="level_up_meal_prep_favorites_v1";
 const favorites=()=>{try{return JSON.parse(localStorage.getItem(FAV_KEY)||"[]")}catch{return[]}};
-const recipePhotoStyle=r=>{const i=Math.max(0,mealPrepRecipes.findIndex(x=>x.id===r.id));return `background-image:url("${mealPhotoSprite}");background-size:400% 300%;background-position:${(i%4)*100/3}% ${Math.floor(i/4)*50}%`;};
+const recipePhotoStyle=r=>{const i=Math.max(0,mealPrepRecipes.findIndex(x=>x.id===r.id));return `background-image:url('${mealPhotoSprite}');background-size:400% 300%;background-position:${(i%4)*100/3}% ${Math.floor(i/4)*50}%`;};
 const ingredients=[["Chicken breast (raw)",150,"g","Protein"],["White rice (dry)",60,"g","Grains"],["Black beans (drained)",100,"g","Canned"],["Corn kernels",80,"g","Canned"],["Tomatoes",80,"g","Produce"],["Red bell pepper",50,"g","Produce"],["Red onion",30,"g","Produce"],["Garlic",3,"g","Produce"],["Cilantro",4,"g","Produce"],["Lime juice",10,"mL","Produce"],["Olive oil",5,"g","Seasoning"],["Ground cumin",1,"g","Seasoning"],["Chili powder",1,"g","Seasoning"],["Smoked paprika",1,"g","Seasoning"],["Salt",1,"g","Seasoning"],["Black pepper",0.3,"g","Seasoning"]];
 const dayNames=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
