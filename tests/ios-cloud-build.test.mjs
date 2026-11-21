@@ -35,7 +35,7 @@ test("App Store releases are protected and any push trigger is one-time guarded"
 });
 
 test("App Store releases use Xcode-managed signing without certificate revocation", () => {
-    assert.doesNotMatch(releaseWorkflow, /node scripts\\/app-store-signing\\.mjs create/);
+    assert.doesNotMatch(releaseWorkflow, /node scripts\/app-store-signing\.mjs create/);
     assert.doesNotMatch(releaseWorkflow, /LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE/);
     assert.match(releaseWorkflow, /CODE_SIGN_STYLE=Automatic/);
     assert.match(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
@@ -45,12 +45,12 @@ test("App Store releases use Xcode-managed signing without certificate revocatio
     assert.match(releaseWorkflow, /-authenticationKeyPath/);
     assert.match(releaseWorkflow, /xcrun altool --upload-app/);
     assert.match(releaseWorkflow, /codesign --verify --deep --strict/);
-    assert.match(releaseWorkflow, /if:\\s*always\\(\\)/);
-    assert.doesNotMatch(releaseWorkflow, /node scripts\\/app-store-signing\\.mjs cleanup/);
+    assert.match(releaseWorkflow, /if:\s*always\(\)/);
+    assert.doesNotMatch(releaseWorkflow, /node scripts\/app-store-signing\.mjs cleanup/);
     assert.match(releaseWorkflow, /Leaving server-side signing assets intact pending Apple processing/);
     assert.match(releaseWorkflow, /appstore-upload-error/);
-    assert.match(releaseWorkflow, /signed-entitlements\\.plist/);
-    assert.match(releaseWorkflow, /rm -f \\"\\$AUTH_KEY_PATH\\"/);
+    assert.match(releaseWorkflow, /signed-entitlements\.plist/);
+    assert.match(releaseWorkflow, /rm -f "\$AUTH_KEY_PATH"/);
 });
 
 test("App Store signing refuses unsafe bulk certificate rotation", () => {
