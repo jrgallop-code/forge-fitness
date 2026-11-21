@@ -1,3 +1,4 @@
+import {ingredientIllustration,dietIllustration} from "./meal-planner-food-art.js?v=1";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
 import {generateGoalAwarePlan,refitRecipeForSlot} from "./meal-planner-planning.js?v=3";
@@ -29,9 +30,9 @@ function prefsMarkup(p){
  const storedGoal=p.goalMode==="custom"?p.goalType:appGoal.goalId;
  const storedCalories=p.goalMode==="custom"?Number(p.dailyCalories):appGoal.dailyCalories;
  const dish=(n)=>mealPhoto({id:"lu-meal-"+String(n*20+1).padStart(3,"0")});
- const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+photo(dish(index),name,index)+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
+ const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+dietIllustration(id,name)+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
  const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.preferredCuisines||p.cuisines||[]).includes(x))).join("");
- const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+photo(ingredientPhoto(x),x,i)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
+ const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
  const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photo(mealPhoto(x),x.name,i)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
  return '<form data-meal-planner-options class="mp-wizard">'+
  '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 7</p>'+
@@ -96,7 +97,7 @@ function screenHeader(title,back,action=""){
 }
 function landingMarkup(saved){
  const appGoal=currentMealPlannerGoal();
- return '<section class="mp-landing mp-standalone">'+
+ return '<section class="lu-meal-planner mp-landing mp-standalone">'+
  '<button class="mp-landing-close" type="button" data-mp-exit aria-label="Close meal planner">✕</button><div class="mp-landing-image"></div><div class="mp-landing-copy"><span class="eyebrow">LEVEL UP · PERSONALIZED NUTRITION</span>'+
  '<h1>Plan meals that<br>fit your goals.</h1><p>Delicious recipes, smart portions, and a weekly plan built for your nutrition targets.</p>'+
  (appGoal.dailyCalories?'<span class="mp-goal-chip">Your current target: '+appGoal.dailyCalories+' kcal/day</span>':'')+'</div>'+
@@ -107,7 +108,7 @@ function landingMarkup(saved){
 function groceriesMarkup(saved){
  if(!saved)return landingMarkup(null);
  const groups=groupedGrocery(saved);
- return '<section class="mp-groceries mp-standalone">'+screenHeader("Grocery list","calendar")+
+ return '<section class="lu-meal-planner mp-groceries mp-standalone">'+screenHeader("Grocery list","calendar")+
  '<div class="mp-grocery-intro"><span class="eyebrow">READY TO SHOP</span><h1>Your weekly groceries</h1><p>Combined quantities across every planned meal and household serving.</p></div>'+
  '<div class="mp-grocery-tools"><button type="button" class="primary-btn" data-mp-copy aria-label="Copy grocery list">⧉ Copy list</button><button type="button" data-mp-share>Share</button></div>'+
  '<p class="mp-copy-status" role="status" aria-live="polite"></p>'+
@@ -135,7 +136,7 @@ function render(root){
  if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
- else if(page==="wizard")root.innerHTML='<section class="mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
+ else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
  else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
  else{
@@ -274,7 +275,7 @@ function renderDays(plan){
       (recipe?'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':''):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
       (entry.notice?'<p class="mp-disclaimer">'+esc(entry.notice)+'</p>':'')+
       '<div class="lu-meal-actions">'+(consumed?'<span class="lu-meal-eaten">✓ Consumed</span><button type="button" data-meal-undo data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Undo log</button>':recipe?'<button class="primary-btn" type="button" data-meal-consume data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Mark Eaten</button>':'')+'</div></div></div>'+
-      '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+photo(ingredientPhoto(item.food),item.food,i)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g</label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+recipeSteps({...recipe,ingredients:entry.ingredients}).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
+      '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+ingredientIllustration(item.food)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g</label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+recipeSteps({...recipe,ingredients:entry.ingredients}).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
       (isWeightLossGoal(plan.goalId)?'<p class="mp-disclaimer">Fullness score is a recipe heuristic, not a measured Satiety Index.</p>':'')+
       (consumed?'<p class="lu-meal-note">Edit logged ingredients in Food Log. Undo removes only entries created through this plan.</p>':'')+'</article>';
   }).join("")+'</section>';
