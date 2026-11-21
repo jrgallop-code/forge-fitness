@@ -160,7 +160,7 @@ export function groceryList(plan){
 }
 export function replacePlannedMeal(plan,date,slot,recipeId){
  const recipe=MEAL_CATALOG.find(x=>x.id===recipeId);if(!recipe)return plan;
- return {...plan,entries:plan.entries.map(x=>x.date===date&&x.slot===slot?{date,slot,recipeId,ingredients:recipe.ingredients.map(y=>({...y}))}:x)};
+ return {...plan,entries:plan.entries.map(x=>x.date===date&&x.slot===slot?{...x,recipeId,ingredients:recipe.ingredients.map(y=>({...y})),notice:undefined}:x)};
 }
 export function editPlannedIngredient(plan,date,slot,index,grams){
  if(!Number.isFinite(Number(grams))||Number(grams)<0)return plan;
