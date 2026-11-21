@@ -34,6 +34,6 @@ test("food and diet art is food-specific, never repeated by category",()=>{
   assert.ok(art.includes(diet));
  }
  assert.ok(ui.includes("ingredientIllustration(x)"));
- assert.ok(ui.includes("dietIllustration(id,name)"));
- assert.ok(ui.includes("recipeIllustration(recipe)"));
+ assert.ok(ui.includes("photoMarkup(MEAL_CATALOG[index*20])"));
+ assert.ok(ui.includes("photoMarkup(recipe)"));
 });
