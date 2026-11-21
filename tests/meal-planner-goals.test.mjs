@@ -1,3 +1,4 @@
+import {MEAL_FULLNESS_DB,recipeFullness,SATIETY_RESEARCH_SOURCES} from "../js/nutrition/meal-planner-satiety-db.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {allocateMealCalories,fullnessEstimate,fitMealPortions,MEASURED_FOOD_SATIETY} from "../js/nutrition/meal-planner-goals.js";
@@ -47,4 +48,14 @@ test("Family servings grow grocery list without multiplying personal macros",()=
  assert.ok(groceryList(p).every(x=>x.grams>0));
  const recipe=refitRecipeForSlot(p.entries[0].recipeId,p.entries[0].targetCalories);
  assert.ok(recipe?.ingredients.length);
+});
+
+test("all 800 recipe variants have a separately labelled estimated fullness record",()=>{
+ assert.equal(Object.keys(MEAL_FULLNESS_DB).length,MEAL_CATALOG.length);
+ assert.ok(SATIETY_RESEARCH_SOURCES.some(x=>x.includes("Holt")));
+ for(const meal of MEAL_CATALOG){
+  const f=recipeFullness(meal.id);
+  assert.ok(f&&f.score>=0&&f.score<=100);
+  assert.equal(f.method,"recipe-heuristic-not-clinically-validated");
+ }
 });
