@@ -43,7 +43,7 @@ export function auditRecipe(recipe){
   if(!Number.isInteger(recipe.yieldPortions)||recipe.yieldPortions<1)errors.push("invalid yield");
   if(!RECIPE_STATES.includes(recipe.status))errors.push("invalid status");
   if(!recipe.source?.url)warnings.push("source provenance absent");
-  if(!recipe.rights?.status||recipe.rights.status==="unreviewed")warnings.push("rights not reviewed");
+  if(!["approved","original-author-owned-confirmed"].includes(recipe.rights?.status))warnings.push("rights not reviewed");
   if(!recipe.components?.length)errors.push("missing ingredient components");
   const items=flattenIngredients(recipe);
   if(items.length<8)warnings.push("sparse ingredient detail: fewer than 8 entries");
