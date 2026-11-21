@@ -1,4 +1,5 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
+import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes} from "./meal-planner-catalog-ui.js?v=1";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
@@ -176,7 +177,7 @@ function render(root){
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
  else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});
- else if(page==="recipe"){const selected=MEAL_CATALOG.find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
+ else if(page==="recipe"){const selected=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
@@ -202,7 +203,7 @@ function render(root){
   catalogSearch=event.target.value;
   const matches=baseRecipes().filter(recipe=>{
    const query=catalogSearch.toLowerCase().trim();
-   const words=[recipe.name,recipe.cuisine,recipe.diet,...recipe.ingredients.map(x=>x.food)].join(" ").toLowerCase();
+   const words=[recipe.name,recipe.cuisine,recipe.diet,...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
    return (!query||words.includes(query))&&(catalogSlot==="All"||recipe.slot===(catalogSlot==="Snacks"?"Meal 4":catalogSlot));
   });
   // Re-rendering the entire catalog on every keystroke would lose keyboard focus.
