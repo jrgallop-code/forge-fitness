@@ -1,5 +1,5 @@
 name: Inspect App Store signing certificates
-# Read-only certificate check for AI meal-photo TestFlight release; never revokes assets.
+# Read-only certificate inventory before first-100 recipe review TestFlight release; never revokes assets.
 
 on:
   workflow_dispatch:
