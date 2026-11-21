@@ -1,7 +1,7 @@
 import {MEAL_FULLNESS_DB,recipeFullness,SATIETY_RESEARCH_SOURCES} from "../js/nutrition/meal-planner-satiety-db.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import {allocateMealCalories,fullnessEstimate,fitMealPortions,MEASURED_FOOD_SATIETY} from "../js/nutrition/meal-planner-goals.js";
+import {allocateMealCalories,fullnessEstimate,fitMealPortions,MEASURED_FOOD_SATIETY,resolveMealPlannerGoal} from "../js/nutrition/meal-planner-goals.js";
 import {generateGoalAwarePlan,refitRecipeForSlot} from "../js/nutrition/meal-planner-planning.js";
 import {MEAL_CATALOG,macrosForIngredients,groceryList} from "../js/nutrition/meal-planner-data.js";
 
@@ -58,4 +58,21 @@ test("all 800 recipe variants have a separately labelled estimated fullness reco
   assert.ok(f&&f.score>=0&&f.score<=100);
   assert.equal(f.method,"recipe-heuristic-not-clinically-validated");
  }
+});
+
+test("live nutrition phase beats stale 2225-calorie selected snapshot",()=>{
+ const r=resolveMealPlannerGoal({
+  phase:{goalId:"bulk_conservative",currentCalories:2600,startCalories:2500},
+  plan:{calculatedCalories:2225},selected:{calories:2200},
+  goal:{goalId:"cut_moderate"},profile:{weightLb:170}
+ });
+ assert.equal(r.dailyCalories,2600);
+ assert.equal(r.goalId,"bulk_conservative");
+ assert.equal(r.source,"active-phase");
+});
+test("saved nutrition plan is used when no phase exists",()=>{
+ const r=resolveMealPlannerGoal({phase:null,plan:{calculatedCalories:2600},
+  selected:{calories:2225},goal:{goalId:"maintain"},profile:{weightLb:170}});
+ assert.equal(r.dailyCalories,2600);
+ assert.equal(r.source,"nutrition-plan");
 });
