@@ -6,7 +6,7 @@ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 export const CATALOG_FAVORITES_KEY="level_up_meal_catalog_favorites_v1";
 export const CATALOG_SLOTS=["All","Breakfast","Lunch","Dinner","Snacks"];
 export const CATALOG_FILTERS=["All recipes","High protein","Quick meals","Vegetarian","Vegan","Pescatarian"];
-export function baseRecipes(){return [...FEATURED_RECIPES,...MEAL_CATALOG.filter((_,i)=>i%20===0)];}
+export function baseRecipes(){return [...MEAL_CATALOG.filter((_,i)=>i%20===0),...FEATURED_RECIPES];}
 export function storedFavorites(){try{const ids=JSON.parse(localStorage.getItem(CATALOG_FAVORITES_KEY)||"[]");return Array.isArray(ids)?ids.filter(x=>typeof x==="string"):[]}catch{return []}}
 export function toggleFavorite(id){
  const list=new Set(storedFavorites());if(list.has(id))list.delete(id);else list.add(id);
