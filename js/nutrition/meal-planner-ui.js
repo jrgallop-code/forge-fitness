@@ -122,6 +122,16 @@ function groceryPlainText(plan){
 function screenHeader(title,back,action=""){
  return '<header class="mp-screen-header"><button type="button" data-mp-open="'+back+'" aria-label="Go back">‹</button><h2>'+esc(title)+'</h2><span>'+action+'</span></header>';
 }
+function loadingMarkup(){
+ return '<section class="lu-meal-planner mp-loading mp-standalone" role="status" aria-live="polite">'+
+ '<div class="mp-loading-inner"><span class="eyebrow">LEVEL UP MEAL PLANNER</span>'+
+ '<div class="mp-loading-orbit" aria-hidden="true"><span class="mp-loading-apple">🍎</span></div>'+
+ '<h1>Plating your week</h1><p>Building a plan around your goals and favorite foods.</p>'+
+ '<div class="mp-loading-stage"><span>Matching meals to your calorie target</span>'+
+ '<span>Balancing portions and protein</span>'+
+ '<span>Preparing your grocery list</span></div>'+
+ '<div class="mp-loading-track"><span></span></div></div></section>';
+}
 function landingMarkup(saved){
  const appGoal=currentMealPlannerGoal();
  return '<section class="lu-meal-planner mp-landing mp-standalone">'+
@@ -248,7 +258,7 @@ function render(root){
    const preview=root.querySelector("[data-mp-coverage-preview]");
    if(preview)preview.textContent=e.target.value+"%";
   });
-  root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",event=>{
+  root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",async event=>{
    event.preventDefault();
    const fd=new FormData(event.currentTarget),appGoal=currentMealPlannerGoal();
    const coverage=String(fd.get("coverage")||"all");
@@ -279,12 +289,19 @@ function render(root){
    };
    const today=new Date();
    const date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,"0"),String(today.getDate()).padStart(2,"0")].join("-");
-   const next=generateGoalAwarePlan(preferences,date,appGoal);
-   if(next.error){window.alert("Your calorie target could not be loaded. Enter a custom target.");showWizardStep(root,0);return;}
-   // Existing logged meals must never be silently overwritten by regenerating.
-   if(saved?.entries?.some(e=>hasConsumedMeal(e.date,e.slot))&&!window.confirm("This will replace your planned meals. Already consumed foods will remain in the Food Log. Continue?"))return;
+   // Existing logged food must not be silently replaced.
+   if(saved?.entries?.some(e=>hasConsumedMeal(e.date,e.slot))&&!window.confirm("This will replace your planned meals. Already consumed foods remain in Food Log. Continue?"))return;
+   plannerScreen="loading";render(root);
+   // Paint the loader before the synchronous recipe-ranking work begins.
+   await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,750)));
+   let next;
+   try{next=generateGoalAwarePlan(preferences,date,appGoal)}catch(error){console.error("Meal plan generation failed",error);}
+   if(!next||next.error){
+    plannerScreen="wizard";wizardStep=9;render(root);
+    window.alert("Meal planning failed. Check your calorie goal and try again.");return;
+   }
    if(write(next)){plannerScreen="calendar";selectedPlanDate=date;wizardStep=0;render(root)}
-   else window.alert("Couldn't save your plan on this device.");
+   else {plannerScreen="wizard";wizardStep=9;render(root);window.alert("Couldn't save your plan on this device.");}
   });
  }
  bindImages(root);
