@@ -7,7 +7,42 @@ import {recipeSteps} from "./meal-planner-media.js?v=2";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const CATALOG_FAVORITES_KEY="level_up_meal_catalog_favorites_v1";
 export const CATALOG_SLOTS=["All","Breakfast","Lunch","Dinner","Snacks"];
-export const CATALOG_FILTERS=["Review first 100","Needs my review","All recipes","Detailed recipes","Source index only"];
+export const RECIPE_STYLE_SETTINGS_KEY="level_up_meal_recipe_styles_v1";
+export const RECIPE_STYLE_CHOICES=[
+ ["Meat & poultry","Chicken, turkey, beef and other meats"],
+ ["Fish & seafood","Salmon, tuna, shrimp and other seafood"],
+ ["Vegetarian","No meat or seafood; eggs and dairy allowed"],
+ ["Vegan","No animal ingredients"]
+];
+export function selectedRecipeStyles(){
+ try { const value=JSON.parse(localStorage.getItem(RECIPE_STYLE_SETTINGS_KEY)||"[]");
+  return Array.isArray(value)?value.filter(id=>RECIPE_STYLE_CHOICES.some(([name])=>name===id)):[];
+ }catch{return []}
+}
+export function saveRecipeStyles(values){
+ const clean=[...new Set(values)].filter(id=>RECIPE_STYLE_CHOICES.some(([name])=>name===id));
+ localStorage.setItem(RECIPE_STYLE_SETTINGS_KEY,JSON.stringify(clean));return clean;
+}
+const SEAFOOD=/\b(salmon|cod|tuna|fish|shrimp|prawn|seafood|tilapia|anchovy|sardine|trout)\b/i;
+const MEAT=/\b(chicken|turkey|beef|steak|sirloin|pork|bacon|ham|sausage|lamb|chorizo|meatball)\b/i;
+const ANIMAL=/\b(egg|eggs|milk|yogurt|yoghurt|cheese|butter|cream|whey|honey|feta|cottage cheese)\b/i;
+export function recipeStyle(recipe){
+ const names=(recipe.ingredients||featuredIngredients(recipe)).map(x=>String(x.food||x.name||"")).join(" ");
+ if(MEAT.test(names)||recipe.diet==="omnivore")return "Meat & poultry";
+ if(SEAFOOD.test(names)||recipe.diet==="pescatarian")return "Fish & seafood";
+ if(recipe.diet==="vegan"&&!ANIMAL.test(names))return "Vegan";
+ return "Vegetarian";
+}
+export function matchesRecipeStyles(recipe,styles=selectedRecipeStyles()){
+ if(!styles?.length)return true;
+ const style=recipeStyle(recipe);
+ return styles.includes(style)||(style==="Vegan"&&styles.includes("Vegetarian"));
+}
+export function isCompleteRecipe(recipe){
+ return !recipe?.indexOnly&&((Array.isArray(recipe?.ingredients)&&recipe.ingredients.length>0)||(Array.isArray(recipe?.groups)&&recipe.groups.some(g=>g.ingredients?.length)));
+}
+
+export const CATALOG_FILTERS=["Complete recipes","All recipes"];
 export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
 const FOOD_TYPE_RULES=[
  ["Chicken & turkey", /\\b(chicken|turkey|poultry)\\b/i],
@@ -27,9 +62,15 @@ export function matchesFoodType(recipe, foodType="All foods"){
 // Index-listed dishes are individually named; do not surface twenty invented
 // size variants of the same generic concept as distinct recipes.
 export function baseRecipes(){
- const reviewById=new Map(REVIEW_RECORDS.map(x=>[x.id,x]));
- const promoted=new Set(FEATURED_RECIPES.map(recipe=>recipe.name.toLocaleLowerCase("en")));
- return [...FEATURED_RECIPES,...MPM_INDEX_RECIPES.filter(recipe=>!promoted.has(recipe.name.toLocaleLowerCase("en"))).map(x=>reviewById.get(x.id)||x)];
+ // Expose finished recipes and retain title-only records for the optional
+ // discovery view. Show one base recipe instead of twenty portion variants.
+ const classics=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
+ const seen=new Set();
+ return [...FEATURED_RECIPES,...classics,...MPM_INDEX_RECIPES].filter(recipe=>{
+  const key=recipe.name.toLocaleLowerCase("en");
+  if(seen.has(key))return false;
+  seen.add(key);return true;
+ });
 }
 export function storedFavorites(){try{const ids=JSON.parse(localStorage.getItem(CATALOG_FAVORITES_KEY)||"[]");return Array.isArray(ids)?ids.filter(x=>typeof x==="string"):[]}catch{return []}}
 export function toggleFavorite(id){
@@ -45,9 +86,11 @@ export function photoMarkup(recipe,cls=""){
  return '<span class="mp-real-photo mp-ai-photo '+esc(cls)+'" style="'+esc(style)+'" role="img" aria-label="'+esc(label)+'"></span>';
 }
 function displaySlot(slot){return slot==="Meal 4"?"Snacks":slot}
-export function matchesCatalog(recipe,{slot="All",filter="All recipes",search="",foodType="All foods"}={}){
+export function matchesCatalog(recipe,{slot="All",filter="Complete recipes",search="",foodType="All foods",styles=selectedRecipeStyles()}={}){
  const selectedSlot=slot==="Snacks"?"Meal 4":slot;
  if(selectedSlot!=="All"&&recipe.slot!==selectedSlot)return false;
+ if(!matchesRecipeStyles(recipe,styles))return false;
+ if(filter==="Complete recipes"&&!isCompleteRecipe(recipe))return false;
  if(!matchesFoodType(recipe,foodType))return false;
  const query=String(search).trim().toLowerCase();
  const words=[recipe.name,recipe.cuisine||"",recipe.diet||"",...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
@@ -70,21 +113,23 @@ export function recipeCard(recipe,favorite=false){
  '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+(reviewLabel?'<small>Review: '+esc(reviewLabel)+'</small>':'')+'</span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
 }
-export function catalogMarkup({slot="All",filter="All recipes",search="",foodType="All foods",favoritesOnly=false}={}){
+export function catalogMarkup({slot="All",filter="Complete recipes",search="",foodType="All foods",styles=selectedRecipeStyles(),favoritesOnly=false}={}){
  const favorites=new Set(storedFavorites());
- const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search,foodType})&&(!favoritesOnly||favorites.has(recipe.id)));
- if(filter==="Review first 100"||filter==="Needs my review"){const rank=new Map(REVIEW_RECORDS.map((x,i)=>[x.id,i]));recipes.sort((a,b)=>(rank.get(reviewIdForRecipe(a))??999)-(rank.get(reviewIdForRecipe(b))??999));}
+ const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search,foodType,styles})&&(!favoritesOnly||favorites.has(recipe.id)));
+
  return '<section class="lu-meal-planner mp-catalog mp-standalone">'+
  '<header class="mp-screen-header"><button type="button" data-mp-exit aria-label="Close meal planner">‹</button><h2>Recipes</h2><span></span></header>'+
  '<div class="mp-catalog-content"><div class="mp-catalog-intro"><h1>What are we cooking?</h1><p>Browse meals, save favourites, then choose when to eat them.</p></div>'+'<div class="mp-catalog-primary-actions"><button type="button" class="primary-btn" data-mp-open="calendar">My week</button><button type="button" data-mp-open="wizard">Generate a plan</button><button type="button" data-mp-open="groceries">Grocery list</button></div>'+'<div class="mp-catalog-mode"><button type="button" data-mp-favorites-filter="all" class="'+(!favoritesOnly?'active':'')+'">All recipes</button><button type="button" data-mp-favorites-filter="favorites" class="'+(favoritesOnly?'active':'')+'">♥ Favourites ('+favorites.size+')</button></div>'+
+ '<div class="mp-recipe-style-settings"><div><strong>Food preferences</strong><small>'+(!styles.length?'All food styles':styles.map(esc).join(' · '))+'</small></div><button type="button" data-mp-style-settings aria-expanded="false">Edit</button></div>'+
+ '<div class="mp-style-options" data-mp-style-options hidden><p>Select the food styles you want to see. Select none to show all.</p>'+RECIPE_STYLE_CHOICES.map(([name,help])=>'<label><input type="checkbox" data-mp-style-choice value="'+esc(name)+'"'+(styles.includes(name)?' checked':'')+'><span><strong>'+esc(name)+'</strong><small>'+esc(help)+'</small></span></label>').join('')+'<button type="button" data-mp-style-done>Done</button></div>'+
  '<label class="mp-catalog-search"><span aria-hidden="true">⌕</span><input data-mp-search type="search" placeholder="Search meals or ingredients" value="'+esc(search)+'" aria-label="Search recipes"></label>'+
  '<div class="mp-catalog-chips" role="group" aria-label="Meal type">'+CATALOG_SLOTS.map(x=>'<button type="button" class="'+(slot===x?"active":"")+'" data-mp-slot="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<div class="mp-food-type-filter"><div class="mp-filter-caption">FOOD TYPE</div><div class="mp-catalog-chips mp-food-type-chips" role="group" aria-label="Filter recipes by food type">'+CATALOG_FOOD_TYPES.map(x=>'<button type="button" class="'+(foodType===x?"active":"")+'" data-mp-food-type="'+esc(x)+'" aria-pressed="'+(foodType===x)+'">'+esc(x)+'</button>').join("")+'</div></div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
- '<p class="mp-catalog-count">'+recipes.length+' recipes shown · '+FEATURED_RECIPES.length+' full ingredient records in catalogue · '+REVIEW_RECORDS.length+' in your first review batch</p>'+
+ '<p class="mp-catalog-count">'+recipes.length+' recipes</p>'+
  '<div class="mp-first100-progress"><strong>First 100 review</strong><span>'+reviewSummary().reviewed+' reviewed · '+reviewSummary().needsChanges+' need changes · '+reviewSummary().notReviewed+' remaining</span><small>'+reviewSummary().ingredientLists+' ingredient lists imported from publisher schema · incomplete recipes remain unschedulable</small><button type="button" class="mp-review-export" data-mp-review-export>Copy my review notes</button></div>'+'<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
- '<div class="mp-source-note"><strong>Source-indexed recipes are discovery only</strong><p>These are distinct public recipe titles, not full imported recipes. Only detailed entries have measured ingredients. Unreviewed items cannot generate accurate grocery lists, nutrition or meal schedules.</p><a href="https://mealprepmanual.com/recipes/" rel="noopener noreferrer" target="_blank">Visit the publisher catalogue</a></div><p class="mp-disclaimer">No publisher photographs or cooking directions have been copied into this catalogue. Recipe-specific images and rights checks are pending.</p></div></section>';
+ '<p class="mp-disclaimer">Nutrition values are estimates. Complete recipes include ingredients and preparation steps.</p></div></section>';
 }
 function featuredRecipeDetail(recipe){
  const m=recipe.publishedEstimate;
