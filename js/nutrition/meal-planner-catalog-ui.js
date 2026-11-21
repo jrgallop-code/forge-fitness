@@ -1,3 +1,4 @@
+// Recipe cards use one distinct generated food photo per displayed recipe; duplicates are rejected by regression tests.
 import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {MPM_INDEX_RECIPES} from "./meal-prep-manual-discovery.js?v=1";
