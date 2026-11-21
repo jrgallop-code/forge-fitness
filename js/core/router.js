@@ -182,11 +182,12 @@ export function navigate(page, { tab = null } = {}) {
             case "measurements":
                 content.innerHTML = renderMeasurementsTracker(); safeInitialize("Measurements tracker", initializeMeasurementsTracker); break;
             case "nutrition":
-                content.innerHTML = renderNutrition(); safeInitialize("Nutrition", initializeNutrition); safeInitialize("Nutrition main view", () => showNutritionView("main")); break;
+            case "energy":
+                // Both Nutrition entry points must land on Food Log; Meal Plan
+                // is a user-selected tab and must not open automatically.
+                content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "water":
                 content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
-            case "energy":
-                content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             default:
