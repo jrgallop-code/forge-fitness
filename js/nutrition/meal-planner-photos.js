@@ -30,6 +30,14 @@ export function recipePhoto(recipe){
   exactMatch:false,recipeId:recipe.id,backgroundSize:"400% 200%"
  };
  const i=recipeBaseIndex(recipe);
+ // Restore the high-resolution photographic atlas for the first twenty
+ // verified base-image positions. The tiny offline JS sprite is too low
+ // resolution for iPhone retina recipe-card and full-screen detail sizes.
+ if(i<AI_TILE_COUNT)return {
+  primary:AI_ATLAS,tile:i,x:(i%5)/4*100,
+  y:Math.floor(i/5)/3*100,source:PHOTO_SOURCE,
+  exactMatch:true,recipeId:recipe?.id,backgroundSize:"500% 400%"
+ };
  return {
   primary:GENERATED_MEAL_ATLAS,tile:i,x:(i%8)/7*100,
   y:Math.floor(i/8)/4*100,source:PHOTO_SOURCE,
