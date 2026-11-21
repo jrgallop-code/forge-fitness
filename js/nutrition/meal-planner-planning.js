@@ -1,3 +1,4 @@
+import {recipeFullness} from "./meal-planner-satiety-db.js?v=1";
 // Goal-aware plan assembly built on the existing meal catalog.
 // Does not modify nutrition targets or consume any foods.
 import {generatePlan,eligibleMeals,macrosForIngredients,MEAL_CATALOG} from "./meal-planner-data.js?v=3";
@@ -11,7 +12,7 @@ function chooseRecipe(candidates,target,goal,used,preferences){
  const lose=isWeightLossGoal(goal);
  return candidates.map(recipe=>{
   const macros=macrosForIngredients(recipe.ingredients);
-  const satiety=fullnessEstimate(recipe.ingredients);
+  const satiety=recipeFullness(recipe.id)||fullnessEstimate(recipe.ingredients);
   const scale=target>0?target/Math.max(1,macros.calories):1;
   const reachable=scale>=.6&&scale<=2.6;
   const fit=Math.abs(Math.log(Math.max(.01,scale)));
