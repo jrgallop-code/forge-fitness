@@ -7,8 +7,9 @@ import {scheduleRecipe} from "../js/nutrition/meal-planner-manual.js";
 import {groceryList} from "../js/nutrition/meal-planner-data.js";
 test("eight source-linked reviewed ingredient inventories promote unique indexed dishes",()=>{
  assert.equal(FEATURED_RECIPES.length,8);
- assert.equal(baseRecipes().length,MPM_INDEX_RECIPES.length);
- assert.equal(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Detailed recipes"})).length,8);
+ assert.ok(baseRecipes().length>=FEATURED_RECIPES.length+40);
+ assert.equal(baseRecipes().filter(x=>x.indexOnly).length,0);
+ assert.equal(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Complete recipes"})).length,baseRecipes().length);
  for(const recipe of FEATURED_RECIPES){
   assert.ok(recipe.groups.length>=2);
   assert.ok(recipe.steps.length>=4);
