@@ -198,3 +198,46 @@ html[data-theme]:has([data-calories-panel="meals"]:not([hidden]) [data-meal-plan
  html[data-theme] .mp-onboarding .mp-photo-grid{gap:8px}
  html[data-theme] .mp-onboarding .mp-photo-copy{padding:8px}
 }
+
+/* Sharp ingredient-driven recipe art: a virtual ceramic plate with food shapes.
+ * No enlarged thumbnail sprites or ambiguous category photos. */
+html[data-theme] .mp-standalone .mp-recipe-art{
+ display:flex!important;position:relative;justify-content:center;align-items:center;
+ width:100%;height:124px;overflow:hidden;
+ background:radial-gradient(circle at 35% 15%,#d6c3ac 0%,#a69683 70%,#80756a 100%);
+}
+html[data-theme] .mp-standalone .mp-recipe-plate{
+ width:100px;height:100px;position:relative;display:block;
+ border-radius:50%;background:radial-gradient(circle at center,#f7f5ed 0 55%,#e3ddd2 57% 67%,#faf8f1 68% 78%,#cfc5b8 81%);
+ box-shadow:0 6px 12px #0004, inset 0 3px 7px #ddd;
+}
+html[data-theme] .mp-standalone .mp-recipe-garnish{
+ position:absolute;font-family:Apple Color Emoji,"Segoe UI Emoji",sans-serif;
+ font-size:43px;line-height:1;filter:drop-shadow(0 3px 3px #0003);
+}
+html[data-theme] .mp-standalone .mp-recipe-garnish-0{left:13px;top:15px;transform:rotate(-14deg)}
+html[data-theme] .mp-standalone .mp-recipe-garnish-1{right:6px;top:17px;transform:rotate(11deg)}
+html[data-theme] .mp-standalone .mp-recipe-garnish-2{left:25px;bottom:8px;transform:rotate(3deg)}
+html[data-theme] .mp-standalone .lu-meal-photo .mp-recipe-art{height:100%;min-height:100px}
+html[data-theme] .mp-standalone .lu-meal-photo .mp-recipe-plate{transform:scale(.95)}
+html[data-theme] .mp-standalone .mp-review{
+ display:grid;gap:0;background:var(--card);border:1px solid var(--line);
+ border-radius:16px;overflow:hidden;margin:16px 0;
+}
+html[data-theme] .mp-standalone .mp-review>div{
+ display:grid;grid-template-columns:minmax(100px,.38fr) minmax(0,.62fr);
+ gap:13px;align-items:start;padding:13px 15px;border-bottom:1px solid var(--line);
+}
+html[data-theme] .mp-standalone .mp-review>div:last-child{border-bottom:0}
+html[data-theme] .mp-standalone .mp-review span{color:var(--muted);font-size:.77rem}
+html[data-theme] .mp-standalone .mp-review strong{
+ font-size:.82rem;font-weight:700;line-height:1.35;
+ overflow-wrap:break-word;word-break:normal;
+}
+html[data-theme] .mp-onboarding .mp-produce-grid{
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px;
+}
+html[data-theme] .mp-onboarding .mp-produce-grid .mp-illustration{height:86px}
+html[data-theme] .mp-onboarding .mp-produce-grid .mp-illustration-icon{font-size:50px}
+html[data-theme] .mp-onboarding .mp-produce-grid .mp-photo-copy{min-height:37px;padding:8px 10px}
+html[data-theme] .mp-onboarding .mp-produce-grid .mp-photo-copy strong{font-size:.78rem}
