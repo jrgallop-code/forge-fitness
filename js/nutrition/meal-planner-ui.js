@@ -410,7 +410,7 @@ function renderDays(plan){
  return nav+dates.filter(date=>date===selectedPlanDate).map(date=>{
   const entries=plan.entries.filter(x=>x.date===date);
   const total=entries.reduce((acc,entry)=>{if(FEATURED_RECIPES.some(x=>x.id===entry.recipeId))return acc;const m=macrosForIngredients(entry.ingredients);for(const key of Object.keys(acc))acc[key]+=m[key];return acc},{calories:0,protein:0,carbs:0,fat:0});
-  return '<section class="lu-meal-day"><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p class="lu-meal-total">Planned ≈ '+Math.round(total.calories)+' kcal · '+Math.round(total.protein)+'g protein · '+Math.round(total.carbs)+'g carbs · '+Math.round(total.fat)+'g fat</p>'+
+  return '<section class="lu-meal-day"><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p class="lu-meal-total">'+(entries.some(x=>FEATURED_RECIPES.some(r=>r.id===x.recipeId))?'Nutrition pending verification for source-linked meals · ':'')+'Planned ≈ '+Math.round(total.calories)+' kcal · '+Math.round(total.protein)+'g protein · '+Math.round(total.carbs)+'g carbs · '+Math.round(total.fat)+'g fat</p>'+
   entries.map(entry=>{
     const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
     const options=eligibleMeals(plan.preferences).filter(x=>x.slot===entry.slot);
@@ -422,11 +422,11 @@ function renderDays(plan){
     return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
       (recipe&&!options.some(x=>x.id===recipe.id)?'<option value="'+esc(recipe.id)+'" selected>'+esc(recipe.name)+'</option>':'')+
       options.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===entry.recipeId?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></label>'+
-      (recipe?sourcePending?'<p>Source-linked · nutrition pending review · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>':'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)&&!sourcePending?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':''):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
+      (recipe?(sourcePending?'<p>Source-linked · nutrition pending review · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>'):'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)&&!sourcePending?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':''):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
       (entry.notice?'<p class="mp-disclaimer">'+esc(entry.notice)+'</p>':'')+
       '<div class="lu-meal-actions">'+(consumed?'<span class="lu-meal-eaten">✓ Consumed</span><button type="button" data-meal-undo data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Undo log</button>':recipe&&!sourcePending?'<button class="primary-btn" type="button" data-meal-consume data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Mark Eaten</button>':sourcePending?'<span class="mp-disclaimer">Logging unavailable until food matching and nutrition verification</span>':'')+'</div></div></div>'+
       '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+ingredientIllustration(item.food)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g</label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+(sourcePending?recipe.steps:recipeSteps({...recipe,ingredients:entry.ingredients})).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
-      (isWeightLossGoal(plan.goalId)?'<p class="mp-disclaimer">Fullness score is a recipe heuristic, not a measured Satiety Index.</p>':'')+
+      (isWeightLossGoal(plan.goalId)&&!sourcePending?'<p class="mp-disclaimer">Fullness score is a recipe heuristic, not a measured Satiety Index.</p>':'')+
       (consumed?'<p class="lu-meal-note">Edit logged ingredients in Food Log. Undo removes only entries created through this plan.</p>':'')+'</article>';
   }).join("")+'</section>';
  }).join("");
@@ -462,6 +462,37 @@ export function renderMealPlannerShell(){return `
 .lu-meal-actions button{padding:9px 14px;border-radius:9px}
 .lu-meal-eaten{font-weight:700;color:var(--success,#3dbb7a)}
 .lu-meal-note{font-size:.8rem;opacity:.8}
+.mp-catalog .mp-catalog-content{padding-bottom:48px}
+.mp-catalog-primary-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:18px 0}
+.mp-catalog-primary-actions button{border:1px solid var(--border-color,#7776);padding:12px 6px;border-radius:12px;background:var(--surface-2,#4442);color:inherit;font:inherit;font-weight:600;font-size:13px}
+.mp-catalog-primary-actions .primary-btn{background:var(--accent,#28835b);color:white;border-color:transparent}
+.mp-catalog-mode{display:flex;gap:9px;align-items:center;margin:16px 0}
+.mp-catalog-mode button{background:var(--surface-2,#4442);color:inherit;border:1px solid var(--border-color,#7776);border-radius:999px;padding:10px 14px;font:inherit;font-weight:600}
+.mp-catalog-mode button.active{background:var(--accent,#28835b);border-color:transparent;color:white}
+.mp-source-note{padding:18px;margin:20px 0;border:1px solid var(--border-color,#7775);border-radius:16px;background:var(--surface-2,#4442)}
+.mp-source-note p{margin:9px 0;font-size:13px}
+.mp-source-note a{color:var(--accent,#72cd9b)}
+.mp-schedule-body{padding:16px 5px 50px}
+.mp-schedule-preview{display:flex;gap:14px;align-items:center;border:1px solid var(--border-color,#7775);padding:12px;border-radius:16px}
+.mp-schedule-preview .mp-real-photo{display:flex;width:96px;height:96px;flex:0 0 96px;border-radius:12px;overflow:hidden;background-color:var(--surface-2,#4442)}
+.mp-schedule-preview h2{font-size:19px}
+.mp-schedule-panel{border:1px solid var(--border-color,#7775);border-radius:16px;margin-top:16px;padding:16px;background:var(--card-bg,#7771)}
+.mp-schedule-panel h3{margin:14px 0 10px}
+.mp-schedule-label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;margin:12px 0}
+.mp-schedule-label input{max-width:55%;color:inherit;background:var(--surface-2,#4442);border:1px solid var(--border-color,#7775);border-radius:10px;padding:10px;font:inherit}
+.mp-schedule-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.mp-schedule-weekdays button{min-width:0;padding:13px 0;background:var(--surface-2,#4442);color:inherit;border:1px solid var(--border-color,#7775);border-radius:11px;font:inherit;font-size:12px}
+.mp-schedule-weekdays button.active{background:var(--accent,#28835b);color:white;border-color:transparent}
+.mp-schedule-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mp-schedule-slots label{display:flex;align-items:center;gap:8px;background:var(--surface-2,#4442);border:1px solid var(--border-color,#7775);border-radius:11px;padding:12px 9px;font-size:13px}
+.mp-schedule-slots input{accent-color:var(--accent,#28835b)}
+.mp-schedule-summary{display:flex;flex-direction:column;gap:6px;background:var(--surface-2,#4442);padding:16px;border-radius:12px;margin:16px 0}
+.mp-schedule-summary strong{font-size:22px}
+.mp-schedule-summary small{opacity:.72}
+.mp-schedule-submit{width:100%;margin-top:14px;padding:13px}
+.mp-schedule-error{color:#e98d8d}
+@media(max-width:390px){.mp-catalog-primary-actions{grid-template-columns:1fr 1fr}.mp-catalog-primary-actions button:last-child{grid-column:span 2}}
+
 </style><div data-meal-planner-root></div>`;}
 export function initializeMealPlanner(){
  const root=document.querySelector("[data-meal-planner-root]");if(root)render(root);
