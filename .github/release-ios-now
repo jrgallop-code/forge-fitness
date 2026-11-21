@@ -707,3 +707,11 @@ Release request: 2026-11-20 stopwatch appearance parity and blank Quick Log inpu
 Meal Planner TestFlight evaluation trigger — 2026-11-20, merged PR #842, iOS commit acfba2812f2d784ad049bf1ca9119455898a54dd.
 
 Release request 2026-11-21: Meal Prep Planner batch schedule beta, iOS Food Log launch, grocery list. Commit 6f159be416976e035916440935fbb59485a682a2.
+
+
+## Native Meal Planner review release — 2026-11-21
+- iOS-only meal catalogue with 12 draft recipes, ingredient quantities and full instructions.
+- AI-generated 4×3 image preview sprite included in native web bundle.
+- Favorites, detail screens, weekly scheduling, groceries and theme-token fixes.
+- PWA planner disabled in main branch; PWA changes not part of this iOS release.
+- This file update explicitly triggers the protected App Store Connect upload workflow.
