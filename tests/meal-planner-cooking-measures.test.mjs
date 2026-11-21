@@ -37,6 +37,6 @@ test("Nutrition always enters Food Log instead of persisting Meal Plan screen",a
  assert.match(src,/data-calories-tab="meals">Meal Plan/);
  const router=await readFile(new URL("../js/core/router.js",import.meta.url),"utf8");
  assert.match(router,/case "nutrition":\s*case "energy":/);
- assert.match(router,/renderCaloriesHub\\(renderEnergyProfile\\(\\)\\)/);
+ assert.match(router,/renderCaloriesHub\(renderEnergyProfile\(\)\)/);
 
 });
