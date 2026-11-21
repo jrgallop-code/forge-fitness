@@ -71,3 +71,50 @@
 .lu-meal-planner .mp-cooking li{margin:9px 0}
 @media(min-width:620px){.lu-meal-planner .mp-photo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lu-meal-planner .mp-photo{height:150px}}
 @media(max-width:360px){.lu-meal-planner .lu-meal-photo{width:86px!important;height:95px!important;flex-basis:86px!important}.calories-hub .calories-tabs button{padding:8px 6px;font-size:.71rem}}
+
+/* Meal Planner v3 -- true standalone screens, shown over the hub without the
+   old tab strip, progress cards, or nutrition views bleeding into onboarding. */
+[data-meal-planner-root]>.mp-standalone{position:fixed;inset:0;z-index:10050;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg,var(--background,var(--surface-1,#f7f7f7)));color:var(--text-primary,var(--text,#161d2d));padding:calc(env(safe-area-inset-top,0px) + 12px) 18px calc(env(safe-area-inset-bottom,0px) + 36px);max-width:none;margin:0}
+.mp-screen-header{display:flex;align-items:center;gap:12px;padding:3px 0 12px;max-width:850px;margin:auto}
+.mp-screen-header>button{min-width:42px;height:42px;font-size:28px;border-radius:12px;border:1px solid var(--border-color,#8884);background:var(--surface-2,#ccc2);color:inherit}
+.mp-screen-header h2{margin:0;flex:1;font-size:1.05rem;text-align:center}
+.mp-screen-header>span{width:42px}
+.mp-onboarding-content,.mp-groceries>.mp-grocery-group,.mp-grocery-intro,.mp-grocery-tools,.mp-copy-status{max-width:750px;margin-left:auto;margin-right:auto}
+.mp-onboarding .mp-wizard{padding-bottom:40px}
+.mp-onboarding .mp-step{padding:12px 0 8px}
+.mp-onboarding .mp-step h3{font-size:1.58rem;line-height:1.2;margin-bottom:10px}
+.mp-onboarding .mp-wizard-footer{bottom:calc(env(safe-area-inset-bottom,0px) + 6px);border-top:1px solid var(--border-color,#8884);padding:12px 3px;background:var(--bg,var(--background,var(--surface-1,#fff)))}
+.mp-goal-box{border:1px solid var(--border-color,#8884);border-radius:16px;padding:15px;margin:16px 0;background:var(--surface-1,var(--card-bg,#fff));display:grid;gap:13px}
+.mp-goal-box label{display:flex;flex-direction:column;gap:6px;font-size:.83rem;font-weight:700}
+.mp-goal-box input,.mp-goal-box select{font:inherit;min-height:46px;width:100%;border-radius:10px;border:1px solid var(--border-color,#8885);background:var(--surface-2,#9991);color:inherit;padding:9px}
+.mp-goal-box .mp-disclaimer{margin:0}
+.mp-landing{display:flex;flex-direction:column;align-items:center;position:fixed!important;padding:0!important;overflow:hidden!important;background:var(--bg,var(--background,var(--surface-1,#f9f9f9)))}
+.mp-landing-image{position:absolute;inset:32% 0 10%;background-image:url("/assets/food/category-7.webp");background-position:center center;background-size:cover;opacity:.93;pointer-events:none}
+.mp-landing-image::before{content:"";position:absolute;inset:-2px 0 65%;background:linear-gradient(to bottom,var(--bg,var(--background,var(--surface-1,#f9f9f9))),transparent)}
+.mp-landing-copy{position:relative;z-index:1;text-align:center;padding:clamp(48px,10vh,120px) 24px 0;max-width:630px}
+.mp-landing-copy h1{font-size:clamp(2.1rem,8.5vw,3.7rem);line-height:1.08;letter-spacing:-.035em;margin:22px 0 12px}
+.mp-landing-copy p{font-size:clamp(.95rem,3.7vw,1.2rem);line-height:1.5;margin:0 auto;max-width:450px}
+.mp-goal-chip{display:inline-block;padding:7px 13px;margin-top:13px;background:var(--surface-2,#9992);border:1px solid var(--border-color,#8884);border-radius:999px;font-size:.78rem}
+.mp-landing-actions{display:grid;gap:10px;position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);left:22px;right:22px;z-index:2;max-width:540px;width:calc(100% - 44px);margin:auto}
+.mp-landing-actions button{border-radius:99px;min-height:55px;font-size:1rem;font-weight:800;border:1px solid var(--border-color,#8884);background:var(--surface-1,#fff);color:inherit}
+.mp-landing-actions .primary-btn,.mp-grocery-tools .primary-btn{background:var(--accent-color,var(--accent,#3245c3));color:white;border:0}
+.mp-groceries .mp-grocery-intro{margin-top:30px;margin-bottom:20px}
+.mp-grocery-intro h1{font-size:clamp(1.9rem,6vw,2.9rem);margin:9px 0}
+.mp-grocery-intro p{line-height:1.45;opacity:.72}
+.mp-grocery-tools{display:flex;gap:10px;margin-top:18px;margin-bottom:20px}
+.mp-grocery-tools button{flex:1;min-height:48px;border:1px solid var(--border-color,#8884);background:var(--surface-2,#ccc2);border-radius:12px;color:inherit;font-weight:800}
+.mp-grocery-group{border:1px solid var(--border-color,#8884);background:var(--surface-1,var(--card-bg,#fff));padding:14px;border-radius:14px;margin-bottom:13px}
+.mp-grocery-group h3{margin:2px 0 10px;font-size:1rem}
+.mp-grocery-group ul{list-style:none;padding:0;margin:0}
+.mp-grocery-group li{display:flex;justify-content:space-between;gap:12px;padding:11px 2px;border-bottom:1px solid var(--border-color,#8882);font-size:.87rem}
+.mp-grocery-group li:last-child{border-bottom:0}
+.mp-grocery-group li strong{white-space:nowrap}
+.mp-copy-status{font-size:.82rem;color:var(--accent-color,var(--accent,#3245c3));font-weight:700;min-height:20px}
+.mp-calendar .mp-calendar-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:end;justify-content:space-between;max-width:870px;margin:13px auto}
+.mp-calendar-actions h2{font-size:1.5rem;margin:4px 0}
+.mp-calendar-actions p{font-size:.76rem;opacity:.8;margin:4px 0}
+.mp-calendar-actions button{padding:10px 12px;border:1px solid var(--border-color,#8884);border-radius:11px;background:var(--surface-2,#9991);color:inherit}
+.mp-calendar .lu-meal-days{max-width:870px;margin:auto}
+.mp-meal-target{font-weight:750;font-size:.76rem}
+.mp-fullness{font-size:.8rem;font-weight:800;color:var(--accent-color,var(--accent,#3245c3))}
+@media(min-width:700px){.mp-landing-image{inset:31% 12% 7%;border-radius:24px}.mp-landing-actions{bottom:40px}.mp-onboarding-content{max-width:680px}}
