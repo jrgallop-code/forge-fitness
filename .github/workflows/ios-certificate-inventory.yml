@@ -1,4 +1,5 @@
 name: Inspect App Store signing certificates
+# Read-only certificate check for meal planner iOS build; never revokes assets.
 
 on:
   workflow_dispatch:
