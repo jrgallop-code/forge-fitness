@@ -1,5 +1,6 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
+import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes} from "./meal-planner-catalog-ui.js?v=1";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
@@ -95,7 +96,8 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="landing",catalogSlot="All",catalogFilter="All recipes",catalogSearch="",catalogRecipeId="";
+let plannerScreen="catalog",catalogSlot="All",catalogFilter="All recipes",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
  ["Meat, fish & protein",/chicken|turkey|beef|salmon|tuna|cod|shrimp|tofu|egg/],
@@ -145,6 +147,26 @@ function landingMarkup(saved){
  '<button type="button" class="mp-landing-secondary" data-mp-open="catalog">Browse recipes</button>'+
  '</div></section>';
 }
+const SCHEDULE_DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+function scheduleMarkup(recipeId){
+ const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===recipeId);
+ if(!recipe)return '<section class="lu-meal-planner">'+screenHeader("Recipe not found","catalog")+'</section>';
+ const batch=scheduleOffsets.length*scheduleSlots.length*schedulePortions;
+ const dates=scheduleOffsets.map(i=>dateForOffset(scheduleStart,i));
+ const source=Boolean(recipe.groups);
+ return '<section class="lu-meal-planner mp-standalone mp-scheduler">'+screenHeader("Schedule recipe","recipe")+
+ '<div class="mp-schedule-body"><div class="mp-schedule-preview">'+photoMarkup(recipe)+
+ '<div><span class="eyebrow">BATCH PREP</span><h2>'+esc(recipe.name)+'</h2><p class="mp-disclaimer">'+(source?'Source-backed recipe; nutrition awaits independent review':'Recipe idea; nutrition and cooking steps are estimates')+'</p></div></div>'+
+ '<div class="mp-schedule-panel"><h3>When will you eat it?</h3><label class="mp-schedule-label">Week starting <input type="date" data-mp-schedule-start value="'+esc(scheduleStart)+'"></label>'+
+ '<div class="mp-schedule-weekdays" role="group" aria-label="Select weekdays">'+SCHEDULE_DAYS.map((d,i)=>'<button type="button" data-mp-schedule-day="'+i+'" aria-pressed="'+scheduleOffsets.includes(i)+'" class="'+(scheduleOffsets.includes(i)?'active':'')+'">'+d+'</button>').join("")+'</div>'+
+ '<h3>Choose meal slots</h3><div class="mp-schedule-slots">'+MEAL_SLOTS.map(slot=>'<label><input type="checkbox" data-mp-schedule-slot="'+esc(slot)+'" '+(scheduleSlots.includes(slot)?'checked':'')+'><span>'+esc(slot==="Meal 4"?"Snacks / Meal 4":slot)+'</span></label>').join("")+'</div>'+
+ '<label class="mp-schedule-label">Portions per selected meal <input type="number" min="1" max="12" value="'+schedulePortions+'" data-mp-schedule-portions></label>'+
+ '<div class="mp-schedule-summary"><strong>Prepare '+batch+' portion'+(batch===1?'':'s')+'</strong><small>'+scheduleOffsets.length+' day'+(scheduleOffsets.length===1?'':'s')+' · '+scheduleSlots.length+' meal slot'+(scheduleSlots.length===1?'':'s')+'</small>'+
+ '<small>Prepare on '+(dates.length?esc(new Date(dates[0]+'T12:00:00').toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})):'a selected day')+'</small></div>'+
+ '<p class="mp-disclaimer">Ingredients, oils and seasonings scale with portions. Planned meals are not automatically logged as eaten. Refrigerate within two hours at 4°C or colder; eat within 2–3 days or freeze. Reheat chicken dishes to 74°C.</p>'+
+ '<p class="mp-schedule-error" role="alert" hidden></p>'+
+ '<button class="primary-btn mp-schedule-submit" type="button" data-mp-schedule-save '+(batch?'':'disabled')+'>Add to my week</button></div></div></section>';
+}
 function groceriesMarkup(saved){
  if(!saved)return landingMarkup(null);
  const groups=groupedGrocery(saved);
@@ -173,15 +195,16 @@ function render(root){
  root.style.setProperty("--mp-hero-image",'url("'+MEAL_PLANNER_HERO+'")');
  const saved=read();
  const prefs={...defaultPrefs,...saved?.preferences};
- if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
+ if(!saved&&plannerScreen==="calendar")plannerScreen="catalog";
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
- else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});
+ else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch,favoritesOnly});
  else if(page==="recipe"){const selected=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
  else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
+  else if(page==="schedule")root.innerHTML=scheduleMarkup(catalogRecipeId);
  else{
   const allocation=saved?.targetAllocation;
   root.innerHTML='<section class="lu-meal-planner mp-standalone mp-calendar">'+
@@ -197,6 +220,40 @@ function render(root){
   if(backup&&!img.dataset.photoRetry){img.dataset.photoRetry="1";img.src=backup;}
   else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
  }));
+ root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";render(root);}));
+ root.querySelectorAll("[data-mp-schedule]").forEach(button=>button.addEventListener("click",()=>{
+   catalogRecipeId=button.dataset.mpSchedule;
+   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
+   scheduleSlots=[recipe?.slot||"Dinner"];scheduleOffsets=[0,1,2];schedulePortions=1;scheduleStart=nextMonday();
+   plannerScreen="schedule";render(root);
+ }));
+ root.querySelectorAll("[data-mp-schedule-day]").forEach(button=>button.addEventListener("click",()=>{
+   const day=Number(button.dataset.mpScheduleDay);
+   scheduleOffsets=scheduleOffsets.includes(day)?scheduleOffsets.filter(x=>x!==day):[...scheduleOffsets,day].sort((a,b)=>a-b);render(root);
+ }));
+ root.querySelectorAll("[data-mp-schedule-slot]").forEach(box=>box.addEventListener("change",()=>{
+   const slot=box.dataset.mpScheduleSlot;
+   scheduleSlots=box.checked?[...new Set([...scheduleSlots,slot])]:scheduleSlots.filter(x=>x!==slot);render(root);
+ }));
+ root.querySelector("[data-mp-schedule-start]")?.addEventListener("change",event=>{
+   if(/^\\d{4}-\\d{2}-\\d{2}$/.test(event.target.value)){scheduleStart=event.target.value;render(root);}
+ });
+ root.querySelector("[data-mp-schedule-portions]")?.addEventListener("change",event=>{
+   schedulePortions=Math.max(1,Math.min(12,Math.floor(Number(event.target.value)||1)));render(root);
+ });
+ root.querySelector("[data-mp-schedule-save]")?.addEventListener("click",()=>{
+   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
+   try{
+     for(const i of scheduleOffsets)for(const slot of scheduleSlots){
+       const date=dateForOffset(scheduleStart,i);
+       if(hasConsumedMeal(date,slot))throw new Error("A meal in this slot has already been logged. Choose a different day or slot.");
+     }
+     const next=scheduleRecipe(read(),recipe,{startDate:scheduleStart,dayOffsets:scheduleOffsets,slots:scheduleSlots,portionsPerDay:schedulePortions});
+     if(!write(next))throw new Error("Could not save this plan to local storage.");
+     selectedPlanDate=dateForOffset(scheduleStart,scheduleOffsets[0]);
+     plannerScreen="calendar";render(root);
+   }catch(error){const msg=root.querySelector(".mp-schedule-error");if(msg){msg.hidden=false;msg.textContent=error.message;}}
+ });
  root.querySelectorAll("[data-mp-slot]").forEach(button=>button.addEventListener("click",()=>{catalogSlot=button.dataset.mpSlot;render(root);}));
  root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
  root.querySelector("[data-mp-search]")?.addEventListener("input",event=>{
