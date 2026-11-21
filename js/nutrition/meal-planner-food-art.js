@@ -46,3 +46,32 @@ export function dietIllustration(id,label){
 }
 export const FOOD_ART_NAMES=Object.freeze(Object.keys(FOOD_ART));
 export const DIET_ART_NAMES=Object.freeze(Object.keys(DIET_ART));
+
+// Each recipe's actual ingredients decide the illustration; these remain sharp
+// at retina resolution and avoid magnifying 8-by-5 low-resolution atlas tiles.
+const FOOD_FALLBACK={
+ "berries":"🫐","brown rice":"🍚","white rice":"🍚","whole wheat pasta":"🍝",
+ "whole wheat bread":"🍞","rice cakes":"🍘","cottage cheese":"🧀",
+ "feta":"🧀","cheddar":"🧀","chicken":"🍗","turkey":"🍗","beef":"🥩",
+ "salmon":"🐟","fish":"🐟","cod":"🐟","tofu":"🧈","eggs":"🥚",
+ "chickpeas":"🫘","lentils":"🫘","black beans":"🫘","edamame":"🫛",
+ "broccoli":"🥦","spinach":"🥬","mushroom":"🍄","tomato":"🍅",
+ "pepper":"🫑","avocado":"🥑","olive":"🫒","potato":"🥔",
+ "oats":"🥣","pasta":"🍝","quinoa":"🌾"
+};
+function emojiForFood(food){
+ const name=String(food||"").toLowerCase();
+ const exact=Object.keys(FOOD_ART).find(x=>name===x.toLowerCase());
+ if(exact)return FOOD_ART[exact][0];
+ return FOOD_FALLBACK[Object.keys(FOOD_FALLBACK).find(x=>name.includes(x))]||"🥗";
+}
+export function recipeIllustration(recipe){
+ const ingredients=Array.isArray(recipe?.ingredients)?recipe.ingredients:[];
+ const foodIcons=[...new Set(ingredients.map(x=>emojiForFood(x.food)))].slice(0,3);
+ while(foodIcons.length<3)foodIcons.push(["🥬","🍅","🥑"][foodIcons.length]);
+ const label=encode(recipe?.name||"Planned meal");
+ return '<span class="mp-recipe-art" role="img" aria-label="'+label+'">'+
+ '<span class="mp-recipe-plate" aria-hidden="true">'+
+ foodIcons.map((emoji,i)=>'<span class="mp-recipe-garnish mp-recipe-garnish-'+i+'">'+emoji+'</span>').join("")+
+ '</span></span>';
+}
