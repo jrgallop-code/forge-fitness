@@ -64,7 +64,9 @@ const BASES = [
  ["Indian lentil spinach bowl","Lunch","Indian","vegan",[["lentils",200],["brown rice",145],["spinach",95],["tomato",100],["curry powder",8]]],
  ["Banana apple oat bowl","Breakfast","North American","vegan",[["oats",65],["banana",95],["apple",95],["pumpkin seeds",16]]],
  ["Tofu breakfast scramble","Breakfast","North American","vegan",[["tofu",175],["spinach",75],["tomato",100],["whole wheat bread",70],["olive oil",7]]],
- ["Berry almond breakfast oats","Breakfast","Mediterranean","vegan",[["oats",65],["berries",125],["almonds",20],["banana",80]]]
+ ["Berry almond breakfast oats","Breakfast","Mediterranean","vegan",[["oats",65],["berries",125],["almonds",20],["banana",80]]],
+ ["Warm chickpea tomato bowl","Dinner","Mediterranean","vegan",[["chickpeas",180],["tomato",150],["spinach",80],["olive oil",12],["garlic",7]]],
+ ["Quick tofu vegetable skillet","Dinner","Asian","vegan",[["tofu",190],["broccoli",145],["bell pepper",105],["ginger",9],["soy sauce",14]]]
 ];
 const MODIFIERS = [
  ["Classic",1,0],["Lighter",.8,0],["Hearty",1.25,0],["Extra protein",1.1,1],
