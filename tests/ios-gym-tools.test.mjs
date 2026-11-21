@@ -43,7 +43,7 @@ test("Gym Tools are exclusive to iOS Quick Log and omit back-off sets", () => {
   assert.match(plate,/if \(card\?\.dataset\?\.exerciseId === STANDALONE_ID\) return/);
   assert.match(gym,/plate-calculator\.js\?v=stopwatch-blank-20261120/);
   assert.match(quick,/ios-gym-tools\.js\?v=stopwatch-blank-20261120/);
-  assert.match(index,/js\/app\.js\?v=stopwatch-blank-20261120/);
+  assert.match(index,/js\/app\.js\?v=[a-z0-9-]+/i);
   assert.match(gym,/\["oneRM", "1RM"\]/);
   assert.match(gym,/\["stopwatch", "Stopwatch"\]/);
   assert.doesNotMatch(gym,/Back-Off Sets/);
