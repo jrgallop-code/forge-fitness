@@ -1,3 +1,5 @@
+import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
+import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes} from "./meal-planner-catalog-ui.js?v=1";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
@@ -30,10 +32,10 @@ function prefsMarkup(p){
  const storedGoal=p.goalMode==="custom"?p.goalType:appGoal.goalId;
  const storedCalories=p.goalMode==="custom"?Number(p.dailyCalories):appGoal.dailyCalories;
  const dish=(n)=>mealPhoto({id:"lu-meal-"+String(n*20+1).padStart(3,"0")});
- const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+dietIllustration(id,name)+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
+ const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+photoMarkup(MEAL_CATALOG[dietRecipeBaseIndex(id)*20])+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
  const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.preferredCuisines||p.cuisines||[]).includes(x))).join("");
  const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
- const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+recipeIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
+ const ratings=baseRecipes().slice(0,16).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photoMarkup(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
  return '<form data-meal-planner-options class="mp-wizard">'+
  '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 10</p>'+
  '<section class="mp-step" data-mp-step="0"><span class="eyebrow">PERSONALIZED NUTRITION</span><h3>Your weight and calorie goals</h3><p>Start with the exact calorie target already used by Level Up, or customize this meal plan only.</p><div class="mp-choice-list">'+
@@ -92,7 +94,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="landing";
+let plannerScreen="landing",catalogSlot="All",catalogFilter="All recipes",catalogSearch="",catalogRecipeId="";
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
  ["Meat, fish & protein",/chicken|turkey|beef|salmon|tuna|cod|shrimp|tofu|egg/],
@@ -121,14 +123,25 @@ function groceryPlainText(plan){
 function screenHeader(title,back,action=""){
  return '<header class="mp-screen-header"><button type="button" data-mp-open="'+back+'" aria-label="Go back">‹</button><h2>'+esc(title)+'</h2><span>'+action+'</span></header>';
 }
+function loadingMarkup(){
+ return '<section class="lu-meal-planner mp-loading mp-standalone" role="status" aria-live="polite">'+
+ '<div class="mp-loading-inner"><span class="eyebrow">LEVEL UP MEAL PLANNER</span>'+
+ '<div class="mp-loading-orbit" aria-hidden="true"><span class="mp-loading-apple">🍎</span></div>'+
+ '<h1>Plating your week</h1><p>Building a plan around your goals and favorite foods.</p>'+
+ '<div class="mp-loading-stage"><span>Matching meals to your calorie target</span>'+
+ '<span>Balancing portions and protein</span>'+
+ '<span>Preparing your grocery list</span></div>'+
+ '<div class="mp-loading-track"><span></span></div></div></section>';
+}
 function landingMarkup(saved){
  const appGoal=currentMealPlannerGoal();
  return '<section class="lu-meal-planner mp-landing mp-standalone">'+
  '<button class="mp-landing-close" type="button" data-mp-exit aria-label="Close meal planner">✕</button><div class="mp-landing-image"></div><div class="mp-landing-copy"><span class="eyebrow">LEVEL UP · PERSONALIZED NUTRITION</span>'+
  '<h1>Plan meals that<br>fit your goals.</h1><p>Delicious recipes, smart portions, and a weekly plan built for your nutrition targets.</p>'+
  (appGoal.dailyCalories?'<span class="mp-goal-chip">Your current target: '+appGoal.dailyCalories+' kcal/day</span>':'')+'</div>'+
- '<div class="mp-landing-actions">'+(saved?'<button type="button" class="primary-btn" data-mp-open="calendar">View my plan</button><button type="button" data-mp-open="wizard">Edit preferences</button>':
+ '<div class="mp-landing-actions">'+(saved?'<button type="button" class="primary-btn" data-mp-open="calendar">View my plan</button><button type="button" class="mp-landing-secondary" data-mp-open="wizard">Edit preferences</button>':
  '<button type="button" class="primary-btn" data-mp-open="wizard">Get started</button>')+
+ '<button type="button" class="mp-landing-secondary" data-mp-open="catalog">Browse recipes</button>'+
  '</div></section>';
 }
 function groceriesMarkup(saved){
@@ -162,6 +175,9 @@ function render(root){
  if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
+ else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});
+ else if(page==="recipe"){const selected=MEAL_CATALOG.find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
+ else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
  else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
@@ -171,10 +187,52 @@ function render(root){
    screenHeader("Your meal plan","landing")+
    '<div class="mp-calendar-actions"><div><span class="eyebrow">YOUR WEEK</span><h2>Plan & prep</h2>'+
    (allocation?'<p>Daily goal '+allocation.dailyCalories+' kcal · '+allocation.plannedCalories+' planned · '+allocation.reservedCalories+' flexible</p>':'<p>Planned meals never count as food consumed.</p>')+'</div>'+
-   '<button type="button" data-mp-open="groceries">☷ Grocery list</button><button type="button" data-mp-open="wizard">Preferences</button></div>'+
+   '<button type="button" data-mp-open="groceries">☷ Grocery list</button><button type="button" data-mp-open="catalog">Catalog</button><button type="button" data-mp-open="wizard">Preferences</button></div>'+
    '<div class="lu-meal-days">'+renderDays(saved)+'</div>'+
    '<p class="mp-disclaimer">Recipe nutrition and fullness estimates are approximate and do not replace verified food labels.</p></section>';
  }
+ root.querySelectorAll("img[data-photo-fallback]").forEach(img=>img.addEventListener("error",()=>{
+  const backup=img.dataset.photoFallback;
+  if(backup&&!img.dataset.photoRetry){img.dataset.photoRetry="1";img.src=backup;}
+  else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
+ }));
+ root.querySelectorAll("[data-mp-slot]").forEach(button=>button.addEventListener("click",()=>{catalogSlot=button.dataset.mpSlot;render(root);}));
+ root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
+ root.querySelector("[data-mp-search]")?.addEventListener("input",event=>{
+  catalogSearch=event.target.value;
+  const matches=baseRecipes().filter(recipe=>{
+   const query=catalogSearch.toLowerCase().trim();
+   const words=[recipe.name,recipe.cuisine,recipe.diet,...recipe.ingredients.map(x=>x.food)].join(" ").toLowerCase();
+   return (!query||words.includes(query))&&(catalogSlot==="All"||recipe.slot===(catalogSlot==="Snacks"?"Meal 4":catalogSlot));
+  });
+  // Re-rendering the entire catalog on every keystroke would lose keyboard focus.
+  root.querySelectorAll(".mp-catalog-card").forEach(card=>{
+   const id=card.querySelector("[data-mp-recipe]")?.dataset.mpRecipe;
+   card.hidden=!matches.some(recipe=>recipe.id===id);
+  });
+  const count=root.querySelector(".mp-catalog-count");if(count)count.textContent=root.querySelectorAll(".mp-catalog-card:not([hidden])").length+" recipes";
+ });
+ root.querySelectorAll("[data-mp-favorite]").forEach(button=>button.addEventListener("click",()=>{
+  const active=toggleFavorite(button.dataset.mpFavorite);
+  button.classList.toggle("active",active);button.textContent=active?"♥":"♡";
+  button.setAttribute("aria-label",active?"Remove favorite":"Save favorite");
+ }));
+ root.querySelectorAll("[data-mp-recipe]").forEach(button=>button.addEventListener("click",()=>{
+  catalogRecipeId=button.dataset.mpRecipe;plannerScreen="recipe";render(root);
+ }));
+ root.querySelector("[data-mp-use-recipe]")?.addEventListener("click",()=>{
+  const id=root.querySelector("[data-mp-use-recipe]").dataset.mpUseRecipe;
+  const recipe=MEAL_CATALOG.find(item=>item.id===id),plan=read();
+  if(!recipe||!plan)return;
+  const date=selectedPlanDate||plan.entries?.[0]?.date;
+  const entry=plan.entries.find(item=>item.date===date&&item.slot===recipe.slot);
+  if(!entry){window.alert("This day doesn't contain a "+recipe.slot+" slot. Edit the plan preferences to include it.");return;}
+  if(hasConsumedMeal(date,recipe.slot)){window.alert("This meal was already logged. Undo it from Food Log before swapping.");return;}
+  const updated=replacePlannedMeal(plan,date,recipe.slot,id);
+  const fitted=refitRecipeForSlot(id,entry.targetCalories);
+  const next=fitted?{...updated,entries:updated.entries.map(x=>x.date===date&&x.slot===recipe.slot?{...x,...fitted}:x)}:updated;
+  if(write(next)){plannerScreen="calendar";render(root);}
+ });
  root.querySelector("[data-mp-exit]")?.addEventListener("click",()=>{const tab=document.querySelector('[data-calories-tab="log"]');if(tab)tab.click();});
  root.querySelectorAll("[data-mp-open]").forEach(b=>b.addEventListener("click",()=>{plannerScreen=b.dataset.mpOpen;wizardStep=0;render(root)}));
  root.querySelector("[data-mp-copy]")?.addEventListener("click",async()=>{
@@ -201,7 +259,7 @@ function render(root){
    const preview=root.querySelector("[data-mp-coverage-preview]");
    if(preview)preview.textContent=e.target.value+"%";
   });
-  root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",event=>{
+  root.querySelector("[data-meal-planner-options]")?.addEventListener("submit",async event=>{
    event.preventDefault();
    const fd=new FormData(event.currentTarget),appGoal=currentMealPlannerGoal();
    const coverage=String(fd.get("coverage")||"all");
@@ -232,12 +290,19 @@ function render(root){
    };
    const today=new Date();
    const date=[today.getFullYear(),String(today.getMonth()+1).padStart(2,"0"),String(today.getDate()).padStart(2,"0")].join("-");
-   const next=generateGoalAwarePlan(preferences,date,appGoal);
-   if(next.error){window.alert("Your calorie target could not be loaded. Enter a custom target.");showWizardStep(root,0);return;}
-   // Existing logged meals must never be silently overwritten by regenerating.
-   if(saved?.entries?.some(e=>hasConsumedMeal(e.date,e.slot))&&!window.confirm("This will replace your planned meals. Already consumed foods will remain in the Food Log. Continue?"))return;
+   // Existing logged food must not be silently replaced.
+   if(saved?.entries?.some(e=>hasConsumedMeal(e.date,e.slot))&&!window.confirm("This will replace your planned meals. Already consumed foods remain in Food Log. Continue?"))return;
+   plannerScreen="loading";render(root);
+   // Paint the loader before the synchronous recipe-ranking work begins.
+   await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,750)));
+   let next;
+   try{next=generateGoalAwarePlan(preferences,date,appGoal)}catch(error){console.error("Meal plan generation failed",error);}
+   if(!next||next.error){
+    plannerScreen="wizard";wizardStep=9;render(root);
+    window.alert("Meal planning failed. Check your calorie goal and try again.");return;
+   }
    if(write(next)){plannerScreen="calendar";selectedPlanDate=date;wizardStep=0;render(root)}
-   else window.alert("Couldn't save your plan on this device.");
+   else {plannerScreen="wizard";wizardStep=9;render(root);window.alert("Couldn't save your plan on this device.");}
   });
  }
  bindImages(root);
@@ -292,7 +357,7 @@ function renderDays(plan){
     const recipe=MEAL_CATALOG.find(x=>x.id===entry.recipeId);
     const options=eligibleMeals(plan.preferences).filter(x=>x.slot===entry.slot);
     const consumed=hasConsumedMeal(date,entry.slot);
-    const thumbnail=recipe?recipeIllustration(recipe):esc(getFoodEmoji({name:entry.ingredients[0]?.food||"meal"}));
+    const thumbnail=recipe?photoMarkup(recipe):esc(getFoodEmoji({name:entry.ingredients[0]?.food||"meal"}));
     const m=macrosForIngredients(entry.ingredients);
     const satiety=fullnessEstimate(entry.ingredients);
     return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+

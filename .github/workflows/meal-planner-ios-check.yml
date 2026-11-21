@@ -6,11 +6,12 @@ on:
     paths:
       - 'js/nutrition/meal-planner-*.js'
       - 'js/nutrition/food-log.js'
-      - 'css/meal-planner.css'
+      - 'css/meal-planner*.css'
       - 'tests/meal-planner*.test.mjs'
+      - 'tests/meal-planner*.browser.mjs'
       - '.github/workflows/meal-planner-ios-check.yml'
   push:
-    branches: [ios/meal-planner-visual-redesign-20261120, ios/meal-planner-goals-satiety-pages-20261121, ios/meal-planner-appearance-calories-images-20261121]
+    branches: [ios/meal-planner-visual-redesign-20261120, ios/meal-planner-goals-satiety-pages-20261121, ios/meal-planner-appearance-calories-images-20261121, ios/meal-planner-catalog-loader-photos-20261121]
 
 permissions:
   contents: read
@@ -34,13 +35,18 @@ jobs:
       - run: node --check js/nutrition/meal-planner-planning.js
       - run: node --check js/nutrition/meal-planner-satiety-db.js
       - run: node --check js/nutrition/meal-planner-food-art.js
-      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs tests/meal-planner-art.test.mjs tests/meal-planner-appearance.test.mjs
+      - run: node --check js/nutrition/meal-planner-catalog-ui.js
+      - run: node --check js/nutrition/meal-planner-photos.js
+      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs tests/meal-planner-art.test.mjs tests/meal-planner-appearance.test.mjs tests/meal-planner-catalog.test.mjs
       - run: npm install --no-save --package-lock=false playwright@1.56.1
       - run: npx playwright install --with-deps firefox
       - run: node tests/meal-planner-appearance.browser.mjs
+      - run: node tests/meal-planner-catalog.browser.mjs
       - run: npm run build:native
       - name: Verify the new local photo fallbacks and stylesheet are in the native bundle
         run: |
           test -s www/css/meal-planner.css
           test -s www/js/nutrition/meal-planner-media.js
+          test -s www/js/nutrition/meal-planner-catalog-ui.js
+          test -s www/css/meal-planner-catalog-polish.css
           test -s www/assets/food/category-0.webp
