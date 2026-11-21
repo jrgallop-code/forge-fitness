@@ -1,0 +1,37 @@
+name: Populate first 100 Meal Prep Manual review records
+on:
+  push:
+    branches: [ios/capacitor-app-store]
+    paths:
+      - .github/workflows/import-mpm-review-100.yml
+      - scripts/import-mpm-review-100.mjs
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios/capacitor-app-store
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Import factual recipe metadata for first 100 distinct titles
+        run: node scripts/import-mpm-review-100.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mealprepmanual-first-100-review-data
+          path: js/nutrition/mpm-review-first-100-generated.js
+          retention-days: 14
+      - name: Commit imported review records
+        run: |
+          git config user.name "Level Up Recipe Review Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/nutrition/mpm-review-first-100-generated.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Populate source-linked first-100 recipe review records'
+          git pull --rebase origin ios/capacitor-app-store
+          git push origin HEAD:ios/capacitor-app-store
