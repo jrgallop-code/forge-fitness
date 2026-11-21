@@ -32,7 +32,7 @@ jobs:
       - run: node --check js/nutrition/meal-planner-consumption.js
       - run: node --check js/nutrition/meal-planner-goals.js
       - run: node --check js/nutrition/meal-planner-planning.js
-      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs
+      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs tests/meal-planner-art.test.mjs
       - run: npm run build:native
       - name: Verify the new local photo fallbacks and stylesheet are in the native bundle
         run: |
