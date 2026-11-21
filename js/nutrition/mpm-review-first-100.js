@@ -6,6 +6,9 @@ export const REVIEW_IDS=new Set(MPM_INDEX_RECIPES.slice(0,100).map(r=>r.id));
 const LOOKUP=new Map(MPM_REVIEW_100_IMPORTED.filter(x=>REVIEW_IDS.has(x.id)).map(r=>[r.id,r]));
 export const REVIEW_RECORDS=Object.freeze(MPM_INDEX_RECIPES.slice(0,100).map(item=>Object.freeze({...item,...LOOKUP.get(item.id),reviewPriority:true,indexOnly:true,canSchedule:false,nutritionVerified:false})));
 export const REVIEW_IMPORT_META=MPM_REVIEW_100_IMPORT_META;
+const norm=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[‘’]/g,"'").replace(/[^a-z0-9]+/g," ").trim();
+const REVIEW_ID_BY_NAME=new Map(REVIEW_RECORDS.map(x=>[norm(x.name),x.id]));
+export function reviewIdForRecipe(recipe){return REVIEW_ID_BY_NAME.get(norm(recipe?.name))||null;}
 export const REVIEW_STORE_KEY="level_up_meal_review_first_100_v1";
 export function readReviewDecisions(){try{const data=JSON.parse(localStorage.getItem(REVIEW_STORE_KEY)||"{}");return data&&typeof data==="object"&&!Array.isArray(data)?data:{}}catch{return {}}}
 export function getReviewDecision(id){return readReviewDecisions()[id]||{decision:"unreviewed",notes:""};}
