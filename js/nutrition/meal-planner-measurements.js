@@ -62,6 +62,6 @@ export function cookingMeasure(food,quantity,unit="g"){
   const rounded=Math.max(0.125,Math.round(value*8)/8);
   // Kitchen units lead; the source weight remains visible as a smaller
   // precision reference, not silently converted in stored nutrient data.
-  return "≈ "+amount(rounded)+" "+label+(rounded!==1&&label==="cup"?"s":"")+" · "+original;
+  return "≈ "+amount(rounded)+" "+label+(rounded>1&&label==="cup"?"s":"")+" · "+original;
 }
 export const formatIngredientMeasure=cookingMeasure;
