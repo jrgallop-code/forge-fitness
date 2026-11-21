@@ -1,6 +1,6 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
-import {getReviewDecision,saveReviewDecision} from "./mpm-review-first-100.js?v=1";
+import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites} from "./meal-planner-catalog-ui.js?v=2";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
@@ -223,6 +223,20 @@ function render(root){
   else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
  }));
  root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";render(root);}));
+ root.querySelectorAll("[data-mp-review-nav]").forEach(button=>button.addEventListener("click",()=>{
+   const id=button.dataset.mpReviewNav;
+   if(id){catalogRecipeId=id;plannerScreen="recipe";render(root);}
+ }));
+ root.querySelector("[data-mp-review-export]")?.addEventListener("click",async()=>{
+   const report={format:"level-up-first100-recipe-review-v1",exportedAt:new Date().toISOString(),summary:reviewSummary(),decisions:readReviewDecisions()};
+   const raw=JSON.stringify(report,null,2);
+   const status=root.querySelector(".mp-review-export");
+   if(navigator.clipboard?.writeText){
+     try{await navigator.clipboard.writeText(raw);if(status)status.textContent="Copied review notes";return;}
+     catch{}
+   }
+   window.prompt("Copy your recipe-review notes",raw);
+ });
  root.querySelectorAll("[data-mp-review-decision]").forEach(button=>button.addEventListener("click",()=>{
    const id=button.dataset.mpReviewId,decision=button.dataset.mpReviewDecision;
    const notes=root.querySelector("[data-mp-review-notes]")?.value??getReviewDecision(id).notes;
@@ -515,6 +529,12 @@ export function renderMealPlannerShell(){return `
 .mp-review-actions button:last-child{grid-column:span 2}
 .mp-review-section label{display:block;font-weight:600;margin-bottom:8px}
 .mp-review-section textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:100px;border-radius:10px;border:1px solid var(--border-color,#7777);background:var(--surface-2,#7772);color:inherit;padding:12px;font:inherit}
+.mp-review-export{align-self:flex-start;margin-top:9px;border-radius:10px;padding:10px 13px;border:1px solid var(--border-color,#7777);color:inherit;background:var(--surface-2,#8882);font:inherit;font-weight:600}
+.mp-review-navigation{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;margin:10px 0}
+.mp-review-navigation button{padding:12px 10px;border-radius:10px;border:1px solid var(--border-color,#7777);color:inherit;background:var(--surface-2,#7772);font:inherit}
+.mp-review-navigation button:disabled{opacity:.4}
+.mp-review-navigation span{font-weight:700;font-size:13px}
+
 
 @media(max-width:390px){.mp-catalog-primary-actions{grid-template-columns:1fr 1fr}.mp-catalog-primary-actions button:last-child{grid-column:span 2}}
 
