@@ -195,7 +195,7 @@ function render(root){
  root.style.setProperty("--mp-hero-image",'url("'+MEAL_PLANNER_HERO+'")');
  const saved=read();
  const prefs={...defaultPrefs,...saved?.preferences};
- if(!saved&&plannerScreen==="calendar")plannerScreen="catalog";
+ 
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
  else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch,favoritesOnly});
@@ -205,6 +205,7 @@ function render(root){
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
  else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
   else if(page==="schedule")root.innerHTML=scheduleMarkup(catalogRecipeId);
+  else if(page==="calendar"&&!saved)root.innerHTML='<section class="lu-meal-planner mp-standalone">'+screenHeader("Your meal plan","catalog")+'<div class="mp-grocery-intro"><h1>Your week is empty</h1><p>Choose a recipe, then schedule the days and meal slots you want.</p></div><button type="button" class="primary-btn" data-mp-open="catalog">Explore recipes</button></section>';
  else{
   const allocation=saved?.targetAllocation;
   root.innerHTML='<section class="lu-meal-planner mp-standalone mp-calendar">'+
