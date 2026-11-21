@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {MEAL_CATALOG,MEAL_SLOTS,eligibleMeals,macrosForIngredients,generatePlan,editPlannedIngredient,groceryList,replacePlannedMeal} from "../js/nutrition/meal-planner-data.js";
 
-test("700 recipe variants include nine cuisine styles",()=>{
- assert.equal(MEAL_CATALOG.length,700);
- assert.equal(new Set(MEAL_CATALOG.map(meal=>meal.id)).size,700);
+test("760 recipe variants include nine cuisine styles",()=>{
+ assert.equal(MEAL_CATALOG.length,760);
+ assert.equal(new Set(MEAL_CATALOG.map(meal=>meal.id)).size,760);
  for(const recipe of MEAL_CATALOG){
   assert.ok(MEAL_SLOTS.includes(recipe.slot));
   assert.ok(recipe.ingredients.every(x=>x.grams>0));
