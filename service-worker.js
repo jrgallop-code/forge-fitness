@@ -1,4 +1,4 @@
-const CACHE_VERSION = "stopwatch-blank-20261120";
+const CACHE_VERSION = "pwa-remove-meal-planner-20261121";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
