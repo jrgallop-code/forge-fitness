@@ -6,10 +6,10 @@ import {FEATURED_RECIPES} from "../js/nutrition/meal-planner-featured-recipes.js
 import {macrosForIngredients} from "../js/nutrition/meal-planner-data.js";
 
 test("spices are shown in everyday cooking measures with original grams",()=>{
- assert.match(formatIngredientMeasure("Smoked paprika",6,"g"),/tsp \(6 g\)/);
- assert.match(formatIngredientMeasure("Garlic powder",3.1,"g"),/≈ 1 tsp \(3.1 g\)/);
- assert.match(formatIngredientMeasure("Cooking oil",13.65,"g"),/≈ 1 tbsp \(13.7 g\)/);
- assert.match(formatIngredientMeasure("Plain Greek yogurt",120,"g"),/≈ ½ cup \(120 g\)/);
+ assert.match(formatIngredientMeasure("Smoked paprika",6,"g"),/tsp · 6 g/);
+ assert.match(formatIngredientMeasure("Garlic powder",3.1,"g"),/≈ 1 tsp · 3.1 g/);
+ assert.match(formatIngredientMeasure("Cooking oil",13.65,"g"),/≈ 1 tbsp · 13.7 g/);
+ assert.match(formatIngredientMeasure("Plain Greek yogurt",120,"g"),/≈ ½ cup · 120 g/);
 });
 test("not all grams are convertible to meaningful spoons",()=>{
  assert.equal(formatIngredientMeasure("Chicken thighs",908,"g"),"908 g");
@@ -30,6 +30,8 @@ test("measurements change presentation only, never source grams or macro math",(
 test("Nutrition always enters Food Log instead of persisting Meal Plan screen",async()=>{
  const src=await readFile(new URL("../js/nutrition/food-log.js",import.meta.url),"utf8");
  assert.match(src,/showTab\("log"\);/);
+ assert.match(src,/if \(safeTab === "meals"\) initializeMealPlanner\(\)/);
+ assert.doesNotMatch(src,/bindHubTabs\(hub\);\s*initializeMealPlanner\(\)/);
  assert.doesNotMatch(src,/showTab\(localStorage\.getItem\(CALORIES_TAB_KEY\)\)/);
  assert.match(src,/data-calories-tab="log">Food Log/);
  assert.match(src,/data-calories-tab="meals">Meal Plan/);
