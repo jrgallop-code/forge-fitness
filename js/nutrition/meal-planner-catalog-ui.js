@@ -56,6 +56,7 @@ export function recipeCard(recipe,favorite=false){
 export function catalogMarkup({slot="All",filter="All recipes",search="",favoritesOnly=false}={}){
  const favorites=new Set(storedFavorites());
  const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search})&&(!favoritesOnly||favorites.has(recipe.id)));
+ if(filter==="Review first 100"||filter==="Needs my review"){const rank=new Map(REVIEW_RECORDS.map((x,i)=>[x.id,i]));recipes.sort((a,b)=>(rank.get(reviewIdForRecipe(a))??999)-(rank.get(reviewIdForRecipe(b))??999));}
  return '<section class="lu-meal-planner mp-catalog mp-standalone">'+
  '<header class="mp-screen-header"><button type="button" data-mp-exit aria-label="Close meal planner">‹</button><h2>Recipes</h2><span></span></header>'+
  '<div class="mp-catalog-content"><div class="mp-catalog-intro"><h1>What are we cooking?</h1><p>Browse meals, save favourites, then choose when to eat them.</p></div>'+'<div class="mp-catalog-primary-actions"><button type="button" class="primary-btn" data-mp-open="calendar">My week</button><button type="button" data-mp-open="wizard">Generate a plan</button><button type="button" data-mp-open="groceries">Grocery list</button></div>'+'<div class="mp-catalog-mode"><button type="button" data-mp-favorites-filter="all" class="'+(!favoritesOnly?'active':'')+'">All recipes</button><button type="button" data-mp-favorites-filter="favorites" class="'+(favoritesOnly?'active':'')+'">♥ Favourites ('+favorites.size+')</button></div>'+
@@ -63,7 +64,7 @@ export function catalogMarkup({slot="All",filter="All recipes",search="",favorit
  '<div class="mp-catalog-chips" role="group" aria-label="Meal type">'+CATALOG_SLOTS.map(x=>'<button type="button" class="'+(slot===x?"active":"")+'" data-mp-slot="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<p class="mp-catalog-count">'+recipes.length+' recipes shown · '+FEATURED_RECIPES.length+' full ingredient records in catalogue · '+REVIEW_RECORDS.length+' in your first review batch</p>'+
- '<div class="mp-first100-progress"><strong>First 100 review</strong><span>'+reviewSummary().reviewed+' reviewed · '+reviewSummary().needsChanges+' need changes · '+reviewSummary().notReviewed+' remaining</span><small>'+reviewSummary().ingredientLists+' ingredient lists imported from publisher schema · incomplete recipes remain unschedulable</small></div>'+'<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
+ '<div class="mp-first100-progress"><strong>First 100 review</strong><span>'+reviewSummary().reviewed+' reviewed · '+reviewSummary().needsChanges+' need changes · '+reviewSummary().notReviewed+' remaining</span><small>'+reviewSummary().ingredientLists+' ingredient lists imported from publisher schema · incomplete recipes remain unschedulable</small><button type="button" class="mp-review-export" data-mp-review-export>Copy my review notes</button></div>'+'<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
  '<div class="mp-source-note"><strong>Source-indexed recipes are discovery only</strong><p>These are distinct public recipe titles, not full imported recipes. Only detailed entries have measured ingredients. Unreviewed items cannot generate accurate grocery lists, nutrition or meal schedules.</p><a href="https://mealprepmanual.com/recipes/" rel="noopener noreferrer" target="_blank">Visit the publisher catalogue</a></div><p class="mp-disclaimer">No publisher photographs or cooking directions have been copied into this catalogue. Recipe-specific images and rights checks are pending.</p></div></section>';
 }
@@ -76,7 +77,19 @@ function featuredRecipeDetail(recipe){
  groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities were not stated by the source. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
  '<section><h3>Source & verification</h3><p>Based on ingredient facts published by '+esc(recipe.sourceName)+'. <a href="'+esc(recipe.sourceUrl)+'" target="_blank" rel="noopener noreferrer">View the original recipe and cooking guidance</a>.</p><p>'+esc(recipe.notes)+'</p></section>'+
- '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+reviewControlsMarkup(recipe)+'<p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
+ '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+reviewControlsMarkup(recipe)+reviewNavigationMarkup(recipe)+'<p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
+}
+function reviewNavigationMarkup(recipe){
+ const currentId=reviewIdForRecipe(recipe);
+ if(!currentId)return "";
+ const index=REVIEW_RECORDS.findIndex(x=>x.id===currentId);
+ const ids=baseRecipes();
+ const target=offset=>{
+   const item=REVIEW_RECORDS[index+offset];
+   return item?ids.find(r=>reviewIdForRecipe(r)===item.id)?.id:null;
+ };
+ const previous=target(-1),next=target(1);
+ return '<nav class="mp-review-navigation"><button type="button" data-mp-review-nav="'+esc(previous||"")+'" '+(!previous?'disabled':'')+'>← Previous</button><span>'+(index+1)+' of '+REVIEW_RECORDS.length+'</span><button type="button" data-mp-review-nav="'+esc(next||"")+'" '+(!next?'disabled':'')+'>Next →</button></nav>';
 }
 function reviewControlsMarkup(recipe){
  const id=reviewIdForRecipe(recipe);
@@ -99,7 +112,7 @@ function sourceReviewDetail(recipe){
  '<h1>'+esc(recipe.name)+'</h1><p>Source: '+esc(recipe.sourceName)+' · Review batch 1–100</p>'+macros+label+list+
  '<p class="mp-disclaimer">Original cooking directions remain on the publisher website. This item is not available for planning, grocery calculation or food logging until ingredient mapping, rights and safety checks are completed.</p>'+
  '<a href="'+esc(source)+'" rel="noopener noreferrer" target="_blank">Open original recipe / publisher index</a>'+
- reviewControlsMarkup(recipe)+'</div></section>';
+ reviewControlsMarkup(recipe)+reviewNavigationMarkup(recipe)+'</div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false){
  if(recipe?.indexOnly)return sourceReviewDetail(recipe);
