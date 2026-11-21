@@ -1,3 +1,4 @@
+import {MEAL_PLANNER_HERO} from "../js/nutrition/meal-planner-hero.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {GENERATED_MEAL_ATLAS,generatedMealTile} from "../js/nutrition/meal-planner-art.js";
@@ -14,4 +15,12 @@ test("offline generated artwork contains complete 40-meal image atlas",()=>{
  for(const meal of MEAL_CATALOG){
   assert.equal(mealPhoto(meal),"generated-meal:"+generatedMealTile(meal));
  }
+});
+
+test("generated welcome hero is a complete bundled WebP image",()=>{
+ const encoded=MEAL_PLANNER_HERO.split(",")[1],data=Buffer.from(encoded,"base64");
+ assert.equal(data.subarray(0,4).toString(),"RIFF");
+ assert.equal(data.subarray(8,12).toString(),"WEBP");
+ assert.equal(data.readUInt32LE(4)+8,data.length);
+ assert.ok(data.length>8000);
 });
