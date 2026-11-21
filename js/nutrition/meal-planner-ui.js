@@ -1,3 +1,4 @@
+import {mealPhoto,ingredientPhoto,localFoodFallback,recipeSteps} from "./meal-planner-media.js?v=2";
 import {getFoodEmoji} from "./food-emoji.js?v=food-artwork-polish-1";
 import {hasConsumedMeal,markPlannedMealConsumed,undoPlannedMealConsumed} from "./meal-planner-consumption.js?v=1";
 import {MEAL_CATALOG,MEAL_SLOTS,generatePlan,eligibleMeals,macrosForIngredients,groceryList,replacePlannedMeal,editPlannedIngredient,PLANNER_STORAGE_KEY} from "./meal-planner-data.js?v=1";
@@ -6,17 +7,41 @@ const read=()=>{try{return JSON.parse(localStorage.getItem(PLANNER_STORAGE_KEY)|
 const write=plan=>{try{localStorage.setItem(PLANNER_STORAGE_KEY,JSON.stringify(plan));return true}catch{return false}};
 const defaultPrefs={goal:"existing",diet:"balanced",coverage:"all",meals:MEAL_SLOTS,allergies:[],dislikes:"",cuisines:["Mediterranean","North American","Mexican"],cooking:"30",prep:"yes",repeats:"3",household:"1",budget:"flexible",priority:"balanced",days:"7"};
 const selectable=(values,selected)=>values.map(x=>'<option value="'+esc(x)+'"'+(selected===x?' selected':'')+'>'+esc(x)+'</option>').join("");
+const DIET_CHOICES=[["balanced","Balanced","Flexible healthy eating",0],["high-protein","High protein","Protein first",6],["whole-food","Whole foods","Minimally processed choices",4],["mediterranean","Mediterranean","Plant-forward and seafood",12],["vegetarian","Vegetarian","No meat or fish",1],["vegan","Vegan","Plant only",2],["pescatarian","Pescatarian","Fish and plants",13],["flexitarian","Flexitarian","Mostly plants",8],["low-carb","Lower carb","Fewer starches",7]];
+const CUISINES=["North American","Mediterranean","Mexican","Asian","Italian","Chinese","Japanese","Thai","Indian"];
+const PRODUCE=["Apple","Blueberries","Banana","Pineapple","Broccoli","Spinach","Zucchini","Bell pepper","Tomato","Cucumber","Avocado","Sweet potato"];
+const ALLERGENS=["milk","eggs","fish","shellfish","peanuts","tree nuts","soy","gluten","wheat","sesame"];
+const photo=(url,label,fallback=0)=>'<span class="mp-photo" style="background-image:url('+localFoodFallback(fallback)+')"><img loading="lazy" src="'+esc(url)+'" alt="'+esc(label)+'"></span>';
+const choose=(name,value,label,checked)=>'<label class="mp-choice"><input type="radio" name="'+name+'" value="'+esc(value)+'"'+(checked?' checked':'')+'><span>'+esc(label)+'</span></label>';
+const pick=(name,value,label,checked)=>'<label class="mp-pill"><input type="checkbox" name="'+name+'" value="'+esc(value)+'"'+(checked?' checked':'')+'><span>'+esc(label)+'</span></label>';
 function prefsMarkup(p){
- return '<form data-meal-planner-options class="lu-meal-preferences">'+
- '<label>Diet <select name="diet">'+selectable(["balanced","vegetarian","vegan","pescatarian"],p.diet)+'</select></label>'+
- '<label>Cuisine <select name="cuisine">'+selectable(["All","Mediterranean","North American","Mexican","Asian"],p.cuisines?.length===1?p.cuisines[0]:"All")+'</select></label>'+
- '<label>Cooking time <select name="cooking">'+selectable(["15","20","30","45","60"],String(p.cooking||"30"))+'</select></label>'+
- '<label>Days <select name="days">'+selectable(["3","5","7","14"],String(p.days||"7"))+'</select></label>'+
- '<label>Avoid ingredients <input name="dislikes" placeholder="e.g. mushrooms, salmon" value="'+esc(p.dislikes)+'"></label>'+
- '<label>Allergies (comma-separated) <input name="allergies" placeholder="e.g. milk, peanuts" value="'+esc((p.allergies||[]).join(", "))+'"></label>'+
- '<fieldset><legend>Meals to plan</legend>'+MEAL_SLOTS.map(slot=>'<label class="lu-meal-checkbox"><input type="checkbox" name="slot" value="'+esc(slot)+'" '+((p.meals||[]).includes(slot)?"checked":"")+'>'+esc(slot)+'</label>').join("")+'</fieldset>'+
- '<button class="primary-btn" type="submit">Generate meal plan</button></form>';
+ const dish=(n)=>mealPhoto({id:"lu-meal-"+String(n*20+1).padStart(3,"0")});
+ const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+(p.diet===id?' checked':'')+'>'+photo(dish(index),name,index)+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
+ const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.cuisines||[]).includes(x))).join("");
+ const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+photo(ingredientPhoto(x),x,i)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
+ const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photo(mealPhoto(x),x.name,i)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
+ return '<form data-meal-planner-options class="mp-wizard">'+
+ '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 6</p>'+
+ '<section class="mp-step" data-mp-step="0"><h3>What is your eating style?</h3><p>Choose the approach that fits you best.</p><div class="mp-photo-grid">'+styles+'</div></section>'+
+ '<section class="mp-step" data-mp-step="1" hidden><h3>How many meals do you want planned?</h3><p>Set up your weekly calendar.</p><div class="mp-choice-list">'+choose("coverage","all","All meals every day",p.coverage==="all")+choose("coverage","lunch-dinner","Lunch and dinner",p.coverage==="lunch-dinner")+choose("coverage","dinner","Dinners only",p.coverage==="dinner")+choose("coverage","custom","Custom",p.coverage==="custom")+'</div><div class="mp-pills">'+MEAL_SLOTS.map(s=>pick("slot",s,s,(p.meals||MEAL_SLOTS).includes(s))).join("")+'</div><div class="mp-fields"><label>Days <select name="days">'+selectable(["3","5","7","14"],String(p.days||"7"))+'</select></label><label>Leftovers <select name="leftovers">'+selectable(["Frequently","Sometimes","Not often"],p.leftovers||"Sometimes")+'</select></label></div></section>'+
+ '<section class="mp-step" data-mp-step="2" hidden><h3>What's your cooking style?</h3><p>We will fit your schedule and skill level.</p><div class="mp-choice-list">'+["Novice","Basic","Intermediate","Advanced"].map(s=>choose("skill",s,s,(p.skill||"Basic")===s)).join("")+'</div><div class="mp-fields"><label>Maximum cooking time <select name="cooking">'+selectable(["15","20","30","45","60"],String(p.cooking||"30"))+'</select></label><label>Grocery shopping <select name="grocery">'+selectable(["In-store","Pickup","Delivery","Flexible"],p.grocery||"In-store")+'</select></label><label>Meal prep <select name="prep">'+selectable(["yes","no"],p.prep||"yes")+'</select></label></div></section>'+
+ '<section class="mp-step" data-mp-step="3" hidden><h3>Which foods do you enjoy?</h3><p>Choose cuisines, fruits and vegetables you would like to see.</p><h4>Cuisine preferences</h4><div class="mp-pills">'+cuisine+'</div><h4>Foods you like</h4><div class="mp-photo-grid">'+produce+'</div><label class="mp-input-label">Foods to avoid <input name="dislikes" placeholder="e.g. mushrooms, salmon" value="'+esc(p.dislikes||"")+'"></label></section>'+
+ '<section class="mp-step" data-mp-step="4" hidden><h3>Personalize your plan</h3><p>Keep allergies, your household and priorities in mind.</p><h4>Allergies</h4><div class="mp-pills">'+ALLERGENS.map(s=>pick("allergy",s,s,(p.allergies||[]).includes(s))).join("")+'</div><p class="mp-disclaimer">This estimated recipe catalog cannot guarantee allergen-free foods or prevent cross-contact. Check product labels before eating.</p><div class="mp-fields"><label>People eating <select name="household">'+selectable(["1","2","3","4","5","6"],String(p.household||"1"))+'</select></label><label>Budget <select name="budget">'+selectable(["Flexible","Moderate","Budget-conscious"],p.budget||"Flexible")+'</select></label></div><h4>What's important to you?</h4>'+["Delicious meals","Easy recipes","Budget-friendly meals","Recipe variety","High protein"].map((x,i)=>'<label class="mp-slider">'+esc(x)+'<input name="priority-'+i+'" type="range" min="1" max="5" value="'+Number(p.priorities?.[i]||3)+'"></label>').join("")+'</section>'+
+ '<section class="mp-step" data-mp-step="5" hidden><h3>Rate a few recipe ideas</h3><p>Tap the heart on meals you enjoy. These ratings help refine future suggestions.</p><div class="mp-photo-grid">'+ratings+'</div><p class="mp-disclaimer">Photos are illustrative; nutrition is estimated. The current draft uses a limited set of base recipes and portion variations.</p></section>'+
+ '<footer class="mp-wizard-footer"><button type="button" data-mp-back hidden>Back</button><button type="button" class="primary-btn" data-mp-next>Next</button><button type="submit" class="primary-btn" data-mp-generate hidden>Generate my meal plan</button></footer></form>';
 }
+let wizardStep=0;
+function showWizardStep(root,next){
+ const form=root.querySelector("[data-meal-planner-options]");if(!form)return;
+ wizardStep=Math.max(0,Math.min(5,next));
+ form.querySelectorAll("[data-mp-step]").forEach(section=>section.hidden=Number(section.dataset.mpStep)!==wizardStep);
+ form.querySelector("[data-mp-step-label]").textContent="Step "+(wizardStep+1)+" of 6";
+ form.querySelector("[data-mp-progress]").style.width=((wizardStep+1)/6*100)+"%";
+ form.querySelector("[data-mp-back]").hidden=wizardStep===0;
+ form.querySelector("[data-mp-next]").hidden=wizardStep===5;
+ form.querySelector("[data-mp-generate]").hidden=wizardStep!==5;
+}
+
 function render(root){
  const saved=read(),p=saved?.preferences||defaultPrefs;
  const start=saved?.startDate;
