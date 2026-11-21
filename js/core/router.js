@@ -32,7 +32,7 @@ import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
-import { initializeMealPrepBeta } from "../nutrition/meal-prep-beta.js?v=meal-prep-catalogue-details-20261121";
+import { initializeMealPrepBeta } from "../nutrition/meal-prep-beta.js?v=pwa-meal-planner-disabled-20261121";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-coach-existing-account-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=pwa-oct02-parity-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=pwa-oct02-parity-1";
