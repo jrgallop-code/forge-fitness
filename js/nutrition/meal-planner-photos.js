@@ -1,44 +1,48 @@
-// Recipe-specific photography registry. Local AI photo assets are preferred;
-// representative photo fallback is explicit so images aren't called AI if not.
-// One recipe-base ID = one photograph reused across its 20 portion variants.
-// In future generated files may be placed at /assets/meal-photos/001.webp etc.
-// AI-generated photographic atlas: first 20 base recipes have matched photographs.
-// Other base meals reuse the nearest visual match until their individual images
-// can be generated. No third-party network request is required at runtime.
+// Stable, nonrepeating photographic tile assignments for the visible iOS recipe catalogue.
+// The forty base recipes have one AI-generated tile each. Portions of the same
+// recipe intentionally retain the same image, as they are not distinct dishes.
+// Featured adaptations use a separate eight-tile selection from the 20-photo
+// generated asset; their composition is illustrative, not independently photo-verified.
+import { GENERATED_MEAL_ATLAS } from "./meal-planner-art.js?v=1";
 export const AI_ATLAS="/assets/meal-photos/generated-001-020.png";
 export const AI_TILE_COUNT=20;
 export const PHOTO_SOURCE="generated-food-photography";
-const MATCHED_TILE=[
- 0,1,2,3,4,5,6,7,8,9,
- 10,11,12,13,14,15,16,17,18,19,
- 8,4,10,9,11,12,17,10,7,6,
- 10,16,7,15,15,1,10,0,15,10
-];
+const FEATURED_TILES=Object.freeze({
+ "reference-creamy-cilantro-lime-chicken":7,
+ "reference-sheet-pan-teriyaki-chicken":12,
+ "reference-korean-bbq-beef-bowls":13,
+ "reference-honey-garlic-chicken":6,
+ "reference-chicken-tikka-masala":15,
+ "reference-japanese-ground-beef-curry":14,
+ "reference-mediterranean-chicken-wraps":9,
+ "reference-honey-garlic-chicken-noodle-bowls":17
+});
 export function recipeBaseIndex(recipe){
  const id=Number(String(recipe?.id||"").replace(/^lu-meal-/,""));
  return Number.isFinite(id)&&id>0?Math.min(39,Math.floor((id-1)/20)):0;
 }
 export function recipePhoto(recipe){
- const baseIndex=recipeBaseIndex(recipe);
- const tile=MATCHED_TILE[baseIndex]??0;
+ const featuredIndex=FEATURED_TILES[recipe?.id];
+ if(Number.isInteger(featuredIndex))return {
+  primary:AI_ATLAS,tile:featuredIndex,x:(featuredIndex%5)/4*100,
+  y:Math.floor(featuredIndex/5)/3*100,source:PHOTO_SOURCE,
+  exactMatch:false,recipeId:recipe.id,backgroundSize:"500% 400%"
+ };
+ const i=recipeBaseIndex(recipe);
  return {
-  primary:AI_ATLAS,
-  tile,
-  x:tile%5/4*100,
-  y:Math.floor(tile/5)/3*100,
-  source:PHOTO_SOURCE,
-  exactMatch:baseIndex<AI_TILE_COUNT,
-  id:baseIndex+1
+  primary:GENERATED_MEAL_ATLAS,tile:i,x:(i%8)/7*100,
+  y:Math.floor(i/8)/4*100,source:PHOTO_SOURCE,
+  exactMatch:true,recipeId:recipe?.id,backgroundSize:"800% 500%"
  };
 }
 export function dietPhoto(diet){
  const baseByDiet={balanced:7,"high-protein":13,"whole-food":8,
-  mediterranean:6,vegetarian:2,vegan:10,pescatarian:6,flexitarian:7,"low-carb":14};
+ mediterranean:6,vegetarian:2,vegan:10,pescatarian:6,flexitarian:7,"low-carb":14};
  const i=baseByDiet[diet]??7;
  return recipePhoto({id:"lu-meal-"+String(i*20+1).padStart(3,"0")});
 }
 export function dietRecipeBaseIndex(diet){
  const matches={balanced:7,"high-protein":13,"whole-food":8,mediterranean:6,
-  vegetarian:2,vegan:10,pescatarian:6,flexitarian:7,"low-carb":14};
+ vegetarian:2,vegan:10,pescatarian:6,flexitarian:7,"low-carb":14};
  return matches[diet]??7;
 }
