@@ -4,7 +4,8 @@
 // A fullness estimate is NOT a published Satiety Index measurement.
 import {FOOD_VALUES,macrosForIngredients,MEAL_SLOTS} from "./meal-planner-data.js?v=3";
 import {getNutritionGoal,getNutritionPlan,getNutritionProfile,getNutritionMacroPreference} from "./nutrition-storage.js?v=meal-goals-1";
-import {getSelectedTarget} from "./active-calorie-target.js?v=meal-goals-1";
+import {getSelectedTarget} from "./active-calorie-target.js?v=meal-goals-2";
+import {getActiveNutritionPhase} from "./nutrition-phase.js?v=meal-goals-2";
 import {calculateMacroTargets} from "./tdee-calculator.js?v=meal-goals-1";
 
 const measuredSource="Holt et al. (1995), European Journal of Clinical Nutrition 49:675–690; PMID:7498104";
@@ -28,22 +29,37 @@ const FIBER_G_100G=Object.freeze({
 const clamp=(v,low,high)=>Math.min(high,Math.max(low,v));
 const finitePositive=v=>Number.isFinite(Number(v))&&Number(v)>0;
 export const isWeightLossGoal=id=>/^cut_|loss|lose|fat_loss|weight_loss/i.test(String(id||""));
+// Use exactly the same source priority as Level Up's active plan and food diary.
+// The estimated auto/manual target snapshot can be stale after a weekly check-in.
+export function resolveMealPlannerGoal({phase,plan,selected,goal,profile,macroPreference}={}){
+ const phaseCalories=Number(phase?.currentCalories ?? phase?.startCalories);
+ const planCalories=Number(plan?.calculatedCalories ?? plan?.currentCalories);
+ const selectedCalories=Number(selected?.calories);
+ const phaseValid=Number.isFinite(phaseCalories)&&phaseCalories>0;
+ const planValid=Number.isFinite(planCalories)&&planCalories>0;
+ const selectedValid=Number.isFinite(selectedCalories)&&selectedCalories>0;
+ const daily=phaseValid?phaseCalories:planValid?planCalories:selectedValid?selectedCalories:null;
+ const goalId=String(phase?.goalId||goal?.goalId||"maintain");
+ const weightKg=Number(profile?.weightKg)||Number(profile?.weightLb)*.45359237||null;
+ const presetMacros=Number.isFinite(daily)&&daily>0&&Number.isFinite(weightKg)&&weightKg>0
+  ?calculateMacroTargets({calories:daily,weightKg,macroPreset:macroPreference?.preset||"balanced"}) : null;
+ const custom=macroPreference?.manualMacros;
+ const manualValid=["protein","carbs","fat"].every(key=>Number.isFinite(Number(custom?.[key]))&&Number(custom[key])>=0);
+ return {goalId,dailyCalories:daily?Math.round(daily):null,
+  proteinGrams:manualValid?Math.round(Number(custom.protein)):presetMacros?.protein??null,
+  carbGrams:manualValid?Math.round(Number(custom.carbs)):presetMacros?.carbs??null,
+  fatGrams:manualValid?Math.round(Number(custom.fat)):presetMacros?.fat??null,
+  source:phaseValid?"active-phase":planValid?"nutrition-plan":selectedValid?"selected-target":"unset"};
+}
 export function currentMealPlannerGoal(){
- let active=null,plan=null,goal=null,profile=null,macroPreference=null;
- try{active=getSelectedTarget()}catch{}
+ let phase=null,plan=null,selected=null,goal=null,profile=null,macroPreference=null;
+ try{phase=getActiveNutritionPhase()}catch{}
  try{plan=getNutritionPlan()}catch{}
+ try{selected=getSelectedTarget()}catch{}
  try{goal=getNutritionGoal()}catch{}
  try{profile=getNutritionProfile()}catch{}
  try{macroPreference=getNutritionMacroPreference()}catch{}
- const daily=Number(active?.calories)||Number(plan?.calculatedCalories)||null;
- const goalId=String(goal?.goalId||"maintain");
- const weightKg=Number(profile?.weightKg)||Number(profile?.weightLb)*.45359237||null;
- const macros=finitePositive(daily)&&finitePositive(weightKg)
-  ?calculateMacroTargets({calories:daily,weightKg,macroPreset:macroPreference?.preset||"balanced"})
-  :null;
- return {goalId,dailyCalories:finitePositive(daily)?Math.round(daily):null,
-  proteinGrams:macros?.protein??null,carbGrams:macros?.carbs??null,
-  fatGrams:macros?.fat??null,source:finitePositive(daily)?"level-up":"unset"};
+ return resolveMealPlannerGoal({phase,plan,selected,goal,profile,macroPreference});
 }
 // Explicit reserve for unplanned meals/snacks; never silently allocate the
 // user's *entire* calorie target to a single planned meal.
