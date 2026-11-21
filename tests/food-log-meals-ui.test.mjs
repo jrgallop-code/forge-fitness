@@ -105,7 +105,8 @@ test("logged meal items open an editor for serving, meal, quantity, or removal",
 
 test("logged meal rows show food emojis and stay expanded after an item is removed", async () => {
     const [module, styles] = await Promise.all([read("../js/nutrition/food-log.js"), read("../css/food-log.css")]);
-    assert.match(module, /class="food-entry-emoji" aria-hidden="true">\$\{getFoodEmoji\(entry\)\}/);
+    assert.match(module, /foodPhotoIndex\(entry\)/);
+    assert.match(module, /getFoodEmoji\(entry\)/);
     assert.match(module, /const expandedMealKeys = new Set\(\)/);
     assert.match(module, /expandedMealKeys\.has\(mealExpansionKey\(selectedDate, meal\)\)/);
     assert.match(module, /if \(details\.open\) expandedMealKeys\.add\(key\)/);
@@ -278,4 +279,15 @@ test("saved meal ingredients open the shared full food detail editor", async () 
     assert.match(module, /mealDraft\.items\.splice\(editingMealItemIndex, 1, entry\)/);
     assert.match(styles, /\.food-builder-item-details>summary/);
     assert.match(styles, /\.food-builder-item-details\[open\]>summary/);
+});
+
+test("iOS meal diary supports per-meal photos with compact theme-aware thumbnails",async()=>{
+ const [module,styles]=await Promise.all([read("../js/nutrition/food-log.js"),read("../css/ios-nutrition-polish.css")]);
+ assert.match(module,/data-diary-meal-photo/);
+ assert.match(module,/pickDiaryMealPhoto/);
+ assert.match(module,/compressMealPhoto/);
+ assert.match(module,/diaryMealPhotoMarkup/);
+ assert.match(module,/DIARY_MEAL_PHOTOS_KEY/);
+ assert.match(styles,/\.food-meal-photo/);
+ assert.match(styles,/\.food-entry-emoji img/);
 });
