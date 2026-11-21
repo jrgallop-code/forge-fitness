@@ -10,7 +10,7 @@ on:
       - 'tests/meal-planner*.test.mjs'
       - '.github/workflows/meal-planner-ios-check.yml'
   push:
-    branches: [ios/meal-planner-visual-redesign-20261120]
+    branches: [ios/meal-planner-visual-redesign-20261120, ios/meal-planner-goals-satiety-pages-20261121]
 
 permissions:
   contents: read
@@ -30,7 +30,10 @@ jobs:
       - run: node --check js/nutrition/meal-planner-data.js
       - run: node --check js/nutrition/meal-planner-media.js
       - run: node --check js/nutrition/meal-planner-consumption.js
-      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs
+      - run: node --check js/nutrition/meal-planner-goals.js
+      - run: node --check js/nutrition/meal-planner-planning.js
+      - run: node --check js/nutrition/meal-planner-satiety-db.js
+      - run: node --test tests/meal-planner.test.mjs tests/meal-planner-consumption.test.mjs tests/meal-planner-goals.test.mjs tests/meal-planner-art.test.mjs
       - run: npm run build:native
       - name: Verify the new local photo fallbacks and stylesheet are in the native bundle
         run: |

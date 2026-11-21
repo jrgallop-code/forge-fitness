@@ -1,3 +1,4 @@
+import {generatedMealTile} from "./meal-planner-art.js?v=1";
 // Photo-based meal planner artwork. Unsplash photos are illustrative: recipe
 // ingredients/portions are described separately and may differ from photograph.
 // The shipped local food photographs are used when remote images are unavailable.
@@ -29,10 +30,7 @@ const PHOTO_IDS = [
  "photo-1490645935967-10de6ba17061"
 ];
 const photos=Object.freeze(PHOTO_IDS.map(id=>"https://images.unsplash.com/"+id+"?auto=format&fit=crop&w=520&q=75"));
-export const mealPhoto=(recipe)=>{
- const n=Number(String(recipe?.id||"").replace("lu-meal-",""));
- return photos[Number.isFinite(n)&&n>0 ? Math.floor((n-1)/20)%photos.length : 0];
-};
+export const mealPhoto=(recipe)=>"generated-meal:"+generatedMealTile(recipe);
 export const ingredientPhoto=(food)=>{
  const name=String(food||"").toLowerCase();
  const categories=[
