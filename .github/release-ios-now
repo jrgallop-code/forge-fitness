@@ -705,3 +705,5 @@ Release notes review — 2026-11-19: iOS-only version 1.0.6 What's New onboardin
 Release request: 2026-11-20 stopwatch appearance parity and blank Quick Log input fields.
 
 Meal Planner TestFlight evaluation trigger — 2026-11-20, merged PR #842, iOS commit acfba2812f2d784ad049bf1ca9119455898a54dd.
+
+Release request 2026-11-21: Meal Prep Planner batch schedule beta, iOS Food Log launch, grocery list. Commit 6f159be416976e035916440935fbb59485a682a2.
