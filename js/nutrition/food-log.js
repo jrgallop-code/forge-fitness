@@ -1,4 +1,4 @@
-import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=ios-meal-preferences-20261121";
+import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=ios-unique-photo-atlas-20261121";
 import {createFoodSpeechSession} from './food-speech.js';
 import {voiceIngredients,accurateVoiceMatch,voicePortion,replacementVoicePortion} from './voice-food-model.js';
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
