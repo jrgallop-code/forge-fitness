@@ -38,7 +38,7 @@ test("App Store releases use Xcode-managed signing without certificate revocatio
     assert.doesNotMatch(releaseWorkflow, /node scripts\/app-store-signing\.mjs create/);
     assert.doesNotMatch(releaseWorkflow, /LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE/);
     assert.match(releaseWorkflow, /CODE_SIGN_STYLE=Automatic/);
-    assert.match(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
+    assert.doesNotMatch(releaseWorkflow, /CODE_SIGN_IDENTITY="Apple Distribution"/);
     assert.match(releaseWorkflow, /plutil -insert signingStyle -string automatic/);
     assert.doesNotMatch(releaseWorkflow, /plutil -insert provisioningProfiles/);
     assert.match(releaseWorkflow, /-allowProvisioningUpdates/);
