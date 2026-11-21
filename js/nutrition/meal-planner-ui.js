@@ -97,7 +97,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="catalog",catalogSlot="All",catalogFilter="Review first 100",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let plannerScreen="catalog",catalogSlot="All",catalogFilter="Review first 100",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -199,8 +199,8 @@ function render(root){
  
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
- else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch,favoritesOnly});
- else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
+ else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly});
+ else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});}
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
@@ -284,11 +284,12 @@ function render(root){
  });
  root.querySelectorAll("[data-mp-slot]").forEach(button=>button.addEventListener("click",()=>{catalogSlot=button.dataset.mpSlot;render(root);}));
  root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
+ root.querySelectorAll("[data-mp-food-type]").forEach(button=>button.addEventListener("click",()=>{catalogFoodType=button.dataset.mpFoodType;render(root);}));
  root.querySelector("[data-mp-search]")?.addEventListener("input",event=>{
   catalogSearch=event.target.value;
   const favoriteIds=new Set(storedFavorites());
   const matches=baseRecipes().filter(recipe=>
-   matchesCatalog(recipe,{slot:catalogSlot,filter:catalogFilter,search:catalogSearch})&&(!favoritesOnly||favoriteIds.has(recipe.id))
+   matchesCatalog(recipe,{slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch})&&(!favoritesOnly||favoriteIds.has(recipe.id))
   );
   // Re-rendering the entire catalog on every keystroke would lose keyboard focus.
   root.querySelectorAll(".mp-catalog-card").forEach(card=>{
