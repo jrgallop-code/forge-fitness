@@ -1,7 +1,7 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
-import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes} from "./meal-planner-catalog-ui.js?v=1";
+import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites} from "./meal-planner-catalog-ui.js?v=2";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
@@ -37,7 +37,7 @@ function prefsMarkup(p){
  const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+photoMarkup(MEAL_CATALOG[dietRecipeBaseIndex(id)*20])+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
  const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.preferredCuisines||p.cuisines||[]).includes(x))).join("");
  const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
- const ratings=baseRecipes().slice(0,16).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photoMarkup(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
+ const ratings=MEAL_CATALOG.filter((_,i)=>i%20===0).slice(0,16).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photoMarkup(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
  return '<form data-meal-planner-options class="mp-wizard">'+
  '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 10</p>'+
  '<section class="mp-step" data-mp-step="0"><span class="eyebrow">PERSONALIZED NUTRITION</span><h3>Your weight and calorie goals</h3><p>Start with the exact calorie target already used by Level Up, or customize this meal plan only.</p><div class="mp-choice-list">'+
@@ -199,7 +199,7 @@ function render(root){
  const page=plannerScreen;
  if(page==="landing")root.innerHTML=landingMarkup(saved);
  else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch,favoritesOnly});
- else if(page==="recipe"){const selected=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
+ else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,search:catalogSearch});}
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
@@ -259,11 +259,10 @@ function render(root){
  root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
  root.querySelector("[data-mp-search]")?.addEventListener("input",event=>{
   catalogSearch=event.target.value;
-  const matches=baseRecipes().filter(recipe=>{
-   const query=catalogSearch.toLowerCase().trim();
-   const words=[recipe.name,recipe.cuisine,recipe.diet,...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
-   return (!query||words.includes(query))&&(catalogSlot==="All"||recipe.slot===(catalogSlot==="Snacks"?"Meal 4":catalogSlot));
-  });
+  const favoriteIds=new Set(storedFavorites());
+  const matches=baseRecipes().filter(recipe=>
+   matchesCatalog(recipe,{slot:catalogSlot,filter:catalogFilter,search:catalogSearch})&&(!favoritesOnly||favoriteIds.has(recipe.id))
+  );
   // Re-rendering the entire catalog on every keystroke would lose keyboard focus.
   root.querySelectorAll(".mp-catalog-card").forEach(card=>{
    const id=card.querySelector("[data-mp-recipe]")?.dataset.mpRecipe;
