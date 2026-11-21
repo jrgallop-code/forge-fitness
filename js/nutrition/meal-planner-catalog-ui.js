@@ -43,7 +43,7 @@ export function isCompleteRecipe(recipe){
 }
 
 export const CATALOG_FILTERS=["Complete recipes"];
-export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
+export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Vegan","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
 const FOOD_TYPE_RULES=[
  ["Chicken & turkey", /\\b(chicken|turkey|poultry)\\b/i],
  ["Beef & pork", /\\b(beef|steak|sirloin|ribeye|pork|bacon|ham|sausage)\\b/i],
@@ -56,14 +56,16 @@ const FOOD_TYPE_RULES=[
 ];
 export function matchesFoodType(recipe, foodType="All foods"){
  if(foodType==="All foods")return true;
+ if(foodType==="Vegetarian")return ["Vegetarian","Vegan"].includes(recipeStyle(recipe));
+ if(foodType==="Vegan")return recipeStyle(recipe)==="Vegan";
  const phrase=[recipe.name, ...(recipe.ingredients||featuredIngredients(recipe)).map(item=>item.food||item.name||"")].join(" ");
  return FOOD_TYPE_RULES.some(([label, pattern])=>label===foodType&&pattern.test(phrase));
 }
 // Index-listed dishes are individually named; do not surface twenty invented
 // size variants of the same generic concept as distinct recipes.
 export function baseRecipes(){
- // Expose finished recipes and retain title-only records for the optional
- // discovery view. Show one base recipe instead of twenty portion variants.
+ // Show only distinct recipes with ingredient records; title-only entries
+ // remain in the separate internal review dataset, not the food catalogue.
  const classics=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
  const seen=new Set();
  return [...FEATURED_RECIPES,...classics].filter(recipe=>{
