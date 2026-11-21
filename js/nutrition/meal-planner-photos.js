@@ -1,8 +1,8 @@
 // Stable, nonrepeating photographic tile assignments for the visible iOS recipe catalogue.
 // The forty base recipes have one AI-generated tile each. Portions of the same
 // recipe intentionally retain the same image, as they are not distinct dishes.
-// Featured adaptations use a separate eight-tile selection from the 20-photo
-// generated asset; their composition is illustrative, not independently photo-verified.
+// Featured adaptations use eight distinct AI-generated food concept images;
+// these are visual concepts, not photos of the exact cooked recipes.
 import { GENERATED_MEAL_ATLAS } from "./meal-planner-art.js?v=1";
 import { FEATURED_MEAL_PHOTOS } from "./featured-unique-photos.js?v=1";
 export const AI_ATLAS="/assets/meal-photos/generated-001-020.png";
@@ -17,7 +17,7 @@ const FEATURED_TILES=Object.freeze({
  "reference-japanese-ground-beef-curry":5,
  "reference-mediterranean-chicken-wraps":6,
  "reference-honey-garlic-chicken-noodle-bowls":7
-};
+});
 export function recipeBaseIndex(recipe){
  const id=Number(String(recipe?.id||"").replace(/^lu-meal-/,""));
  return Number.isFinite(id)&&id>0?Math.min(39,Math.floor((id-1)/20)):0;
