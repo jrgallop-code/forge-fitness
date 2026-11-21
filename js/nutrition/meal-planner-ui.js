@@ -61,7 +61,7 @@ function render(root){
   if(!slotChoices.length){window.alert("Choose at least one meal to plan.");showWizardStep(root,1);return;}
   const diet=String(fd.get("diet")||"balanced");
   const rawCuisines=fd.getAll("cuisine");
-  const cuisines=[...new Set(rawCuisines)];
+  const cuisines=[...new Set(rawCuisines.length?rawCuisines:fd.get("diet")==="mediterranean"?["Mediterranean"]:[])];
   const preferences={...p,diet:["vegetarian","vegan","pescatarian"].includes(diet)?diet:"balanced",
    preferredDiet:diet,coverage,cuisines,preferredCuisines:rawCuisines,
    cooking:fd.get("cooking")||"30",days:fd.get("days")||"7",meals:slotChoices,
