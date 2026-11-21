@@ -1,4 +1,4 @@
-import {ingredientIllustration,dietIllustration} from "./meal-planner-food-art.js?v=1";
+import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
 import {generateGoalAwarePlan,refitRecipeForSlot} from "./meal-planner-planning.js?v=3";
@@ -33,7 +33,7 @@ function prefsMarkup(p){
  const styles=DIET_CHOICES.map(([id,name,desc,index])=>'<label class="mp-photo-choice"><input type="radio" name="diet" value="'+esc(id)+'"'+((p.preferredDiet||p.diet)===id?' checked':'')+'>'+dietIllustration(id,name)+'<span class="mp-photo-copy"><strong>'+esc(name)+'</strong><small>'+esc(desc)+'</small></span><span class="mp-choice-tick">✓</span></label>').join("");
  const cuisine=CUISINES.map(x=>pick("cuisine",x,x,(p.preferredCuisines||p.cuisines||[]).includes(x))).join("");
  const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
- const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photo(mealPhoto(x),x.name,i)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
+ const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+recipeIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
  return '<form data-meal-planner-options class="mp-wizard">'+
  '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 10</p>'+
  '<section class="mp-step" data-mp-step="0"><span class="eyebrow">PERSONALIZED NUTRITION</span><h3>Your weight and calorie goals</h3><p>Start with the exact calorie target already used by Level Up, or customize this meal plan only.</p><div class="mp-choice-list">'+
@@ -292,7 +292,7 @@ function renderDays(plan){
     const recipe=MEAL_CATALOG.find(x=>x.id===entry.recipeId);
     const options=eligibleMeals(plan.preferences).filter(x=>x.slot===entry.slot);
     const consumed=hasConsumedMeal(date,entry.slot);
-    const thumbnail=recipe?photo(mealPhoto(recipe),recipe.name,0):esc(getFoodEmoji({name:entry.ingredients[0]?.food||"meal"}));
+    const thumbnail=recipe?recipeIllustration(recipe):esc(getFoodEmoji({name:entry.ingredients[0]?.food||"meal"}));
     const m=macrosForIngredients(entry.ingredients);
     const satiety=fullnessEstimate(entry.ingredients);
     return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
