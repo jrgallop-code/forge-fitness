@@ -26,7 +26,7 @@ export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""
  const query=String(search).trim().toLowerCase();
  const words=[recipe.name,recipe.cuisine,recipe.diet,...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
  if(query&&!words.includes(query))return false;
- const m=macrosForIngredients(recipe.ingredients);
+ const m=recipe.publishedEstimate||macrosForIngredients(recipe.ingredients);
  if(filter==="High protein"&&m.protein<25)return false;
  if(filter==="Quick meals"&&recipe.prepMinutes>20)return false;
  if(filter==="Vegetarian"&&!["vegan","vegetarian"].includes(recipe.diet))return false;
@@ -35,7 +35,7 @@ export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""
  return true;
 }
 export function recipeCard(recipe,favorite=false){
- const m=macrosForIngredients(recipe.ingredients);
+ const m=recipe.publishedEstimate||macrosForIngredients(recipe.ingredients);
  return '<article class="mp-catalog-card"><button type="button" class="mp-catalog-open" data-mp-recipe="'+esc(recipe.id)+'" aria-label="See '+esc(recipe.name)+'">'+photoMarkup(recipe)+
  '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+Math.round(m.calories)+' kcal · '+Math.round(m.protein)+'g protein · '+recipe.prepMinutes+' min'+(recipe.publishedEstimate?' · source estimate':'')+'</small></span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
