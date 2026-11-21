@@ -19,7 +19,7 @@ const ALLERGENS=["milk","eggs","fish","shellfish","peanuts","tree nuts","soy","g
 const photo=(url,label,fallback=0)=>{
  if(String(url).startsWith("generated-meal:")){
   const index=Math.max(0,Math.min(39,Number(url.slice(15))||0)),column=index%8,row=Math.floor(index/8);
-  return '<span class="mp-photo mp-generated-art" role="img" aria-label="'+esc(label)+'" style="background-position:'+(column/7*100)+'% '+(row/4*100)+'%"></span>';
+  return '<span class="mp-photo mp-generated-art" role="img" aria-label="'+esc(label)+'" style="background-position:'+(column/10*100)+'% '+(row/4*100)+'%"></span>';
  }
  return '<span class="mp-photo" style="background-image:url('+localFoodFallback(fallback)+')"><img loading="lazy" src="'+esc(url)+'" data-fallback="'+localFoodFallback(fallback)+'" alt="'+esc(label)+'"></span>';
 };
@@ -35,7 +35,7 @@ function prefsMarkup(p){
  const produce=PRODUCE.map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-food" value="'+esc(x)+'"'+((p.likes||[]).includes(x)?' checked':'')+'>'+ingredientIllustration(x)+'<span class="mp-photo-copy"><strong>'+esc(x)+'</strong></span><span class="mp-choice-tick">♥</span></label>').join("");
  const ratings=MEAL_CATALOG.filter(x=>["lu-meal-001","lu-meal-041","lu-meal-141","lu-meal-161","lu-meal-261","lu-meal-301"].includes(x.id)).map((x,i)=>'<label class="mp-photo-choice mp-food-choice"><input type="checkbox" name="liked-recipe" value="'+esc(x.id)+'"'+((p.likedRecipes||[]).includes(x.id)?' checked':'')+'>'+photo(mealPhoto(x),x.name,i)+'<span class="mp-photo-copy"><strong>'+esc(x.name)+'</strong><small>≈ '+Math.round(macrosForIngredients(x.ingredients).calories)+' kcal</small></span><span class="mp-choice-tick">♥</span></label>').join("");
  return '<form data-meal-planner-options class="mp-wizard">'+
- '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 7</p>'+
+ '<div class="mp-step-progress"><span data-mp-progress></span></div><p class="mp-step-counter" data-mp-step-label>Step 1 of 10</p>'+
  '<section class="mp-step" data-mp-step="0"><span class="eyebrow">PERSONALIZED NUTRITION</span><h3>Your weight and calorie goals</h3><p>Start with the exact calorie target already used by Level Up, or customize this meal plan only.</p><div class="mp-choice-list">'+
  choose("goalMode","existing","Use current Level Up goal"+(appGoal.dailyCalories?" · "+appGoal.dailyCalories+" kcal/day":" · no calorie target found"),p.goalMode!=="custom")+
  choose("goalMode","custom","Set a different meal-planning goal",p.goalMode==="custom")+'</div>'+
@@ -48,21 +48,47 @@ function prefsMarkup(p){
  '<section class="mp-step" data-mp-step="1"><h3>What is your eating style?</h3><p>Choose the approach that fits you best.</p><div class="mp-photo-grid">'+styles+'</div></section>'+
  '<section class="mp-step" data-mp-step="2" hidden><h3>How many meals do you want planned?</h3><p>Set up your weekly calendar.</p><div class="mp-choice-list">'+choose("coverage","all","All meals every day",p.coverage==="all")+choose("coverage","lunch-dinner","Lunch and dinner",p.coverage==="lunch-dinner")+choose("coverage","dinner","Dinners only",p.coverage==="dinner")+choose("coverage","custom","Custom",p.coverage==="custom")+'</div><div class="mp-pills">'+MEAL_SLOTS.map(s=>pick("slot",s,s,(p.meals||MEAL_SLOTS).includes(s))).join("")+'</div><div class="mp-fields"><label>Days <select name="days">'+selectable(["3","5","7","14"],String(p.days||"7"))+'</select></label><label>Leftovers <select name="leftovers">'+selectable(["Frequently","Sometimes","Not often"],p.leftovers||"Sometimes")+'</select></label></div></section>'+
  '<section class="mp-step" data-mp-step="3" hidden><h3>What is your cooking style?</h3><p>We will fit your schedule and skill level.</p><div class="mp-choice-list">'+["Novice","Basic","Intermediate","Advanced"].map(s=>choose("skill",s,s,(p.skill||"Basic")===s)).join("")+'</div><div class="mp-fields"><label>Maximum cooking time <select name="cooking">'+selectable(["15","20","30","45","60"],String(p.cooking||"30"))+'</select></label><label>Grocery shopping <select name="grocery">'+selectable(["In-store","Pickup","Delivery","Flexible"],p.grocery||"In-store")+'</select></label><label>Meal prep <select name="prep">'+selectable(["yes","no"],p.prep||"yes")+'</select></label></div></section>'+
- '<section class="mp-step" data-mp-step="4" hidden><h3>Which foods do you enjoy?</h3><p>Choose cuisines, fruits and vegetables you would like to see.</p><h4>Cuisine preferences</h4><div class="mp-pills">'+cuisine+'</div><h4>Foods you like</h4><div class="mp-photo-grid">'+produce+'</div><label class="mp-input-label">Foods to avoid <input name="dislikes" placeholder="e.g. mushrooms, salmon" value="'+esc(p.dislikes||"")+'"></label></section>'+
- '<section class="mp-step" data-mp-step="5" hidden><h3>Personalize your plan</h3><p>Keep allergies, your household and priorities in mind.</p><h4>Allergies</h4><div class="mp-pills">'+ALLERGENS.map(s=>pick("allergy",s,s,(p.allergies||[]).includes(s))).join("")+'</div><p class="mp-disclaimer">This estimated recipe catalog cannot guarantee allergen-free foods or prevent cross-contact. Check product labels before eating.</p><div class="mp-fields"><label>People eating <select name="household">'+selectable(["1","2","3","4","5","6"],String(p.household||"1"))+'</select></label><label>Budget <select name="budget">'+selectable(["Flexible","Moderate","Budget-conscious"],p.budget||"Flexible")+'</select></label></div><h4>Servings per meal</h4><p class="mp-disclaimer">Groceries cover all servings. Mark Eaten logs just one serving to your personal Food Log.</p><div class="mp-fields">'+MEAL_SLOTS.map(slot=>'<label>'+esc(slot)+' <select name="servings-'+esc(slot)+'">'+selectable(["1","2","3","4","5","6"],String(p.mealSizes?.[slot]||p.household||"1"))+'</select></label>').join("")+'</div><h4>What matters most to you?</h4>'+["Delicious meals","Easy recipes","Budget-friendly meals","Recipe variety","High protein"].map((x,i)=>'<label class="mp-slider">'+esc(x)+'<input name="priority-'+i+'" type="range" min="1" max="5" value="'+Number(p.priorities?.[i]||3)+'"></label>').join("")+'</section>'+
- '<section class="mp-step" data-mp-step="6" hidden><h3>Rate a few recipe ideas</h3><p>Tap the heart on meals you enjoy. These ratings help refine future suggestions.</p><div class="mp-photo-grid">'+ratings+'</div><p class="mp-disclaimer">Photos are illustrative; nutrition is estimated. The current draft uses a limited set of base recipes and portion variations.</p></section>'+
+ '<section class="mp-step" data-mp-step="4" hidden><h3>Which cuisines sound good?</h3><p>Pick your favourites. You can choose more than one.</p><div class="mp-pills">'+cuisine+'</div></section>'+
+ '<section class="mp-step" data-mp-step="5" hidden><h3>Foods you enjoy</h3><p>Choose your favourites below.</p><div class="mp-photo-grid mp-produce-grid">'+produce+'</div><label class="mp-input-label">Anything you dislike? <input name="dislikes" placeholder="Optional · e.g. mushrooms" value="'+esc(p.dislikes||"")+'"></label></section>'+
+ '<section class="mp-step" data-mp-step="6" hidden><h3>Allergies & serving sizes</h3><p>Plan for yourself or the whole household.</p><h4>Allergies or restrictions</h4><div class="mp-pills">'+ALLERGENS.map(s=>pick("allergy",s,s,(p.allergies||[]).includes(s))).join("")+'</div><p class="mp-disclaimer">Check all product labels. Recipes cannot guarantee an allergen-free kitchen.</p><div class="mp-fields"><label>People eating <select name="household">'+selectable(["1","2","3","4","5","6"],String(p.household||"1"))+'</select></label><label>Budget <select name="budget">'+selectable(["Flexible","Moderate","Budget-conscious"],p.budget||"Flexible")+'</select></label></div><h4>Servings to prepare</h4><div class="mp-fields">'+MEAL_SLOTS.map(slot=>'<label>'+esc(slot)+' <select name="servings-'+esc(slot)+'">'+selectable(["1","2","3","4","5","6"],String(p.mealSizes?.[slot]||p.household||"1"))+'</select></label>').join("")+'</div></section>'+
+ '<section class="mp-step" data-mp-step="7" hidden><h3>What matters most?</h3><p>Balance taste, convenience and nutrition.</p>'+["Great taste","Quick cooking","Affordable ingredients","More variety","Higher protein"].map((x,i)=>'<label class="mp-slider">'+esc(x)+'<input name="priority-'+i+'" type="range" min="1" max="5" value="'+Number(p.priorities?.[i]||3)+'"></label>').join("")+'</section>'+
+ '<section class="mp-step" data-mp-step="8" hidden><h3>Pick recipes you like</h3><p>Choose a few ideas to personalize your week.</p><div class="mp-photo-grid">'+ratings+'</div><p class="mp-disclaimer">Nutrition values are estimates.</p></section>'+
+ '<section class="mp-step" data-mp-step="9" hidden><h3>Ready for your meal plan?</h3><p>Review the essentials before generating.</p><div class="mp-review" data-mp-review></div><p class="mp-disclaimer">Planned food is not logged as eaten. Meals can be swapped and portions edited later.</p></section>'+
  '<footer class="mp-wizard-footer"><button type="button" data-mp-back hidden>Back</button><button type="button" class="primary-btn" data-mp-next>Next</button><button type="submit" class="primary-btn" data-mp-generate hidden>Generate my meal plan</button></footer></form>';
 }
 let wizardStep=0;
 function showWizardStep(root,next){
  const form=root.querySelector("[data-meal-planner-options]");if(!form)return;
- wizardStep=Math.max(0,Math.min(6,next));
+ wizardStep=Math.max(0,Math.min(9,next));
  form.querySelectorAll("[data-mp-step]").forEach(section=>section.hidden=Number(section.dataset.mpStep)!==wizardStep);
- form.querySelector("[data-mp-step-label]").textContent="Step "+(wizardStep+1)+" of 7";
+ form.querySelector("[data-mp-step-label]").textContent="Step "+(wizardStep+1)+" of 10";
  form.querySelector("[data-mp-progress]").style.width=((wizardStep+1)/7*100)+"%";
  form.querySelector("[data-mp-back]").hidden=wizardStep===0;
- form.querySelector("[data-mp-next]").hidden=wizardStep===6;
- form.querySelector("[data-mp-generate]").hidden=wizardStep!==6;
+ form.querySelector("[data-mp-next]").hidden=wizardStep===9;
+ form.querySelector("[data-mp-generate]").hidden=wizardStep!==9;
+ if(wizardStep===9){
+  const fd=new FormData(form);
+  const app=currentMealPlannerGoal(),mode=String(fd.get("goalMode")||"existing");
+  const daily=mode==="custom"?Number(fd.get("dailyCalories")):Number(app.dailyCalories);
+  const selected=String(fd.get("coverage")||"all");
+  const meals=selected==="all"?MEAL_SLOTS:selected==="lunch-dinner"?["Lunch","Dinner"]:selected==="dinner"?["Dinner"]:fd.getAll("slot");
+  const coverage=Number(fd.get("calorieCoverage")||100);
+  const allocated=allocateMealCalories({dailyCalories:daily,meals,calorieCoverage:coverage});
+  const diet=String(fd.get("diet")||"balanced");
+  const summary=[
+   ["Goal",mode==="existing"?"Current Level Up goal":String(fd.get("goalType")||"Custom")],
+   ["Calories",Number.isFinite(daily)&&daily>0?Math.round(daily).toLocaleString()+" kcal/day":"Choose a target"],
+   ["Planned",allocated.plannedCalories.toLocaleString()+" kcal"],
+   ["Meals",meals.join(", ")],
+   ["Eating style",DIET_CHOICES.find(x=>x[0]===diet)?.[1]||"Balanced"],
+   ["Cooking",String(fd.get("cooking")||"30")+" min or less"],
+   ["Cuisines",fd.getAll("cuisine").join(", ")||"Any"]
+  ];
+  const box=form.querySelector("[data-mp-review]");
+  if(box)box.innerHTML=summary.map(([label,value])=>'<div><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>').join("");
+ }
+ const scroller=root.querySelector(".mp-standalone");if(scroller)scroller.scrollTop=0;
+
 }
 
 
