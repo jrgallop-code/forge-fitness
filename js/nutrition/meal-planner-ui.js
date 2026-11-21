@@ -1,4 +1,5 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
+import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=1";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
@@ -118,7 +119,7 @@ function groceryPlainText(plan){
  const lines=["LEVEL UP · GROCERY LIST",plan.startDate+" · "+new Set(plan.entries.map(e=>e.date)).size+" days",""];
  for(const [section,items] of groupedGrocery(plan)){
   lines.push(section);
-  for(const item of items)lines.push("• "+item.food+" — "+item.grams+" "+(item.unit||"g"));
+  for(const item of items)lines.push("• "+item.food+" — "+formatIngredientMeasure(item.food,item.grams,item.unit||"g"));
   lines.push("");
  }
  lines.push("Quantities are estimated. Check servings, labels and pantry stock.");
@@ -175,7 +176,7 @@ function groceriesMarkup(saved){
  '<div class="mp-grocery-intro"><span class="eyebrow">READY TO SHOP</span><h1>Your weekly groceries</h1><p>Combined quantities across every planned meal and household serving.</p></div>'+
  '<div class="mp-grocery-tools"><button type="button" class="primary-btn" data-mp-copy aria-label="Copy grocery list">⧉ Copy list</button><button type="button" data-mp-share>Share</button></div>'+
  '<p class="mp-copy-status" role="status" aria-live="polite"></p>'+
- groups.map(([name,items])=>'<section class="mp-grocery-group"><h3>'+esc(name)+'</h3><ul>'+items.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' '+esc(item.unit||'g')+'</strong></li>').join("")+'</ul></section>').join("")+
+ groups.map(([name,items])=>'<section class="mp-grocery-group"><h3>'+esc(name)+'</h3><ul>'+items.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,item.grams,item.unit||'g'))+'</strong></li>').join("")+'</ul></section>').join("")+
  '<p class="mp-disclaimer">Shopping quantities are approximate. Check your pantry, portions and food labels.</p></section>';
 }
 async function copyGroceryText(text){
@@ -464,7 +465,7 @@ function renderDays(plan){
       (recipe?(sourcePending?'<p>Source-linked · nutrition pending review · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>':'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':'')):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
       (entry.notice?'<p class="mp-disclaimer">'+esc(entry.notice)+'</p>':'')+
       '<div class="lu-meal-actions">'+(consumed?'<span class="lu-meal-eaten">✓ Consumed</span><button type="button" data-meal-undo data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Undo log</button>':recipe&&!sourcePending?'<button class="primary-btn" type="button" data-meal-consume data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Mark Eaten</button>':sourcePending?'<span class="mp-disclaimer">Logging unavailable until food matching and nutrition verification</span>':'')+'</div></div></div>'+
-      '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+ingredientIllustration(item.food)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g</label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+(sourcePending?recipe.steps:recipeSteps({...recipe,ingredients:entry.ingredients})).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
+      '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+ingredientIllustration(item.food)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g <small class="mp-ingredient-measure">'+esc(formatIngredientMeasure(item.food,item.grams,"g"))+'</small></label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+(sourcePending?recipe.steps:recipeSteps({...recipe,ingredients:entry.ingredients})).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
       (isWeightLossGoal(plan.goalId)&&!sourcePending?'<p class="mp-disclaimer">Fullness score is a recipe heuristic, not a measured Satiety Index.</p>':'')+
       (consumed?'<p class="lu-meal-note">Edit logged ingredients in Food Log. Undo removes only entries created through this plan.</p>':'')+'</article>';
   }).join("")+'</section>';
