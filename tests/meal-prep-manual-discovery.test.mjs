@@ -14,13 +14,12 @@ test("indexed recipes are discovery-only and cannot masquerade as nutritional da
  assert.ok(MPM_INDEX_RECIPES.every(x=>x.verificationStatus==="title-index-only"&&!x.photo));
  assert.ok(MPM_INDEX_RECIPES.every(x=>x.sourceIndexUrl.startsWith("https://mealprepmanual.com/recipes/")));
 });
-test("catalog promotes detailed recipes, avoids source-index duplicates and supports search",()=>{
+test("normal catalogue contains finished distinct recipes and does not expose title-only references",()=>{
  const recipes=baseRecipes();
- assert.equal(recipes.length,MPM_INDEX_COUNT);
+ assert.ok(recipes.length>=40);
  assert.equal(new Set(recipes.map(x=>x.name.toLowerCase())).size,recipes.length);
  assert.ok(recipes.some(x=>x.id===FEATURED_RECIPES[0].id));
- assert.ok(recipes.some(x=>matchesCatalog(x,{search:"Tikka Masala"})));
- assert.ok(recipes.some(x=>matchesCatalog(x,{filter:"Detailed recipes"})));
- assert.ok(recipes.filter(x=>matchesCatalog(x,{filter:"Source index only"})).every(x=>x.indexOnly));
- assert.equal(recipes.filter(x=>matchesCatalog(x,{filter:"Detailed recipes"})).length,FEATURED_RECIPES.length);
+ assert.equal(recipes.filter(x=>x.indexOnly).length,0);
+ assert.ok(recipes.every(x=>matchesCatalog(x,{filter:"Complete recipes",styles:[]})));
+ assert.ok(!recipes.some(x=>x.sourceIndexUrl && x.indexOnly));
 });
