@@ -33,7 +33,7 @@ function prefsMarkup(p){
  '<div class="mp-goal-box"><label>Planning goal <select name="goalType">'+
  [["cut_gentle","Lose weight (gentle)"],["cut_moderate","Lose weight (moderate)"],["maintain","Maintain weight"],["bulk_conservative","Lean bulk"],["bulk_aggressive","Gain weight"]].map(([id,label])=>'<option value="'+id+'"'+(storedGoal===id?' selected':'')+'>'+label+'</option>').join("")+
  '</select></label><label>Daily calorie target <input type="number" name="dailyCalories" min="800" max="10000" step="25" placeholder="Set daily calories" value="'+esc(storedCalories||"")+'"></label><p class="mp-disclaimer">Your main Level Up nutrition goals will not change.</p></div>'+
- '<label class="mp-input-label">Percent of daily calories assigned to planned meals <input type="range" name="calorieCoverage" min="20" max="100" step="5" value="'+esc(p.calorieCoverage||"75")+'"><strong data-mp-coverage-preview>'+(p.calorieCoverage||75)+'%</strong></label>'+
+ '<label class="mp-input-label">Percent of daily calories assigned to planned meals <input type="range" name="calorieCoverage" min="20" max="100" step="5" value="'+esc(p.calorieCoverage||"100")+'"><strong data-mp-coverage-preview>'+(p.calorieCoverage||100)+'%</strong></label>'+
  '<p class="mp-disclaimer">Unplanned calories are reserved for other food. You can adjust this again after choosing your meals.</p>'+
  (appGoal.dailyCalories?'<p class="mp-disclaimer">Current app target: '+appGoal.dailyCalories+' kcal · Protein '+(appGoal.proteinGrams??"—")+' g · Carbs '+(appGoal.carbGrams??"—")+' g · Fat '+(appGoal.fatGrams??"—")+' g</p>':'<p class="mp-disclaimer">No current app calorie target could be read. Enter a custom target to generate a calibrated plan.</p>')+'</section>'+
  '<section class="mp-step" data-mp-step="1"><h3>What is your eating style?</h3><p>Choose the approach that fits you best.</p><div class="mp-photo-grid">'+styles+'</div></section>'+
@@ -153,6 +153,12 @@ function render(root){
   showWizardStep(root,wizardStep);
   root.querySelector("[data-mp-next]")?.addEventListener("click",()=>showWizardStep(root,wizardStep+1));
   root.querySelector("[data-mp-back]")?.addEventListener("click",()=>showWizardStep(root,wizardStep-1));
+  root.querySelectorAll('input[name="coverage"]').forEach(radio=>radio.addEventListener("change",()=>{
+   if(!radio.checked)return;
+   const suggested={all:100,"lunch-dinner":75,dinner:40,custom:75};
+   const slider=root.querySelector('input[name="calorieCoverage"]');
+   if(slider){slider.value=suggested[radio.value]||75;const label=root.querySelector("[data-mp-coverage-preview]");if(label)label.textContent=slider.value+"%";}
+  }));
   root.querySelector('input[name="calorieCoverage"]')?.addEventListener("input",e=>{
    const preview=root.querySelector("[data-mp-coverage-preview]");
    if(preview)preview.textContent=e.target.value+"%";
@@ -250,13 +256,15 @@ function renderDays(plan){
     const consumed=hasConsumedMeal(date,entry.slot);
     const thumbnail=recipe?photo(mealPhoto(recipe),recipe.name,0):esc(getFoodEmoji({name:entry.ingredients[0]?.food||"meal"}));
     const m=macrosForIngredients(entry.ingredients);
+    const satiety=fullnessEstimate(entry.ingredients);
     return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
       (recipe&&!options.some(x=>x.id===recipe.id)?'<option value="'+esc(recipe.id)+'" selected>'+esc(recipe.name)+'</option>':'')+
       options.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===entry.recipeId?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></label>'+
-      (recipe?'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>':'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
+      (recipe?'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':''):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
       (entry.notice?'<p class="mp-disclaimer">'+esc(entry.notice)+'</p>':'')+
       '<div class="lu-meal-actions">'+(consumed?'<span class="lu-meal-eaten">✓ Consumed</span><button type="button" data-meal-undo data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Undo log</button>':recipe?'<button class="primary-btn" type="button" data-meal-consume data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Mark Eaten</button>':'')+'</div></div></div>'+
       '<details><summary>Ingredients &amp; portions</summary>'+entry.ingredients.map((item,i)=>'<label class="lu-meal-ingredient"><span class="lu-meal-food-photo" role="img" aria-label="Ingredient thumbnail">'+photo(ingredientPhoto(item.food),item.food,i)+'</span><span>'+esc(item.food)+'</span><input '+(consumed?'disabled ':'')+'type="number" min="0" max="10000" step="1" value="'+Number(item.grams)+'" data-meal-grams data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" data-index="'+i+'"> g</label>').join("")+'</details>'+(recipe?'<details class="mp-cooking"><summary>Cooking instructions · Step by step</summary><ol>'+recipeSteps({...recipe,ingredients:entry.ingredients}).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></details>':'')+
+      (isWeightLossGoal(plan.goalId)?'<p class="mp-disclaimer">Fullness score is a recipe heuristic, not a measured Satiety Index.</p>':'')+
       (consumed?'<p class="lu-meal-note">Edit logged ingredients in Food Log. Undo removes only entries created through this plan.</p>':'')+'</article>';
   }).join("")+'</section>';
  }).join("");
