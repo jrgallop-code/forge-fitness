@@ -3,7 +3,7 @@ import {featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 export const isoDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 export function nextMonday(date=new Date()){const d=new Date(date);d.setHours(12,0,0,0);d.setDate(d.getDate()+((8-d.getDay())%7));return isoDate(d);}
 export function dateForOffset(start,offset){const d=new Date(start+"T12:00:00");if(Number.isNaN(d.valueOf()))throw new Error("Invalid start date");d.setDate(d.getDate()+offset);return isoDate(d);}
-export function recipeServingIngredients(recipe){if(recipe.groups)return featuredIngredients(recipe).map(item=>({food:item.food,grams:item.grams/recipe.servings,group:item.group}));return (recipe.ingredients||[]).map(item=>({food:item.food,grams:item.grams}));}
+export function recipeServingIngredients(recipe){if(recipe.groups)return featuredIngredients(recipe).map(item=>({food:item.food,grams:item.grams/recipe.servings,unit:item.unit||"g",group:item.group}));return (recipe.ingredients||[]).map(item=>({food:item.food,grams:item.grams,unit:item.unit||"g"}));}
 export function scheduleRecipe(plan,recipe,{startDate,dayOffsets,slots,portionsPerDay=1}={}){
  if(!recipe||!recipe.id)throw new Error("Recipe required");
  if(!/^\d{4}-\d{2}-\d{2}$/.test(startDate||""))throw new Error("Valid start date required");
