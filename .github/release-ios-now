@@ -723,3 +723,5 @@ Release refresh 2026-11-21: include photo sprite attribute quoting fix from 2818
 2026-11-21 retry automatic signing, corrected CI signing contract test d1f0e1ad.
 
 2026-11-21: TestFlight retry with corrected automatic-signing CI tests at 004fdbbb.
+
+2026-11-21: automatic-signing retry without distribution identity override, commit 361bb0dc.
