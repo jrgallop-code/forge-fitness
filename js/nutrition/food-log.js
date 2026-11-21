@@ -382,7 +382,9 @@ function bindHubTabs(hub) {
 
     hub.querySelectorAll("[data-calories-tab]").forEach(button => button.addEventListener("click", () => showTab(button.dataset.caloriesTab)));
     hub.querySelector("[data-food-open-plan]")?.addEventListener("click", () => showTab("plan"));
-    showTab(localStorage.getItem(CALORIES_TAB_KEY));
+    // Each new Nutrition visit starts on Food Log. A tab selection remains
+    // local to this visit and must not hijack the next navigation.
+    showTab("log");
 }
 
 function shiftDate(days) {
