@@ -45,14 +45,14 @@ export function isCompleteRecipe(recipe){
 export const CATALOG_FILTERS=["Complete recipes"];
 export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Vegan","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
 const FOOD_TYPE_RULES=[
- ["Chicken & turkey", /\\b(chicken|turkey|poultry)\\b/i],
- ["Beef & pork", /\\b(beef|steak|sirloin|ribeye|pork|bacon|ham|sausage)\\b/i],
- ["Fish & seafood", /\\b(salmon|tuna|cod|fish|shrimp|prawn|seafood|tilapia)\\b/i],
- ["Vegetarian", /\\b(tofu|lentil|chickpea|beans?|vegetarian|vegan|tempeh|falafel|halloumi)\\b/i],
- ["Pasta & noodles", /\\b(pasta|noodles?|spaghetti|penne|linguine|fettuccine|macaroni|ramen)\\b/i],
- ["Rice & grains", /\\b(rice|quinoa|couscous|bulgur|farro|barley|grain|risotto)\\b/i],
- ["Salads & vegetables", /\\b(salad|vegetables?|broccoli|spinach|greens|asparagus|cauliflower)\\b/i],
- ["Breakfast foods", /\\b(oats?|oatmeal|pancake|waffle|egg|omelette|breakfast|granola|yogurt|porridge)\\b/i]
+ ["Chicken & turkey", /\b(chicken|turkey|poultry)\b/i],
+ ["Beef & pork", /\b(beef|steak|sirloin|ribeye|pork|bacon|ham|sausage)\b/i],
+ ["Fish & seafood", /\b(salmon|tuna|cod|fish|shrimp|prawn|seafood|tilapia)\b/i],
+ ["Vegetarian", /\b(tofu|lentil|chickpea|beans?|vegetarian|vegan|tempeh|falafel|halloumi)\b/i],
+ ["Pasta & noodles", /\b(pasta|noodles?|spaghetti|penne|linguine|fettuccine|macaroni|ramen)\b/i],
+ ["Rice & grains", /\b(rice|quinoa|couscous|bulgur|farro|barley|grain|risotto)\b/i],
+ ["Salads & vegetables", /\b(salad|vegetables?|broccoli|spinach|greens|asparagus|cauliflower)\b/i],
+ ["Breakfast foods", /\b(oats?|oatmeal|pancake|waffle|egg|omelette|breakfast|granola|yogurt|porridge)\b/i]
 ];
 export function matchesFoodType(recipe, foodType="All foods"){
  if(foodType==="All foods")return true;
