@@ -1,3 +1,4 @@
+import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
 import {generateGoalAwarePlan,refitRecipeForSlot} from "./meal-planner-planning.js?v=3";
 import {currentMealPlannerGoal,isWeightLossGoal,allocateMealCalories,fullnessEstimate} from "./meal-planner-goals.js?v=3";
@@ -128,6 +129,7 @@ function bindImages(root){
 }
 function render(root){
  root.style.setProperty("--mp-art-sprite",'url("'+GENERATED_MEAL_ATLAS+'")');
+ root.style.setProperty("--mp-hero-image",'url("'+MEAL_PLANNER_HERO+'")');
  const saved=read();
  const prefs={...defaultPrefs,...saved?.preferences};
  if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
