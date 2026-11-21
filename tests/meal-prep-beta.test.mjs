@@ -9,7 +9,7 @@ test("Three batch-cooked dinner portions scale every ingredient including season
  assert.equal(rows.find(x=>x.name==="White rice (dry)").amount,180);
  assert.equal(rows.find(x=>x.name==="Olive oil").amount,15);
  assert.equal(rows.find(x=>x.name==="Ground cumin").amount,3);
- assert.equal(rows.find(x=>x.name==="Black pepper").amount,0.8999999999999999);
+ assert.ok(Math.abs(rows.find(x=>x.name==="Black pepper").amount-0.9)<1e-9);
 });
 test("Grocery list consolidates repeated batches and recalculates removal",()=>{
  const a={portions:3},b={portions:2};
