@@ -1,5 +1,5 @@
 import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
-import {FEATURED_RECIPES,scaledFeaturedGrocery} from "./meal-planner-featured-recipes.js?v=1";
+import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=1";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -24,7 +24,7 @@ export function matchesCatalog(recipe,{slot="All",filter="All recipes",search=""
  const selectedSlot=slot==="Snacks"?"Meal 4":slot;
  if(selectedSlot!=="All"&&recipe.slot!==selectedSlot)return false;
  const query=String(search).trim().toLowerCase();
- const words=[recipe.name,recipe.cuisine,recipe.diet,...recipe.ingredients.map(x=>x.food)].join(" ").toLowerCase();
+ const words=[recipe.name,recipe.cuisine,recipe.diet,...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
  if(query&&!words.includes(query))return false;
  const m=macrosForIngredients(recipe.ingredients);
  if(filter==="High protein"&&m.protein<25)return false;
@@ -57,7 +57,6 @@ export function catalogMarkup({slot="All",filter="All recipes",search=""}={}){
 function featuredRecipeDetail(recipe){
  const m=recipe.publishedEstimate;
  const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' '+esc(item.unit)+'</strong></li>').join("")+'</ul></section>').join("");
- const grocery=scaledFeaturedGrocery(recipe,recipe.servings);
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe reference</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
  '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+recipe.prepMinutes+' minutes · '+recipe.servings+' servings</p>'+
  '<p class="mp-disclaimer"><strong>Source nutrition estimate, not verified by Level Up.</strong> Per serving: '+m.calories+' kcal · '+m.protein+'g protein · '+m.carbs+'g carbs · '+m.fat+'g fat.</p>'+
