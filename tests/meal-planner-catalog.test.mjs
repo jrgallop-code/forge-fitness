@@ -20,15 +20,19 @@ test("catalog search and dietary/meal filters work",()=>{
  assert.ok(list.every(r=>!matchesCatalog(r,{slot:"Dinner",filter:"Vegan"})||r.diet==="vegan"));
  assert.ok(CATALOG_FILTERS.includes("High protein"));
 });
-test("recipe photographs have local generated slots and representative fallbacks",()=>{
+test("every recipe uses the local generated photography atlas",()=>{
  const recipes=baseRecipes();
+ const tiles=new Set();
  for(const [i,recipe] of recipes.entries()){
   assert.equal(recipeBaseIndex(recipe),i);
-  const info=recipePhoto(recipe);
-  assert.equal(info.primary,"/assets/meal-photos/"+String(i+1).padStart(3,"0")+".webp");
-  assert.match(info.fallback,/^https:\/\/images\.unsplash\.com\//);
-  assert.match(photoMarkup(recipe),/data-photo-fallback/);
+  const photo=recipePhoto(recipe);
+  assert.equal(photo.primary,"/assets/meal-photos/generated-001-020.png");
+  assert.ok(photo.tile>=0&&photo.tile<20);
+  assert.equal(photo.exactMatch,i<20);
+  assert.match(photoMarkup(recipe),/mp-ai-photo/);
+  tiles.add(photo.tile);
  }
+ assert.equal(tiles.size,20);
 });
 test("catalog pages render recipe details, instructions and favorites",()=>{
  const catalog=catalogMarkup({slot:"Lunch",filter:"All recipes"});
