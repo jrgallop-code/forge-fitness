@@ -92,8 +92,8 @@ export function renderCaloriesHub(planMarkup) {
         <section class="calories-hub" data-calories-hub>
             <div class="calories-tabs" role="tablist" aria-label="Calories sections">
                 <button type="button" class="active" role="tab" aria-selected="true" data-calories-tab="log">Food Log</button>
-                <button type="button" role="tab" aria-selected="false" data-calories-tab="plan">Goals &amp; Plan</button>
-                <button type="button" role="tab" aria-selected="false" data-calories-tab="meals">Meal Planner</button>
+                <button type="button" role="tab" aria-selected="false" data-calories-tab="plan">Goals</button>
+                <button type="button" role="tab" aria-selected="false" data-calories-tab="meals">Meal Plan</button>
             </div>
             <div data-calories-panel="log">${renderFoodLogShell()}</div>
             <div data-calories-panel="plan" hidden>${planMarkup}</div>
