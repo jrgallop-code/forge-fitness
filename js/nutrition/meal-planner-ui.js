@@ -1,3 +1,4 @@
+import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
 import {generateGoalAwarePlan,refitRecipeForSlot} from "./meal-planner-planning.js?v=3";
 import {currentMealPlannerGoal,isWeightLossGoal,allocateMealCalories,fullnessEstimate} from "./meal-planner-goals.js?v=3";
 import {mealPhoto,ingredientPhoto,localFoodFallback,recipeSteps} from "./meal-planner-media.js?v=2";
@@ -13,7 +14,13 @@ const DIET_CHOICES=[["balanced","Balanced","Flexible healthy eating",0],["high-p
 const CUISINES=["North American","Mediterranean","Mexican","Asian","Italian","Chinese","Japanese","Thai","Indian"];
 const PRODUCE=["Apple","Blueberries","Banana","Pineapple","Broccoli","Spinach","Zucchini","Bell pepper","Tomato","Cucumber","Avocado","Sweet potato"];
 const ALLERGENS=["milk","eggs","fish","shellfish","peanuts","tree nuts","soy","gluten","wheat","sesame"];
-const photo=(url,label,fallback=0)=>'<span class="mp-photo" style="background-image:url('+localFoodFallback(fallback)+')"><img loading="lazy" src="'+esc(url)+'" data-fallback="'+localFoodFallback(fallback)+'" alt="'+esc(label)+'"></span>';
+const photo=(url,label,fallback=0)=>{
+ if(String(url).startsWith("generated-meal:")){
+  const index=Math.max(0,Math.min(39,Number(url.slice(15))||0)),column=index%8,row=Math.floor(index/8);
+  return '<span class="mp-photo mp-generated-art" role="img" aria-label="'+esc(label)+'" style="background-position:'+(column/7*100)+'% '+(row/4*100)+'%"></span>';
+ }
+ return '<span class="mp-photo" style="background-image:url('+localFoodFallback(fallback)+')"><img loading="lazy" src="'+esc(url)+'" data-fallback="'+localFoodFallback(fallback)+'" alt="'+esc(label)+'"></span>';
+};
 const choose=(name,value,label,checked)=>'<label class="mp-choice"><input type="radio" name="'+name+'" value="'+esc(value)+'"'+(checked?' checked':'')+'><span>'+esc(label)+'</span></label>';
 const pick=(name,value,label,checked)=>'<label class="mp-pill"><input type="checkbox" name="'+name+'" value="'+esc(value)+'"'+(checked?' checked':'')+'><span>'+esc(label)+'</span></label>';
 function prefsMarkup(p){
@@ -120,6 +127,7 @@ function bindImages(root){
  },{once:true}));
 }
 function render(root){
+ root.style.setProperty("--mp-art-sprite",'url("'+GENERATED_MEAL_ATLAS+'")');
  const saved=read();
  const prefs={...defaultPrefs,...saved?.preferences};
  if(!saved&&plannerScreen==="calendar")plannerScreen="landing";
