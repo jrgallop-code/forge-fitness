@@ -2,7 +2,7 @@ import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
-import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites} from "./meal-planner-catalog-ui.js?v=2";
+import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites,selectedRecipeStyles,saveRecipeStyles} from "./meal-planner-catalog-ui.js?v=ios-food-preferences-1";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
@@ -97,7 +97,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="catalog",catalogSlot="All",catalogFilter="Review first 100",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let plannerScreen="catalog",catalogSlot="All",catalogFilter="Complete recipes",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -285,6 +285,17 @@ function render(root){
  root.querySelectorAll("[data-mp-slot]").forEach(button=>button.addEventListener("click",()=>{catalogSlot=button.dataset.mpSlot;render(root);}));
  root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
  root.querySelectorAll("[data-mp-food-type]").forEach(button=>button.addEventListener("click",()=>{catalogFoodType=button.dataset.mpFoodType;render(root);}));
+ root.querySelector("[data-mp-style-settings]")?.addEventListener("click",event=>{
+   const options=root.querySelector("[data-mp-style-options]");
+   if(!options)return;
+   options.hidden=!options.hidden;
+   event.currentTarget.setAttribute("aria-expanded",String(!options.hidden));
+ });
+ root.querySelector("[data-mp-style-done]")?.addEventListener("click",()=>{
+   const selected=[...root.querySelectorAll("[data-mp-style-choice]:checked")].map(input=>input.value);
+   try {saveRecipeStyles(selected);} catch { window.alert("Food preferences could not be saved on this device.");return; }
+   render(root);
+ });
  root.querySelector("[data-mp-search]")?.addEventListener("input",event=>{
   catalogSearch=event.target.value;
   const favoriteIds=new Set(storedFavorites());
