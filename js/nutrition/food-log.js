@@ -274,7 +274,6 @@ export function initializeFoodLog() {
     if (!hub) return;
     ensureBarcodeStyles();
     bindHubTabs(hub);
-    initializeMealPlanner();
     hub.querySelector("[data-food-add]")?.addEventListener("click", openFoodSheet);
     hub.querySelectorAll("[data-food-date-shift]").forEach(button => button.addEventListener("click", () => shiftDate(Number(button.dataset.foodDateShift))));
     const calendarToggle = hub.querySelector("[data-food-calendar-toggle]");
@@ -375,6 +374,9 @@ function bindHubTabs(hub) {
         });
         hub.querySelectorAll("[data-calories-panel]").forEach(panel => { panel.hidden = panel.dataset.caloriesPanel !== safeTab; });
         localStorage.setItem(CALORIES_TAB_KEY, safeTab);
+        // The planner creates a full-screen fixed view. Never mount it while
+        // Food Log is active: initialize only after the user opens Meal Plan.
+        if (safeTab === "meals") initializeMealPlanner();
         if (safeTab === "plan") {
             window.dispatchEvent(new CustomEvent("levelup:nutrition-updated", { detail: { source: "calories-plan-opened" } }));
         }
