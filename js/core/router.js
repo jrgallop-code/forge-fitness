@@ -34,6 +34,7 @@ import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
+import { initializeMealPrepBeta } from "../nutrition/meal-prep-beta.js?v=meal-prep-beta-1";
 import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=help-navigation-2";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=resume-workout-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=workout-pr-badges-2";
@@ -186,7 +187,7 @@ export function navigate(page, { tab = null } = {}) {
             case "water":
                 content.innerHTML = renderWater(); safeInitialize("Water log", initializeNutrition); break;
             case "energy":
-                content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); break;
+                content.innerHTML = renderCaloriesHub(renderEnergyProfile()); safeInitialize("Food log", initializeFoodLog); safeInitialize("Energy profile", initializeEnergyProfile); safeInitialize("Protein target explanation", initializeProteinTargetExplanation); safeInitialize("Nutrition plan UI", initializeNutritionPlanUI); safeInitialize("Unified goals and calories", initializeUnifiedGoalsCalories); safeInitialize("Meal prep beta", initializeMealPrepBeta); break;
             case "more": content.innerHTML = renderMore(); safeInitialize("More", initializeMore); break;
             case "history": content.innerHTML = renderWorkoutHistory(); safeInitialize("Workout history", initializeWorkoutHistory); safeInitialize("Workout PR badges", initializeWorkoutPrBadges); break;
             default:
