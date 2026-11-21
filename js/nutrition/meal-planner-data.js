@@ -24,7 +24,7 @@ export const FOOD_VALUES = {
  "cottage cheese":[98,11.1,3.4,4.3],"rice cakes":[387,8,81.5,2.8],
  "pineapple":[50,.5,13.1,.1],"pumpkin seeds":[559,30,10.7,49],
  "edamame":[121,11.9,8.9,5.2],"salsa":[36,1.5,7,.2],
- "cod":[82,17.8,0,.7],"mushrooms":[22,3.1,3.3,.3]
+ "cod":[82,17.8,0,.7],"mushrooms":[22,3.1,3.3,.3],"garlic":[149,6.4,33.1,.5],"ginger":[80,1.8,17.8,.8],"soy sauce":[53,8.1,4.9,.6],"lime":[30,.7,10.5,.2],"curry powder":[325,14,55,14]
 };
 const BASES = [
  ["Berry overnight oats","Breakfast","North American","vegetarian",[["oats",60],["greek yogurt",130],["berries",90],["milk",100]]],
@@ -51,7 +51,17 @@ const BASES = [
  ["Cottage cheese berries","Meal 4","North American","vegetarian",[["cottage cheese",200],["berries",120],["almonds",15]]],
  ["Edamame and apple","Meal 4","Asian","vegan",[["edamame",190],["apple",120]]],
  ["Turkey toast","Meal 4","North American","omnivore",[["turkey breast",100],["whole wheat bread",70],["tomato",80]]],
- ["Tuna rice cakes","Meal 4","North American","pescatarian",[["tuna",120],["rice cakes",40],["cucumber",110]]]
+ ["Tuna rice cakes","Meal 4","North American","pescatarian",[["tuna",120],["rice cakes",40],["cucumber",110]]],
+ ["Italian turkey tomato pasta","Dinner","Italian","omnivore",[["turkey breast",150],["whole wheat pasta",170],["tomato",150],["garlic",8],["spinach",60]]],
+ ["Italian tomato spinach pasta","Lunch","Italian","vegan",[["whole wheat pasta",175],["tomato",155],["spinach",90],["garlic",8],["olive oil",12]]],
+ ["Chinese tofu vegetable rice","Lunch","Chinese","vegan",[["tofu",190],["brown rice",165],["bell pepper",110],["ginger",10],["soy sauce",15]]],
+ ["Chinese chicken mushroom rice","Dinner","Chinese","omnivore",[["chicken breast",155],["brown rice",165],["mushrooms",100],["broccoli",100],["soy sauce",15]]],
+ ["Japanese salmon rice bowl","Dinner","Japanese","pescatarian",[["salmon",145],["brown rice",160],["edamame",100],["cucumber",100],["soy sauce",12]]],
+ ["Japanese tofu edamame bowl","Lunch","Japanese","vegan",[["tofu",170],["edamame",100],["brown rice",145],["cucumber",85],["ginger",8]]],
+ ["Thai lime shrimp bowl","Dinner","Thai","pescatarian",[["shrimp",160],["brown rice",165],["bell pepper",120],["lime",35],["ginger",8]]],
+ ["Thai chicken pepper rice","Lunch","Thai","omnivore",[["chicken breast",155],["brown rice",155],["bell pepper",120],["lime",25],["garlic",8]]],
+ ["Indian chickpea tomato curry","Dinner","Indian","vegan",[["chickpeas",170],["brown rice",150],["tomato",150],["curry powder",8],["spinach",80]]],
+ ["Indian lentil spinach bowl","Lunch","Indian","vegan",[["lentils",200],["brown rice",145],["spinach",95],["tomato",100],["curry powder",8]]]
 ];
 const MODIFIERS = [
  ["Classic",1,0],["Lighter",.8,0],["Hearty",1.25,0],["Extra protein",1.1,1],
@@ -66,9 +76,9 @@ const PROTEIN_FOODS = new Set(["egg whites","chicken breast","turkey breast","sa
 const ALLERGENS = {
  "milk":["greek yogurt","milk","feta","cheddar","cottage cheese"],"dairy":["greek yogurt","milk","feta","cheddar","cottage cheese"],
  "eggs":["egg","egg whites"],"fish":["salmon","tuna","cod"],"shellfish":["shrimp"],
- "peanuts":["peanut butter"],"tree nuts":["almonds"],"soy":["tofu","edamame"],
- "gluten":["oats","whole wheat bread","whole wheat pasta","tortilla"],
- "wheat":["whole wheat bread","whole wheat pasta","tortilla"],"sesame":["hummus"]
+ "peanuts":["peanut butter"],"tree nuts":["almonds"],"soy":["tofu","edamame","soy sauce"],
+ "gluten":["oats","whole wheat bread","whole wheat pasta","tortilla","soy sauce"],
+ "wheat":["whole wheat bread","whole wheat pasta","tortilla","soy sauce"],"sesame":["hummus"],"soy sauce":["soy sauce"]
 };
 export const MEAL_CATALOG = Object.freeze(BASES.flatMap((base,index)=>MODIFIERS.map(([label,multiplier,extra],variant)=>{
  const [title,slot,cuisine,diet,items]=base;
@@ -106,22 +116,46 @@ function keyForDay(offset,startDate){
 export function generatePlan(options={},startDate=new Date().toLocaleDateString("en-CA")){
  const slots=Array.isArray(options.meals)&&options.meals.length?options.meals:MEAL_SLOTS;
  const pool=eligibleMeals(options);
+ // Cuisine is a preference, not a dietary restriction; if a particular meal
+ // slot has no recipe in the requested cuisine, keep allergy/diet constraints.
+ const dietarySafePool=eligibleMeals({...options,cuisines:[]});
  const days=Math.min(14,Math.max(1,Number(options.days)||7));
- const used=new Map();
- const entries=[];
+ const usedBases=new Map(),entries=[];
+ const lovedFoods=(options.likes||[]).map(x=>String(x).toLowerCase());
+ const favourites=new Set(options.likedRecipes||[]);
+ const highProtein=["high-protein","low-carb"].includes(options.preferredDiet);
  for(let day=0;day<days;day++)for(const slot of slots){
-   const candidates=pool.filter(x=>x.slot===slot);
-   if(!candidates.length){entries.push({date:keyForDay(day,startDate),slot,recipeId:null,ingredients:[],warning:"No matching meal; relax filters"});continue;}
-   candidates.sort((a,b)=>(used.get(a.id)||0)-(used.get(b.id)||0)||a.id.localeCompare(b.id));
-   const picked=candidates[(day+slots.indexOf(slot))%Math.min(candidates.length,5)];
-   used.set(picked.id,(used.get(picked.id)||0)+1);
-   entries.push({date:keyForDay(day,startDate),slot,recipeId:picked.id,ingredients:picked.ingredients.map(x=>({...x}))});
+   let candidates=pool.filter(x=>x.slot===slot);
+   const usingOtherCuisine=!candidates.length;
+   if(usingOtherCuisine)candidates=dietarySafePool.filter(x=>x.slot===slot);
+   if(!candidates.length){entries.push({date:keyForDay(day,startDate),slot,recipeId:null,ingredients:[],warning:"No matching meal for this slot and dietary restrictions"});continue;}
+   const scored=candidates.map(meal=>{
+     const baseIndex=Math.floor((Number(meal.id.slice(-3))-1)/20);
+     const used=usedBases.get(baseIndex)||0;
+     const macros=macrosForIngredients(meal.ingredients);
+     const proteinRatio=macros.calories?macros.protein*4/macros.calories:0;
+     let score=meal.ingredients.reduce((sum,item)=>sum+(lovedFoods.some(food=>item.food.includes(food))?1.5:0),0);
+     if(favourites.has(meal.id))score+=5;
+     if(highProtein)score+=proteinRatio*12;
+     score-=used*8;
+     score-=Math.abs((day+slots.indexOf(slot))%5-(Number(meal.id.slice(-3))%5))*.05;
+     return {meal,baseIndex,score};
+   }).sort((a,b)=>b.score-a.score || a.meal.id.localeCompare(b.meal.id));
+   const picked=scored[0];
+   usedBases.set(picked.baseIndex,(usedBases.get(picked.baseIndex)||0)+1);
+   const servings=Math.max(1,Math.min(12,Number(options.mealSizes?.[slot]||options.household||1)));
+   entries.push({date:keyForDay(day,startDate),slot,recipeId:picked.meal.id,servings,
+     ingredients:picked.meal.ingredients.map(x=>({...x})),
+     ...(usingOtherCuisine?{notice:"This meal uses another cuisine to keep your plan complete."}:{})});
  }
- return {version:1,createdAt:new Date().toISOString(),startDate,preferences:options,entries,consumed:false};
+ return {version:2,createdAt:new Date().toISOString(),startDate,preferences:options,entries,consumed:false};
 }
 export function groceryList(plan){
  const quantities=new Map();
- for(const meal of plan?.entries||[])for(const item of meal.ingredients||[])quantities.set(item.food,(quantities.get(item.food)||0)+Math.max(0,Number(item.grams)||0));
+ for(const meal of plan?.entries||[])for(const item of meal.ingredients||[]){
+  const servings=Math.max(1,Math.min(12,Number(meal.servings)||1));
+  quantities.set(item.food,(quantities.get(item.food)||0)+Math.max(0,Number(item.grams)||0)*servings);
+ }
  return [...quantities].map(([food,grams])=>({food,grams:Math.round(grams)})).sort((a,b)=>a.food.localeCompare(b.food));
 }
 export function replacePlannedMeal(plan,date,slot,recipeId){
