@@ -42,7 +42,7 @@ export function isCompleteRecipe(recipe){
  return !recipe?.indexOnly&&((Array.isArray(recipe?.ingredients)&&recipe.ingredients.length>0)||(Array.isArray(recipe?.groups)&&recipe.groups.some(g=>g.ingredients?.length)));
 }
 
-export const CATALOG_FILTERS=["Complete recipes","All recipes"];
+export const CATALOG_FILTERS=["Complete recipes"];
 export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
 const FOOD_TYPE_RULES=[
  ["Chicken & turkey", /\\b(chicken|turkey|poultry)\\b/i],
@@ -66,7 +66,7 @@ export function baseRecipes(){
  // discovery view. Show one base recipe instead of twenty portion variants.
  const classics=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
  const seen=new Set();
- return [...FEATURED_RECIPES,...classics,...MPM_INDEX_RECIPES].filter(recipe=>{
+ return [...FEATURED_RECIPES,...classics].filter(recipe=>{
   const key=recipe.name.toLocaleLowerCase("en");
   if(seen.has(key))return false;
   seen.add(key);return true;
@@ -105,7 +105,7 @@ export function recipeCard(recipe,favorite=false){
  const estimated=recipe.publishedEstimate;
  const info=recipe.indexOnly
    ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" source ingredients · review needed":"Source index · ingredient review pending")
-   :Math.round(estimated?.calories||0)+" kcal · "+Math.round(estimated?.protein||0)+"g protein · "+recipe.prepMinutes+" min · publisher estimate";
+   :Math.round(estimated?.calories||0)+" kcal · "+Math.round(estimated?.protein||0)+"g protein · "+recipe.prepMinutes+" min · estimated values";
  const reviewId=reviewIdForRecipe(recipe);
  const reviewDecision=reviewId?getReviewDecision(reviewId).decision:null;
  const reviewLabel=reviewDecision==="looks-good"?"Reviewed":reviewDecision==="needs-changes"?"Needs changes":reviewDecision?"Awaiting your review":"";
@@ -134,12 +134,12 @@ export function catalogMarkup({slot="All",filter="Complete recipes",search="",fo
 function featuredRecipeDetail(recipe){
  const m=recipe.publishedEstimate;
  const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+item.grams+' '+esc(item.unit)+'</strong></li>').join("")+'</ul></section>').join("");
- return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe reference</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
+ return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
  '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+recipe.prepMinutes+' minutes · '+recipe.servings+' servings</p>'+
- '<p class="mp-disclaimer"><strong>Source nutrition estimate, not verified by Level Up.</strong> Per serving: '+m.calories+' kcal · '+m.protein+'g protein · '+m.carbs+'g carbs · '+m.fat+'g fat.</p>'+
- groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities were not stated by the source. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
+ '<p class="mp-disclaimer"><strong>Estimated nutrition, not independently verified.</strong> Per serving: '+m.calories+' kcal · '+m.protein+'g protein · '+m.carbs+'g carbs · '+m.fat+'g fat.</p>'+
+ groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
- '<section><h3>Source & verification</h3><p>Based on ingredient facts published by '+esc(recipe.sourceName)+'. <a href="'+esc(recipe.sourceUrl)+'" target="_blank" rel="noopener noreferrer">View the original recipe and cooking guidance</a>.</p><p>'+esc(recipe.notes)+'</p></section>'+
+ '<p class="mp-disclaimer">Nutrition and portions are estimates. Review ingredients for your own dietary needs.</p>'+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+reviewControlsMarkup(recipe)+reviewNavigationMarkup(recipe)+'<p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
 }
 function reviewNavigationMarkup(recipe){
@@ -165,17 +165,9 @@ function reviewControlsMarkup(recipe){
  '<label for="mp-review-notes">Review notes</label><textarea id="mp-review-notes" data-mp-review-notes="'+esc(id)+'" rows="4" maxlength="2000" placeholder="Missing spice, incorrect portion, cooking question, or preferred change...">'+esc(current.notes||"")+'</textarea><p class="mp-disclaimer">Notes and decisions currently save on this device only.</p></section>';
 }
 function sourceReviewDetail(recipe){
- const ingredients=recipe.ingredientStatements||[];
- const estimated=recipe.publishedEstimate;
- const label=ingredients.length?'<p>'+ingredients.length+' published ingredient statements captured for review. These quantities are not yet mapped to Level Up food records.</p>':'<p>The publisher ingredient list has not been extracted for this title. Open the source recipe to review it.</p>';
- const source=recipe.sourceUrl||recipe.sourceIndexUrl;
- const list=ingredients.length?'<section><h3>Publisher ingredient facts</h3><ul>'+ingredients.map(x=>'<li><span>'+esc(x.description)+'</span></li>').join("")+'</ul></section>':'';
- const macros=estimated?'<p class="mp-disclaimer">Publisher nutrition estimate: '+(estimated.calories??"?")+' kcal · '+(estimated.protein??"?")+'g protein · '+(estimated.carbs??"?")+'g carbohydrate · '+(estimated.fat??"?")+'g fat. Not independently verified.</p>':'';
- return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe review</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
- '<h1>'+esc(recipe.name)+'</h1><p>Source: '+esc(recipe.sourceName)+' · Review batch 1–100</p>'+macros+label+list+
- '<p class="mp-disclaimer">Original cooking directions remain on the publisher website. This item is not available for planning, grocery calculation or food logging until ingredient mapping, rights and safety checks are completed.</p>'+
- '<a href="'+esc(source)+'" rel="noopener noreferrer" target="_blank">Open original recipe / publisher index</a>'+
- reviewControlsMarkup(recipe)+reviewNavigationMarkup(recipe)+'</div></section>';
+ return '<section class="lu-meal-planner mp-recipe-detail mp-standalone">'+
+ '<header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe unavailable</h2><span></span></header>'+
+ '<div class="mp-recipe-content"><h1>'+esc(recipe.name)+'</h1><p>This entry is still missing complete ingredients or preparation steps. It cannot be scheduled as a finished recipe.</p></div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false){
  if(recipe?.indexOnly)return sourceReviewDetail(recipe);
