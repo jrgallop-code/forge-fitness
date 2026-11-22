@@ -55,3 +55,5 @@ jobs:
 # Read-only preflight for Meal Planner macro, day-scrolling and full ingredient logging release, 2026-11-22.
 
 # Read-only certificate preflight before iOS recipe summary and My Week remove release.
+
+# Read-only Apple signing preflight for recipe thumbs rating, themed scheduling and featured Mark Eaten release (2026-11-22).
