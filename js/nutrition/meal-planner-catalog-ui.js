@@ -104,11 +104,19 @@ export function matchesCatalog(recipe,{slot="All",filter="Complete recipes",sear
  if(filter==="Source index only"&&!recipe.indexOnly)return false;
  return true;
 }
+export function recipeNutritionEstimate(recipe){
+ if(!recipe||recipe.indexOnly)return null;
+ if(recipe.publishedEstimate)return recipe.publishedEstimate;
+ return Array.isArray(recipe.ingredients)&&recipe.ingredients.length?macrosForIngredients(recipe.ingredients):null;
+}
 export function recipeCard(recipe,favorite=false){
- const estimated=recipe.publishedEstimate;
+ // Match the detail page: published per-portion values for featured recipes,
+ // ingredient-calculated estimates for complete original catalogue recipes.
+ const estimated=recipeNutritionEstimate(recipe);
+ const hasNutrition=estimated&&["calories","protein","carbs","fat"].every(k=>Number.isFinite(Number(estimated[k])));
  const info=recipe.indexOnly
    ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" source ingredients · review needed":"Source index · ingredient review pending")
-   :Math.round(estimated?.calories||0)+" kcal · "+Math.round(estimated?.protein||0)+"g protein · "+recipe.prepMinutes+" min · estimated values";
+   :hasNutrition?Math.round(estimated.calories)+" kcal · P "+Math.round(estimated.protein)+"g · C "+Math.round(estimated.carbs)+"g · F "+Math.round(estimated.fat)+"g · "+recipe.prepMinutes+" min":"Nutrition estimate unavailable";
  const reviewId=reviewIdForRecipe(recipe);
  const reviewDecision=reviewId?getReviewDecision(reviewId).decision:null;
  const reviewLabel=reviewDecision==="looks-good"?"Reviewed":reviewDecision==="needs-changes"?"Needs changes":reviewDecision?"Awaiting your review":"";
@@ -135,7 +143,7 @@ export function catalogMarkup({slot="All",filter="Complete recipes",search="",fo
  '<p class="mp-disclaimer">Nutrition values are estimates. Complete recipes include ingredients and preparation steps.</p></div></section>';
 }
 export function recipeMacroSummary(recipe){
- const m=recipe?.publishedEstimate || (Array.isArray(recipe?.ingredients)?macrosForIngredients(recipe.ingredients):null);
+ const m=recipeNutritionEstimate(recipe);
  if(!m)return '<p class="mp-disclaimer">Nutrition per portion has not been calculated.</p>';
  const values=[["Calories",Math.round(m.calories),"kcal"],["Protein",Math.round(m.protein),"g"],["Fat",Math.round(m.fat),"g"],["Carbs",Math.round(m.carbs),"g"]];
  return '<section class="mp-recipe-nutrition" aria-label="Estimated nutrition per portion"><h3>Nutrition per portion</h3><div class="mp-recipe-macro-grid">'+values.map(([label,value,unit])=>'<div class="'+(label==="Calories"?"mp-macro-calories":"")+'"><strong>'+value+(unit==="g"?"g":"")+'</strong><small>'+(label==="Calories"?"Cal":label)+'</small></div>').join("")+'</div><p class="mp-disclaimer">Estimated values per meal · ingredients below scale for the selected days.</p></section>';
