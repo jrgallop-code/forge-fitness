@@ -1,0 +1,23 @@
+name: Arctic focus theme regression
+on:
+  push:
+    branches: [main, ios/capacitor-app-store]
+    paths:
+      - css/native-ios-polish.css
+      - css/ios-quick-log.css
+      - css/appearance-themes.css
+      - index.html
+      - tests/arctic-input-focus-theme.test.mjs
+      - .github/workflows/arctic-focus-theme-check.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  focus-contrast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test tests/arctic-input-focus-theme.test.mjs
