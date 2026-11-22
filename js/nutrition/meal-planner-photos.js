@@ -4,7 +4,8 @@
 // Featured adaptations use eight distinct AI-generated food concept images;
 // these are visual concepts, not photos of the exact cooked recipes.
 import { GENERATED_MEAL_ATLAS } from "./meal-planner-art.js?v=1";
-import { FEATURED_MEAL_PHOTOS } from "./featured-unique-photos.js?v=1";
+// Each featured recipe uses a distinct tile of the full-resolution local AVIF asset.
+export const FEATURED_HQ_ATLAS="/assets/meal-photos/featured8-hq.avif?v=3";
 export const AI_ATLAS="/assets/meal-photos/generated-001-020.png";
 export const AI_TILE_COUNT=20;
 export const PHOTO_SOURCE="generated-food-photography";
@@ -25,7 +26,7 @@ export function recipeBaseIndex(recipe){
 export function recipePhoto(recipe){
  const featuredIndex=FEATURED_TILES[recipe?.id];
  if(Number.isInteger(featuredIndex))return {
-  primary:FEATURED_MEAL_PHOTOS,tile:featuredIndex,x:(featuredIndex%4)/3*100,
+  primary:FEATURED_HQ_ATLAS,tile:featuredIndex,x:(featuredIndex%4)/3*100,
   y:Math.floor(featuredIndex/4)*100,source:PHOTO_SOURCE,
   exactMatch:false,recipeId:recipe.id,backgroundSize:"400% 200%"
  };
