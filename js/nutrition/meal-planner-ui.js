@@ -196,17 +196,18 @@ function bindImages(root){
 // Re-rendering the recipe detail swaps its DOM. Preserve the page and nested
 // scroll offsets so selecting a day never jumps back to the image header.
 function renderWithoutScrollJump(root){
+ // The iOS Meal Planner scrolls inside a fixed .mp-standalone element.
+ // It is replaced by render(), so window.scrollY alone cannot restore it.
+ const oldPanel=root.querySelector(".mp-standalone");
+ const panelTop=oldPanel?.scrollTop||0;
  const doc=document.scrollingElement||document.documentElement;
- const top=doc?.scrollTop||0;
- const nested=[];
- for(let node=root?.parentElement;node&&node!==document.body;node=node.parentElement){
-  if(node.scrollHeight>node.clientHeight+4)nested.push({node,top:node.scrollTop});
- }
+ const documentTop=doc?.scrollTop||0;
  const focus=document.activeElement?.getAttribute?.("data-mp-schedule-day");
  render(root);
  const restore=()=>{
-  if(doc)doc.scrollTop=top;
-  for(const {node,top:offset} of nested)node.scrollTop=offset;
+  const newPanel=root.querySelector(".mp-standalone");
+  if(newPanel)newPanel.scrollTop=panelTop;
+  if(doc)doc.scrollTop=documentTop;
   if(focus!==null&&focus!==undefined)root.querySelector('[data-mp-schedule-day="'+focus+'"]')?.focus({preventScroll:true});
  };
  restore();
