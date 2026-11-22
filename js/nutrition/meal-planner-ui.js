@@ -524,19 +524,23 @@ function renderDays(plan){
 }
 
 function renderDays(plan) {
- const entries=Array.isArray(plan?.entries)?plan.entries:[], dates=[...new Set(entries.map(x=>x.date))].sort();
- if(!dates.length)return '<div class="mp-week-empty"><h3>Your week is empty</h3><p>Choose a recipe and schedule its days.</p><button type="button" data-mp-open="catalog">Browse recipes</button></div>';
- if(!dates.includes(selectedPlanDate))selectedPlanDate=dates[0];
- const nav='<nav class="mp-day-carousel" aria-label="Meal plan days"><button type="button" data-mp-day-nav="-1" aria-label="Previous day">‹</button><div class="mp-day-items">'+dates.map(date=>{const d=new Date(date+"T12:00:00");return '<button type="button" class="mp-day-option'+(date===selectedPlanDate?' active':'')+'" data-mp-date="'+esc(date)+'"><small>'+esc(d.toLocaleDateString(undefined,{weekday:"short"}))+'</small><strong>'+d.getDate()+'</strong></button>'}).join("")+'</div><button type="button" data-mp-day-nav="1" aria-label="Next day">›</button></nav>';
- const date=selectedPlanDate, today=entries.filter(x=>x.date===date);
- const calories=today.reduce((sum,entry)=>{const r=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId),m=r?.groups&&r.publishedEstimate?r.publishedEstimate:macrosForIngredients(entry.ingredients);return sum+Math.max(0,Number(m?.calories)||0)*(Number(entry.servings)||1)},0);
- return nav+'<section class="lu-meal-day mp-week-compact"><div class="mp-week-date"><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p>'+Math.round(calories)+' kcal planned · not yet consumed</p></div><div class="mp-week-compact-list">'+today.map(entry=>{
-  const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
-  const m=recipe?.groups&&recipe.publishedEstimate?recipe.publishedEstimate:macrosForIngredients(entry.ingredients);
-  const cal=Number(m?.calories),total=Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
-  const image=recipe?photoMarkup(recipe):'<span aria-hidden="true">🍽</span>';
-  return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(recipe?.name||entry.recipeName||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><button type="button" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Remove meal</button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">View recipe & ingredients</button></details></article>';
- }).join("")+'</div></section>';
+ const entries=Array.isArray(plan?.entries)?plan.entries:[];
+ if(!entries.length)return '<div class="mp-week-empty"><h3>Your week is empty</h3><p>Choose a recipe and schedule its days.</p><button type="button" data-mp-open="catalog">Browse recipes</button></div>';
+ const scheduled=[...new Set(entries.map(x=>x.date))].sort();
+ const anchor=plan?.startDate&&/^\d{4}-\d{2}-\d{2}$/.test(plan.startDate)?plan.startDate:scheduled[0];
+ const week=Array.from({length:7},(_,i)=>dateForOffset(anchor,i));
+ const dates=[...new Set([...week,...scheduled])].sort();
+ return '<div class="mp-week-scroll-list">'+dates.map(date=>{
+  const today=entries.filter(x=>x.date===date);
+  const calories=today.reduce((sum,entry)=>{const r=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId),m=r?.groups&&r.publishedEstimate?r.publishedEstimate:macrosForIngredients(entry.ingredients);return sum+(Number(m?.calories)||0)*(Number(entry.servings)||1)},0);
+  return '<section class="lu-meal-day mp-week-compact"><div class="mp-week-date"><div><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p>'+(today.length?Math.round(calories)+' kcal planned':'No meals scheduled')+'</p></div><button type="button" class="mp-week-add" data-mp-open="catalog" aria-label="Browse recipes to schedule for '+esc(date)+'">+</button></div><div class="mp-week-compact-list">'+today.map(entry=>{
+   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
+   const m=recipe?.groups&&recipe.publishedEstimate?recipe.publishedEstimate:macrosForIngredients(entry.ingredients);
+   const cal=Number(m?.calories),total=Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
+   const image=recipe?photoMarkup(recipe):'<span aria-hidden="true">🍽</span>';
+   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(recipe?.name||entry.recipeName||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><button type="button" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Remove meal</button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">View recipe & ingredients</button></details></article>';
+  }).join("")+'</div></section>';
+ }).join("")+'</div>';
 }
 function renderPlannedMealDetail(plan,date,slot) {
  const entry=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
@@ -548,6 +552,14 @@ function renderPlannedMealDetail(plan,date,slot) {
 
 export function renderMealPlannerShell(){return `
 <style>
+
+.mp-week-scroll-list{display:grid;gap:18px;padding-bottom:32px}
+.mp-week-compact{padding:16px!important;background:var(--card,var(--surface,#fff))!important;border:1px solid var(--card-border,var(--line,#d8e1ee))!important;border-radius:20px!important;box-shadow:none!important}
+.mp-week-date{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:12px;margin:0 0 12px;border-bottom:1px solid var(--line,#d8e1ee)}
+.mp-week-add{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line,#d8e1ee);background:var(--surface-raised,#edf3fb);color:var(--text,#10203a);font-size:1.7rem;cursor:pointer}
+.mp-week-compact .mp-week-compact-list{gap:8px}
+.mp-week-compact .mp-week-recipe{border:0;border-radius:12px;padding:8px 0;background:transparent}
+
 
 .mp-week-compact{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
 .mp-week-date{margin:8px 0 14px}.mp-week-date h3{margin:0;color:var(--text,#10203a);font-size:1.12rem}.mp-week-date p{margin:5px 0 0;color:var(--muted,#526079);font-size:.87rem}
