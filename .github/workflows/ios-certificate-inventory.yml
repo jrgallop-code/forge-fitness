@@ -1,5 +1,5 @@
 name: Inspect App Store signing certificates
-# Read-only check before Arctic focus contrast TestFlight build; never revokes assets.
+# Read-only certificate inventory for meal section and seven-day planner TestFlight release; never revokes.
 
 on:
   workflow_dispatch:
