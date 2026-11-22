@@ -492,8 +492,14 @@ function renderDays(plan){
  const nav='<nav class="mp-day-carousel" aria-label="Meal plan days"><button type="button" data-mp-day-nav="-1" aria-label="Previous day">‹</button><div class="mp-day-items">'+dates.map(d=>{const x=new Date(d+"T12:00:00");return '<button type="button" class="mp-day-option'+(d===selectedPlanDate?" active":"")+'" data-mp-date="'+esc(d)+'"><small>'+esc(x.toLocaleDateString(undefined,{weekday:"short"}))+'</small><strong>'+x.getDate()+'</strong></button>'}).join("")+'</div><button type="button" data-mp-day-nav="1" aria-label="Next day">›</button></nav>';
  return nav+dates.filter(date=>date===selectedPlanDate).map(date=>{
   const entries=plan.entries.filter(x=>x.date===date);
-  const total=entries.reduce((acc,entry)=>{if(FEATURED_RECIPES.some(x=>x.id===entry.recipeId))return acc;const m=macrosForIngredients(entry.ingredients);for(const key of Object.keys(acc))acc[key]+=m[key];return acc},{calories:0,protein:0,carbs:0,fat:0});
-   return '<section class="lu-meal-day"><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p class="lu-meal-total">'+(entries.some(x=>FEATURED_RECIPES.some(r=>r.id===x.recipeId))?'Nutrition total unavailable until source-linked meals are independently verified.':'Planned ≈ '+Math.round(total.calories)+' kcal · '+Math.round(total.protein)+'g protein · '+Math.round(total.carbs)+'g carbs · '+Math.round(total.fat)+'g fat')+'</p>'+
+  const total=entries.reduce((acc,entry)=>{
+   const selected=FEATURED_RECIPES.find(x=>x.id===entry.recipeId);
+   const m=selected?.publishedEstimate||macrosForIngredients(entry.ingredients);
+   const portions=Number(entry.servings)||1;
+   for(const key of Object.keys(acc))acc[key]+=(Number(m?.[key])||0)*portions;
+   return acc;
+  },{calories:0,protein:0,carbs:0,fat:0});
+   return '<section class="lu-meal-day"><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p class="lu-meal-total">'+('Planned ≈ '+Math.round(total.calories)+' kcal · '+Math.round(total.protein)+'g protein · '+Math.round(total.carbs)+'g carbs · '+Math.round(total.fat)+'g fat · estimates')+'</p>'+
   entries.map(entry=>{
     const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
     const options=eligibleMeals(plan.preferences).filter(x=>x.slot===entry.slot);
