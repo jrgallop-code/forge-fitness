@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {markPlannedMealConsumed,undoPlannedMealConsumed,consumedEntries} from "../js/nutrition/meal-planner-consumption.js";
+import {markPlannedMealConsumed,markFeaturedMealConsumed,undoPlannedMealConsumed,consumedEntries} from "../js/nutrition/meal-planner-consumption.js";
+import {FEATURED_RECIPES} from "../js/nutrition/meal-planner-featured-recipes.js";
+import {recipeServingIngredients} from "../js/nutrition/meal-planner-manual.js";
 import {entriesForDate,removeEntry} from "../js/nutrition/food-log-data.js";
 const store=new Map();
 globalThis.localStorage={getItem:key=>store.get(key)??null,setItem:(key,value)=>store.set(key,String(value)),removeItem:key=>store.delete(key)};
@@ -55,4 +57,26 @@ test("zeroed-out optional ingredient is ignored without losing other ingredients
  const result=markPlannedMealConsumed(date,slot,[{food:"tofu",grams:180},{food:"ginger",grams:0},{food:"brown rice",grams:145}]);
  assert.equal(result.ok,true);
  assert.equal(consumedEntries(date,slot).length,2);
+});
+
+test("featured recipe can be marked eaten without fabricating individual spice nutrition",()=>{
+ const date="2026-11-28",slot="Dinner",recipe=FEATURED_RECIPES[0],ingredients=recipeServingIngredients(recipe);
+ const result=markFeaturedMealConsumed(date,slot,recipe,ingredients,3);
+ assert.equal(result.ok,true);
+ assert.equal(result.ingredientCount,ingredients.length);
+ const logged=consumedEntries(date,slot);
+ assert.equal(logged.length,1,"Composite meal preserves recipe-level estimated macros");
+ assert.equal(logged[0].mealPlannerRecipeId,recipe.id);
+ assert.equal(logged[0].mealPlannerPortions,3);
+ assert.equal(logged[0].mealPlannerIngredientList.length,ingredients.length);
+ assert.equal(logged[0].mealPlannerIngredientList[0].grams,ingredients[0].grams*3);
+ assert.ok(Math.abs(logged[0].nutrition.calories-recipe.publishedEstimate.calories*3)<1e-6);
+ assert.equal(markFeaturedMealConsumed(date,slot,recipe,ingredients,3).reason,"already_logged");
+ assert.equal(undoPlannedMealConsumed(date,slot).ok,true);
+});
+test("featured recipe with missing published nutrition cannot be consumed as zero calories",()=>{
+ const bad={...FEATURED_RECIPES[0],publishedEstimate:null};
+ const result=markFeaturedMealConsumed("2026-11-29","Dinner",bad,recipeServingIngredients(bad));
+ assert.equal(result.ok,false);
+ assert.equal(result.reason,"incomplete_recipe");
 });
