@@ -175,7 +175,18 @@ function renderDashboardNutritionSummary() {
         setDisplayMode(mode === "consumed" ? "remaining" : "consumed");
         renderDashboardNutritionSummary();
     });
-    card.querySelector("[data-dashboard-open-food-log]")?.addEventListener("click", () => {
-        document.querySelector('.nav-btn[data-page="energy"]')?.click();
+    // The five-item navigation does not contain an "energy" button.
+    // Use the app's navigation event to open Food Log directly instead.
+    const openFoodLog = () => document.dispatchEvent(new CustomEvent("levelup:navigate", {
+        detail: { page: "energy", tab: "log" }
+    }));
+    card.querySelector("[data-dashboard-open-food-log]")?.addEventListener("click", event => {
+        event.stopPropagation();
+        openFoodLog();
+    });
+    card.addEventListener("click", event => {
+        // Preserve the existing calorie consumed/remaining toggle.
+        if (event.target.closest("[data-dashboard-calorie-toggle], [data-dashboard-open-food-log], a, input, select")) return;
+        openFoodLog();
     });
 }
