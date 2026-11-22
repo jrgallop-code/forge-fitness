@@ -23,13 +23,18 @@ test("publisher records never auto-approve nutritional or safety data",()=>{
    if(r.sourceUrl)assert.ok(r.sourceUrl.startsWith("https://mealprepmanual.com/"));
  }
 });
-test("published full recipes participate in reviewer feedback without duplicating catalogue",()=>{
+test("published recipes expose simple personal thumbs rating, not review workflow",()=>{
  const item=FEATURED_RECIPES.find(x=>reviewIdForRecipe(x));
  assert.ok(item);
  assert.ok(baseRecipes().length>=40);
  const html=recipeDetailMarkup(item);
- assert.ok(html.includes("Review notes"));
- assert.ok(html.includes("data-mp-review-decision"));
+ assert.ok(html.includes('data-mp-vote="up"'));
+ assert.ok(html.includes('data-mp-vote="down"'));
+ assert.ok(!html.includes("Review notes"));
+ assert.ok(!html.includes("data-mp-review-decision"));
+ const catalogue=catalogMarkup();
+ assert.ok(!catalogue.includes("First 100 review"));
+ assert.ok(!catalogue.includes("Awaiting your review"));
 });
 test("review decisions save locally and never turn a source-only record into food-log entries",()=>{
  const id=REVIEW_RECORDS[0].id;
