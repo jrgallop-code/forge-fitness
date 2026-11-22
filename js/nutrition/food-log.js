@@ -513,7 +513,7 @@ function mealMarkup(meal, entries, source) {
     const expanded = expandedMealKeys.has(mealExpansionKey(selectedDate, meal));
     return `
         <details class="food-meal" data-food-meal="${meal}"${expanded ? " open" : ""}>
-            <summary aria-expanded="${expanded}">${diaryMealPhotoMarkup(meal, entries)}<span class="food-meal-title"><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
+            <summary aria-expanded="${expanded}"><span class="food-meal-title"><strong>${meal}</strong><small>${entries.length ? `${entries.length} item${entries.length === 1 ? "" : "s"}` : "Nothing logged"}</small></span><b>${Math.round(totals.calories)} kcal</b></summary>
             <div class="food-meal-body">
                 ${entries.length ? `<div class="food-meal-macros">${macroBreakdownMarkup(totals, `${meal} total · ${entries.length} item${entries.length === 1 ? "" : "s"}`)}</div>` : ""}
                 ${showYesterday ? `<button type="button" class="food-copy-yesterday" data-copy-yesterday="${meal}" data-copy-source-date="${source.date}"><span><strong>${sourceLabel} ${meal}</strong><small>${escapeHtml(mealPreview(yesterdayEntries))}</small></span><b>Swipe right <i>→</i></b></button>` : ""}
