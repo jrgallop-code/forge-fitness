@@ -35,6 +35,10 @@ function recipeCard(recipe,entry,photoMarkup,favs){
  '<span class="mp-home-recipe-info"><strong>'+esc(recipe.name)+'</strong><small>'+(calories!==null?'≈ '+calories+' kcal':'Recipe nutrition under review')+'</small>'+macros+'</span></button>'+
  '<button type="button" class="mp-home-heart'+(favs.has(recipe.id)?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favs.has(recipe.id)?"Remove":"Save")+' favorite">'+(favs.has(recipe.id)?"♥":"♡")+'</button></article>';
 }
+export function mealPlannerShortcutMarkup(active=""){
+ const destinations=[["week","My Week","calendar"],["groceries","Grocery","groceries"],["recipes","Recipes","catalog"],["favorites","Favorites","favorites"]];
+ return '<nav class="mp-home-quick mp-persistent-nav" aria-label="Meal Plan navigation">'+destinations.map(([icon,label,screen])=>'<button type="button" class="mp-home-shortcut'+(active===screen?' active':'')+'" data-mp-open="'+screen+'" aria-current="'+(active===screen?'page':'false')+'" aria-label="Open '+label+'"><span class="mp-home-shortcut-icon">'+icons[icon]+'</span><span>'+label+'</span></button>').join("")+'</nav>';
+}
 export function mealPlannerHomeMarkup({plan,selectedDate="",recipes,photoMarkup,favoriteIds=[]}){
  const dates=weekDates(plan);
  const active=dates.includes(selectedDate)?selectedDate:dates[0];
@@ -47,7 +51,7 @@ export function mealPlannerHomeMarkup({plan,selectedDate="",recipes,photoMarkup,
  const count=plan?.entries?.length||0;
  return '<section class="lu-meal-planner mp-home mp-standalone">'+
  '<header class="mp-home-header"><div><span class="mp-home-eyebrow">LEVEL UP · NUTRITION</span><h1>Meal Plan</h1></div><button type="button" class="mp-home-close" data-mp-exit aria-label="Return to Food Log">✕</button></header>'+
- '<nav class="mp-home-quick" aria-label="Meal Plan shortcuts">'+actions.map(([icon,label,screen])=>'<button type="button" class="mp-home-shortcut" data-mp-open="'+screen+'" aria-label="Open '+label+'"><span class="mp-home-shortcut-icon">'+icons[icon]+'</span><span>'+label+'</span></button>').join("")+'</nav>'+
+ mealPlannerShortcutMarkup()+
  '<div class="mp-home-heading"><h2>'+(scheduled.length?'This Week':'Discover recipes')+'</h2><button type="button" data-mp-open="'+(plan?'calendar':'catalog')+'">'+(plan?'View week':'Browse all')+icons.chevron+'</button></div>'+
  '<div class="mp-home-date-strip" role="group" aria-label="Select meal plan day">'+dates.map(date=>{const d=niceDate(date);return '<button type="button" data-mp-home-date="'+esc(date)+'" class="'+(date===active?'active':'')+'" aria-pressed="'+(date===active)+'"><span>'+esc(d.toLocaleDateString(undefined,{weekday:"short"}))+'</span><small>'+d.getDate()+'</small></button>'}).join("")+'</div>'+
  '<p class="mp-home-subcopy">'+(scheduled.length?scheduled.length+' planned meal'+(scheduled.length===1?'':'s')+' for this day. Planning does not log food.':'Choose a recipe to start planning meals for your week.')+'</p>'+
