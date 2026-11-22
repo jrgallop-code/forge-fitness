@@ -191,9 +191,9 @@ jobs:
           # verified from read-only Apple inventory run 44973373096.
           # Never replace either older personal Distribution certificate.
           # Never revoke the other Distribution certificates.
-          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: 8KLXXMY343
-          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 285642CE8C69B573C2CCF3951DE6ABF7
-          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-21T23:49:13.000+00:00
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: ZSK86XN4Q3
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 311FFF85BE3BB9F8A95ECA8B403B93C3
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-22T01:46:14.000+00:00
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
