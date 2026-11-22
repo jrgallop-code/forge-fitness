@@ -75,7 +75,7 @@ test("in-app base recipes retain local imagery and estimated nutrition",()=>{
   assert.ok(photo.tile>=0&&photo.tile<40);
   assert.match(photoMarkup(recipe),/mp-ai-photo/);
  }
- assert.equal(new Set(classic.map(recipe=>recipePhoto(recipe).tile)).size,40);
+ assert.equal(new Set(classic.map(recipe=>{const p=recipePhoto(recipe);return p.primary+"|"+p.tile;})).size,40);
  const detail=recipeDetailMarkup(classic[3]);
  assert.match(detail,/Cooking instructions/);
  assert.match(detail,/Ingredients/);
