@@ -12,7 +12,10 @@ on:
       - tests/meal-planner-source-batch-2.test.mjs
       - tests/meal-planner-catalog.test.mjs
       - tests/food-log-meals-ui.test.mjs
-      - tests/meal-planner-cooking-measures.test.mjs
+      - tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-home-ios.test.mjs
+      - tests/meal-planner-home-ios.test.mjs
+      - js/nutrition/meal-planner-home.js
+      - css/meal-planner-catalog-polish.css
       - js/nutrition/meal-planner-measurements.js
       - js/nutrition/meal-planner-photos.js
       - js/nutrition/food-log.js
