@@ -3,7 +3,7 @@ import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {MPM_INDEX_RECIPES} from "./meal-prep-manual-discovery.js?v=1";
 import {REVIEW_RECORDS,REVIEW_IMPORT_META,reviewIdForRecipe,getReviewDecision,reviewSummary} from "./mpm-review-first-100.js?v=1";
-import {recipePhoto} from "./meal-planner-photos.js?v=hires-first20-20261121";
+import {recipePhoto} from "./meal-planner-photos.js?v=featured-base-hq-v3";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
