@@ -1,4 +1,5 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
+import {mealPlannerHomeMarkup} from "./meal-planner-home.js?v=approved-svg-dashboard-1";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
@@ -98,7 +99,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="catalog",catalogSlot="All",catalogFilter="Complete recipes",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let plannerScreen="home",catalogSlot="All",catalogFilter="Complete recipes",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -199,8 +200,9 @@ function render(root){
  const prefs={...defaultPrefs,...saved?.preferences};
  
  const page=plannerScreen;
- if(page==="landing")root.innerHTML=landingMarkup(saved);
- else if(page==="catalog")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly});
+ if(page==="home")root.innerHTML=mealPlannerHomeMarkup({plan:saved,selectedDate:selectedPlanDate,recipes:baseRecipes(),photoMarkup,favoriteIds:storedFavorites()});
+ else if(page==="landing")root.innerHTML=landingMarkup(saved);
+ else if(page==="catalog"||page==="favorites")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly:page==="favorites"||favoritesOnly});
  else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});}
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
@@ -224,6 +226,7 @@ function render(root){
   else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
  }));
  root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";render(root);}));
+ root.querySelectorAll("[data-mp-home-date]").forEach(button=>button.addEventListener("click",()=>{selectedPlanDate=button.dataset.mpHomeDate;render(root);}));
  root.querySelectorAll("[data-mp-review-nav]").forEach(button=>button.addEventListener("click",()=>{
    const id=button.dataset.mpReviewNav;
    if(id){catalogRecipeId=id;plannerScreen="recipe";render(root);}
@@ -332,7 +335,7 @@ function render(root){
   if(write(next)){plannerScreen="calendar";render(root);}
  });
  root.querySelector("[data-mp-exit]")?.addEventListener("click",()=>{const tab=document.querySelector('[data-calories-tab="log"]');if(tab)tab.click();});
- root.querySelectorAll("[data-mp-open]").forEach(b=>b.addEventListener("click",()=>{plannerScreen=b.dataset.mpOpen;wizardStep=0;render(root)}));
+ root.querySelectorAll("[data-mp-open]").forEach(b=>b.addEventListener("click",()=>{plannerScreen=b.dataset.mpOpen;if(plannerScreen==="catalog")favoritesOnly=false;if(plannerScreen==="favorites")favoritesOnly=true;wizardStep=0;render(root)}));
  root.querySelector("[data-mp-copy]")?.addEventListener("click",async()=>{
   const success=await copyGroceryText(groceryPlainText(read()));
   const status=root.querySelector(".mp-copy-status");if(status)status.textContent=success?"Copied to clipboard.":"Could not copy automatically. Use Share to export the list.";
