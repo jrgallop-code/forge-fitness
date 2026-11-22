@@ -200,7 +200,7 @@ function render(root){
  const prefs={...defaultPrefs,...saved?.preferences};
  
  const page=plannerScreen;
- if(page==="home")root.innerHTML=mealPlannerHomeMarkup({plan:saved,selectedDate:selectedPlanDate,recipes:baseRecipes(),photoMarkup,favoriteIds:storedFavorites()});
+ if(page==="home")root.innerHTML=mealPlannerHomeMarkup({plan:saved,selectedDate:selectedPlanDate,recipes:[...baseRecipes(),...MEAL_CATALOG],photoMarkup,favoriteIds:storedFavorites()});
  else if(page==="landing")root.innerHTML=landingMarkup(saved);
  else if(page==="catalog"||page==="favorites")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly:page==="favorites"||favoritesOnly});
  else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});}
