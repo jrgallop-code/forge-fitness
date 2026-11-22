@@ -134,11 +134,11 @@ export function catalogMarkup({slot="All",filter="Complete recipes",search="",fo
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
  '<p class="mp-disclaimer">Nutrition values are estimates. Complete recipes include ingredients and preparation steps.</p></div></section>';
 }
-function featuredRecipeDetail(recipe){
+function featuredRecipeDetail(recipe,scale=1){
  const m=recipe.publishedEstimate;
- const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,item.grams,item.unit))+'</strong></li>').join("")+'</ul></section>').join("");
+ const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,(item.grams/Math.max(1,recipe.servings))*scale,item.unit))+'</strong></li>').join("")+'</ul></section>').join("");
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
- '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+recipe.prepMinutes+' minutes · '+recipe.servings+' servings</p>'+
+ '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+recipe.prepMinutes+' minutes · original batch '+recipe.servings+' servings</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong> (scaled from the original recipe).</p>'+
  '<p class="mp-disclaimer"><strong>Estimated nutrition, not independently verified.</strong> Per serving: '+m.calories+' kcal · '+m.protein+'g protein · '+m.carbs+'g carbs · '+m.fat+'g fat.</p>'+
  groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
@@ -172,16 +172,16 @@ function sourceReviewDetail(recipe){
  '<header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe unavailable</h2><span></span></header>'+
  '<div class="mp-recipe-content"><h1>'+esc(recipe.name)+'</h1><p>This entry is still missing complete ingredients or preparation steps. It cannot be scheduled as a finished recipe.</p></div></section>';
 }
-export function recipeDetailMarkup(recipe,hasPlan=false){
+export function recipeDetailMarkup(recipe,hasPlan=false,scale=1){
  if(recipe?.indexOnly)return sourceReviewDetail(recipe);
- if(recipe?.groups)return featuredRecipeDetail(recipe);
+ if(recipe?.groups)return featuredRecipeDetail(recipe,scale);
  const m=macrosForIngredients(recipe.ingredients);
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone">'+
  '<header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe</h2><span></span></header>'+
  '<div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
- '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · '+displaySlot(recipe.slot)+' · '+recipe.prepMinutes+' minutes</p>'+
+ '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · '+displaySlot(recipe.slot)+' · '+recipe.prepMinutes+' minutes</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong>.</p>'+
  '<div class="mp-recipe-macro-grid">'+[["Calories",Math.round(m.calories)],["Protein",Math.round(m.protein)+"g"],["Carbs",Math.round(m.carbs)+"g"],["Fat",Math.round(m.fat)+"g"]].map(([label,value])=>'<div><strong>'+esc(value)+'</strong><small>'+label+'</small></div>').join("")+'</div>'+
- '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams,'g'))+'</strong></li>').join("")+'</ul></section>'+
+ '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams*scale,'g'))+'</strong></li>').join("")+'</ul></section>'+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Choose days &amp; meals</button>'+
  '<p class="mp-disclaimer">AI-generated food photographs are illustrative, and recipes and nutrition remain estimates.</p></div></section>';
