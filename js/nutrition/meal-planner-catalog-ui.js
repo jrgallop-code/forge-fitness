@@ -2,7 +2,7 @@
 import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {MPM_INDEX_RECIPES} from "./meal-prep-manual-discovery.js?v=1";
-import {REVIEW_RECORDS,REVIEW_IMPORT_META,reviewIdForRecipe,getReviewDecision,reviewSummary} from "./mpm-review-first-100.js?v=1";
+import {getRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=featured-base-hq-v3";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
@@ -98,7 +98,7 @@ export function matchesCatalog(recipe,{slot="All",filter="Complete recipes",sear
  const query=String(search).trim().toLowerCase();
  const words=[recipe.name,recipe.cuisine||"",recipe.diet||"",...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
  if(query&&!words.includes(query))return false;
- if(filter==="Review first 100"&&!reviewIdForRecipe(recipe))return false;
+ 
  if(filter==="Needs my review"&&(!reviewIdForRecipe(recipe)||getReviewDecision(reviewIdForRecipe(recipe)).decision!=="unreviewed"))return false;
  if(filter==="Detailed recipes"&&recipe.indexOnly)return false;
  if(filter==="Source index only"&&!recipe.indexOnly)return false;
@@ -117,11 +117,8 @@ export function recipeCard(recipe,favorite=false){
  const info=recipe.indexOnly
    ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" source ingredients · review needed":"Source index · ingredient review pending")
    :hasNutrition?Math.round(estimated.calories)+" kcal · P "+Math.round(estimated.protein)+"g · C "+Math.round(estimated.carbs)+"g · F "+Math.round(estimated.fat)+"g · "+recipe.prepMinutes+" min":"Nutrition estimate unavailable";
- const reviewId=reviewIdForRecipe(recipe);
- const reviewDecision=reviewId?getReviewDecision(reviewId).decision:null;
- const reviewLabel=reviewDecision==="looks-good"?"Reviewed":reviewDecision==="needs-changes"?"Needs changes":reviewDecision?"Awaiting your review":"";
  return '<article class="mp-catalog-card"><button type="button" class="mp-catalog-open" data-mp-recipe="'+esc(recipe.id)+'" aria-label="See '+esc(recipe.name)+'">'+photoMarkup(recipe)+
- '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+(reviewLabel?'<small>Review: '+esc(reviewLabel)+'</small>':'')+'</span></button>'+
+ '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+'</span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
 }
 export function catalogMarkup({slot="All",filter="Complete recipes",search="",foodType="All foods",styles=selectedRecipeStyles(),favoritesOnly=false}={}){
@@ -138,9 +135,16 @@ export function catalogMarkup({slot="All",filter="Complete recipes",search="",fo
  '<div class="mp-food-type-filter"><div class="mp-filter-caption">FOOD TYPE</div><div class="mp-catalog-chips mp-food-type-chips" role="group" aria-label="Filter recipes by food type">'+CATALOG_FOOD_TYPES.map(x=>'<button type="button" class="'+(foodType===x?"active":"")+'" data-mp-food-type="'+esc(x)+'" aria-pressed="'+(foodType===x)+'">'+esc(x)+'</button>').join("")+'</div></div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<p class="mp-catalog-count">'+recipes.length+' recipes</p>'+
- '<div class="mp-first100-progress"><strong>First 100 review</strong><span>'+reviewSummary().reviewed+' reviewed · '+reviewSummary().needsChanges+' need changes · '+reviewSummary().notReviewed+' remaining</span><small>'+reviewSummary().ingredientLists+' ingredient lists imported from publisher schema · incomplete recipes remain unschedulable</small><button type="button" class="mp-review-export" data-mp-review-export>Copy my review notes</button></div>'+'<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
+ '<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
  '<p class="mp-disclaimer">Nutrition values are estimates. Complete recipes include ingredients and preparation steps.</p></div></section>';
+}
+const svgThumb=(down=false)=>'<svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"'+(down?' style="transform:rotate(180deg)"':'')+'><path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3Zm0 0 4.6-7.2a2.2 2.2 0 0 1 3.9 1.7L14 9h5.1a3 3 0 0 1 2.9 3.6l-1.4 6A3 3 0 0 1 17.7 21H7"/></svg>';
+export function recipeRatingMarkup(recipe){
+ const vote=getRecipeRating(recipe.id);
+ return '<section class="mp-recipe-rate" aria-label="Rate recipe"><span>Rate</span><div class="mp-recipe-rate-actions">'+
+ '<button type="button" class="'+(vote==="up"?'active':'')+'" data-mp-rate="'+esc(recipe.id)+'" data-mp-vote="up" aria-pressed="'+(vote==="up")+'" aria-label="Thumbs up for '+esc(recipe.name)+'">'+svgThumb()+'</button>'+
+ '<button type="button" class="'+(vote==="down"?'active':'')+'" data-mp-rate="'+esc(recipe.id)+'" data-mp-vote="down" aria-pressed="'+(vote==="down")+'" aria-label="Thumbs down for '+esc(recipe.name)+'">'+svgThumb(true)+'</button></div></section>';
 }
 export function recipeMacroSummary(recipe){
  const m=recipeNutritionEstimate(recipe);
@@ -157,29 +161,7 @@ function featuredRecipeDetail(recipe,scale=1){
  groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
  '<p class="mp-disclaimer">Nutrition and portions are estimates. Review ingredients for your own dietary needs.</p>'+
- '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+reviewControlsMarkup(recipe)+reviewNavigationMarkup(recipe)+'<p class="mp-disclaimer">Scheduling is available in preview, but this recipe cannot be logged as consumed until food mapping and nutrition review are complete.</p></div></section>';
-}
-function reviewNavigationMarkup(recipe){
- const currentId=reviewIdForRecipe(recipe);
- if(!currentId)return "";
- const index=REVIEW_RECORDS.findIndex(x=>x.id===currentId);
- const ids=baseRecipes();
- const target=offset=>{
-   const item=REVIEW_RECORDS[index+offset];
-   return item?ids.find(r=>reviewIdForRecipe(r)===item.id)?.id:null;
- };
- const previous=target(-1),next=target(1);
- return '<nav class="mp-review-navigation"><button type="button" data-mp-review-nav="'+esc(previous||"")+'" '+(!previous?'disabled':'')+'>← Previous</button><span>'+(index+1)+' of '+REVIEW_RECORDS.length+'</span><button type="button" data-mp-review-nav="'+esc(next||"")+'" '+(!next?'disabled':'')+'>Next →</button></nav>';
-}
-function reviewControlsMarkup(recipe){
- const id=reviewIdForRecipe(recipe);
- if(!id)return "";
- const current=getReviewDecision(id);
- return '<section class="mp-review-section"><h3>Review this recipe</h3><p class="mp-disclaimer">This records your feedback only. It does not certify nutrition, allergens, food safety or use rights.</p>'+
- '<div class="mp-review-actions"><button type="button" data-mp-review-decision="looks-good" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="looks-good"?"active":"")+'">✓ Looks good</button>'+
- '<button type="button" data-mp-review-decision="needs-changes" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="needs-changes"?"active":"")+'">Needs changes</button>'+
- '<button type="button" data-mp-review-decision="unreviewed" data-mp-review-id="'+esc(id)+'" class="'+(current.decision==="unreviewed"?"active":"")+'">Reset review</button></div>'+
- '<label for="mp-review-notes">Review notes</label><textarea id="mp-review-notes" data-mp-review-notes="'+esc(id)+'" rows="4" maxlength="2000" placeholder="Missing spice, incorrect portion, cooking question, or preferred change...">'+esc(current.notes||"")+'</textarea><p class="mp-disclaimer">Notes and decisions currently save on this device only.</p></section>';
+ '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+recipeRatingMarkup(recipe)+'<p class="mp-disclaimer">You can mark this meal eaten from My Week. Nutrition is a published estimate and has not been independently verified.</p></div></section>';
 }
 function sourceReviewDetail(recipe){
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone">'+
@@ -197,6 +179,7 @@ export function recipeDetailMarkup(recipe,hasPlan=false,scale=1){
  recipeMacroSummary(recipe)+
  '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams*scale,'g'))+'</strong></li>').join("")+'</ul></section>'+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
+  recipeRatingMarkup(recipe)+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Choose days &amp; meals</button>'+
  '<p class="mp-disclaimer">AI-generated food photographs are illustrative, and recipes and nutrition remain estimates.</p></div></section>';
 }
