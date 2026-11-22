@@ -741,3 +741,6 @@ Release latest native branch, 48 completed recipe cards (40 base, 8 featured), F
 - Replaces blurry featured 8 images with high-res bundled AI atlas and ten additional base photos.
 - Food Log default remains intact; PWA untouched.
 - Native signing inventory verified read-only in workflow run 44976396314.
+
+## 2026-11-22: Recipe catalogue macros and My Week remove controls
+Complete 48 recipe summary cards use same per-portion nutrition as detail views. My Week cards have visible Remove and overflow Remove actions, confirmation, and empty-week screen. Existing Food Log entries are preserved. iOS only; PWA unchanged. Current signing guard verified via read-only inventory 44980539916.
