@@ -306,3 +306,48 @@ html[data-theme] .mp-home-generate{width:100%;padding:13px;margin:2px 0 0;border
 html[data-theme] .mp-home-disclaimer{color:var(--muted);font-size:11px;line-height:1.4;margin:15px 0}
 @media(min-width:650px){html[data-theme] .mp-home-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:360px){html[data-theme] .mp-home-quick{gap:5px}html[data-theme] .mp-home-shortcut{min-height:80px;border-radius:13px}html[data-theme] .mp-home-macros small{font-size:8px}}
+
+
+/* Persistent icons for Recipes, Favorites, My Week, Groceries across all pages. */
+html[data-theme] .mp-persistent-nav{
+ position:sticky;top:0;z-index:8;margin:4px 0 12px;padding:9px 2px 12px;
+ background:var(--bg,var(--background,#101114));
+ backdrop-filter:blur(14px);
+}
+html[data-theme] .mp-persistent-nav .mp-home-shortcut{
+ min-height:76px;gap:5px;border:1px solid var(--line,#8885);
+}
+html[data-theme] .mp-persistent-nav .mp-home-shortcut-icon svg{width:23px;height:23px}
+html[data-theme] .mp-persistent-nav .mp-home-shortcut.active{
+ background:var(--surface-raised,var(--card,#7772));
+ border-color:var(--accent,#e51b28);
+ color:var(--accent,#e51b28);
+}
+html[data-theme] .mp-recipe-plan-panel{
+ margin:17px 0;padding:17px;border-radius:16px;
+ background:var(--card,var(--surface-2,#7772));
+ border:1px solid var(--line,var(--border-color,#7775));
+ color:var(--text,inherit);
+}
+html[data-theme] .mp-recipe-plan-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;
+}
+html[data-theme] .mp-recipe-plan-heading h3{font-size:17px;margin:0}
+html[data-theme] .mp-recipe-plan-heading span{font-weight:700;color:var(--accent,#e51b28);font-size:14px}
+html[data-theme] .mp-recipe-plan-panel .mp-schedule-weekdays{margin:12px 0 18px}
+html[data-theme] .mp-recipe-plan-panel .mp-schedule-weekdays button{
+ min-height:45px;border-radius:10px;font-weight:700
+}
+html[data-theme] .mp-recipe-plan-panel .mp-recipe-plan-add{
+ display:block;width:100%;margin-top:16px;padding:13px;border-radius:12px
+}
+html[data-theme] .mp-recipe-plan-advanced{
+ display:block;width:100%;margin-top:9px;padding:10px;
+ color:var(--text,inherit);background:none;
+ border:1px solid var(--line,#8885);border-radius:10px;
+}
+html[data-theme] .mp-recipe-scale-note{
+ background:var(--surface-raised,var(--card,#8882));padding:12px;
+ border-radius:10px;border:1px solid var(--line,#8885);
+ font-size:13px;line-height:1.5;
+}
