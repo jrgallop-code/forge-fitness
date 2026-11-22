@@ -295,3 +295,22 @@ html[data-ios-quick-log-installed="1"] #weight-progress .weight-section-header .
 .ios-quick-log-overlay .ios-quick-log-save {
   color: var(--accent-contrast, white);
 }
+
+
+/* Arctic weight-sheet focus: remove legacy crimson inset while preserving
+   the accessible blue keyboard focus and readable text on pale surfaces. */
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-number,
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-date {
+  color: var(--text, #10203a) !important;
+  background: var(--input-bg, #f7faff) !important;
+  caret-color: var(--accent, #1769e0) !important;
+}
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-number:focus,
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-number:focus-visible,
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-date:focus,
+html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-date:focus-visible {
+  border-color: var(--accent, #1769e0) !important;
+  outline: 2px solid var(--accent, #1769e0) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--accent-soft, rgba(23,105,224,.1)) !important;
+}
