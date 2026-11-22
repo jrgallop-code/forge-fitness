@@ -36,6 +36,34 @@ export function markPlannedMealConsumed(date,slot,ingredients,servings=1){
   return {ok:true,entryIds:saved.map(item=>item.id),ingredientCount:saved.length};
  }catch(error){return {ok:false,reason:error.message||"storage_error"}}
 }
+// Featured recipes have a complete ingredient snapshot and an estimated
+// published per-portion macro total, but not verified per-ingredient nutrients.
+// Log one composite meal with every ingredient preserved in metadata rather
+// than inventing nutrient values for its seasonings and sauces.
+export function markFeaturedMealConsumed(date,slot,recipe,ingredients,servings=1){
+ if(hasConsumedMeal(date,slot))return {ok:false,reason:"already_logged"};
+ if(!recipe?.id||!recipe?.publishedEstimate||!Array.isArray(ingredients)||!ingredients.length)return {ok:false,reason:"incomplete_recipe"};
+ const n=Number(servings);
+ if(!Number.isInteger(n)||n<1||n>12)return {ok:false,reason:"invalid_servings"};
+ if(ingredients.some(item=>!item?.food||!Number.isFinite(Number(item.grams))||Number(item.grams)<0))return {ok:false,reason:"invalid_ingredient_amount"};
+ const nutrition=recipe.publishedEstimate;
+ if(!["calories","protein","carbs","fat"].every(k=>Number.isFinite(Number(nutrition[k]))&&Number(nutrition[k])>=0))return {ok:false,reason:"invalid_nutrition"};
+ const perPortion={calories:Number(nutrition.calories),protein:Number(nutrition.protein),carbs:Number(nutrition.carbs),fat:Number(nutrition.fat),fiber:Number(nutrition.fiber)||0};
+ const portion={label:"1 meal portion (estimated)",grams:1,nutrition:perPortion};
+ const food={source:"custom",name:recipe.name,servingLabel:portion.label,nutrition:perPortion,portions:[portion]};
+ const snapshot=ingredients.map(x=>({food:String(x.food),grams:Number(x.grams)*n,unit:x.unit||"g",group:x.group||null}));
+ const entry={...createLogEntry({meal:slotToLogMeal(slot),food,portion,quantity:n}),
+  mealPlannerKey:plannerEntryKey(date,slot),mealPlannerRecipeId:recipe.id,
+  mealPlannerEstimated:true,mealPlannerPortions:n,
+  mealPlannerIngredientList:snapshot,
+  mealPlannerNutrientBasis:"published per-portion estimate; ingredient nutrients not independently verified"};
+ try{
+  const saved=saveEntries(date,[entry]);
+  const persisted=consumedEntries(date,slot);
+  if(saved.length!==1||persisted.length!==1)return {ok:false,reason:"save_verification_failed"};
+  return {ok:true,entryIds:saved.map(x=>x.id),ingredientCount:snapshot.length,composite:true};
+ }catch(error){return {ok:false,reason:error.message||"storage_error"}}
+}
 export function undoPlannedMealConsumed(date,slot){
  const items=consumedEntries(date,slot);
  if(!items.length)return {ok:false,reason:"not_logged"};
