@@ -733,3 +733,11 @@ Release refresh 2026-11-21: include photo sprite attribute quoting fix from 2818
 
 ## iOS Food Log default + recipe kitchen measurements — 2026-11-21
 Release latest native branch, 48 completed recipe cards (40 base, 8 featured), Food Log opens first, tsp/tbsp as leading measures, sharper photos for first 20 base recipes. Apple distribution CI certificate identity verified read-only in run 44964110388. PWA untouched.
+
+
+## 2026-11-22: iOS Meal Plan navigation and image quality
+- Persistent SVG shortcuts on Recipes, recipe detail, My Week, Groceries and Favorites.
+- On-recipe day selection and ingredient quantities scaled to selected meal portions.
+- Replaces blurry featured 8 images with high-res bundled AI atlas and ten additional base photos.
+- Food Log default remains intact; PWA untouched.
+- Native signing inventory verified read-only in workflow run 44976396314.
