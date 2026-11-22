@@ -1,5 +1,5 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
-import {mealPlannerHomeMarkup} from "./meal-planner-home.js?v=approved-svg-dashboard-1";
+import {mealPlannerHomeMarkup,mealPlannerShortcutMarkup} from "./meal-planner-home.js?v=persistent-svg-menu-20261121";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
@@ -100,7 +100,7 @@ function showWizardStep(root,next){
 
 
 let plannerScreen="home",catalogSlot="All",catalogFilter="Complete recipes",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
-let scheduleStart=nextMonday(),scheduleOffsets=[0,1,2],scheduleSlots=["Dinner"],schedulePortions=1;
+let scheduleStart=nextMonday(),scheduleOffsets=[0],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
  ["Meat, fish & protein",/chicken|turkey|beef|salmon|tuna|cod|shrimp|tofu|egg/],
@@ -203,7 +203,21 @@ function render(root){
  if(page==="home")root.innerHTML=mealPlannerHomeMarkup({plan:saved,selectedDate:selectedPlanDate,recipes:[...baseRecipes(),...MEAL_CATALOG],photoMarkup,favoriteIds:storedFavorites()});
  else if(page==="landing")root.innerHTML=landingMarkup(saved);
  else if(page==="catalog"||page==="favorites")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly:page==="favorites"||favoritesOnly});
- else if(page==="recipe"){const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});}
+ else if(page==="recipe"){
+   const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
+   const total=scheduleOffsets.length*scheduleSlots.length*schedulePortions;
+   root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved),Math.max(1,total)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});
+   if(selected&&!selected.indexOnly){
+     const panel='<div class="mp-recipe-plan-panel"><div class="mp-recipe-plan-heading"><h3>Choose your meal prep days</h3><span>'+total+' meal'+(total===1?'':'s')+'</span></div>'+
+     '<label class="mp-schedule-label">Week starting <input type="date" data-mp-schedule-start value="'+esc(scheduleStart)+'"></label>'+
+     '<div class="mp-schedule-weekdays" role="group" aria-label="Days to prepare this recipe">'+SCHEDULE_DAYS.map((day,i)=>'<button type="button" data-mp-schedule-day="'+i+'" aria-pressed="'+scheduleOffsets.includes(i)+'" class="'+(scheduleOffsets.includes(i)?'active':'')+'">'+day+'</button>').join("")+'</div>'+
+     '<label class="mp-schedule-label">Meals per selected day <input type="number" min="1" max="12" value="'+schedulePortions+'" data-mp-schedule-portions></label>'+
+     '<p class="mp-disclaimer">The ingredients below automatically scale to '+total+' meal'+(total===1?'':'s')+'. Choose three days for three servings, or increase meals per day to prepare more.</p>'+
+     '<button type="button" class="primary-btn mp-recipe-plan-add" data-mp-recipe-save '+(total?'':'disabled')+'>Add '+total+' meal'+(total===1?'':'s')+' to My Week</button>'+
+     '<button type="button" class="mp-recipe-plan-advanced" data-mp-schedule="'+esc(selected.id)+'">More scheduling options</button><p class="mp-schedule-error" role="alert" hidden></p></div>';
+     root.querySelector(".mp-recipe-content h1")?.insertAdjacentHTML("afterend",panel);
+   }
+  }
  else if(page==="loading")root.innerHTML=loadingMarkup();
  else if(page==="wizard")root.innerHTML='<section class="lu-meal-planner mp-onboarding mp-standalone">'+screenHeader("Meal preferences",saved?"calendar":"landing")+
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
@@ -220,6 +234,14 @@ function render(root){
    '<div class="lu-meal-days">'+renderDays(saved)+'</div>'+
    '<p class="mp-disclaimer">Recipe nutrition and fullness estimates are approximate and do not replace verified food labels.</p></section>';
  }
+ if(page!=="home"){
+    const section=root.querySelector(".mp-standalone");
+    if(section){
+      const header=section.querySelector(".mp-screen-header");
+      if(header)header.insertAdjacentHTML("afterend",mealPlannerShortcutMarkup(page));
+      else section.insertAdjacentHTML("afterbegin",mealPlannerShortcutMarkup(page));
+    }
+  }
  root.querySelectorAll("img[data-photo-fallback]").forEach(img=>img.addEventListener("error",()=>{
   const backup=img.dataset.photoFallback;
   if(backup&&!img.dataset.photoRetry){img.dataset.photoRetry="1";img.src=backup;}
@@ -256,7 +278,7 @@ function render(root){
  root.querySelectorAll("[data-mp-schedule]").forEach(button=>button.addEventListener("click",()=>{
    catalogRecipeId=button.dataset.mpSchedule;
    const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
-   scheduleSlots=[recipe?.slot||"Dinner"];scheduleOffsets=[0,1,2];schedulePortions=1;scheduleStart=nextMonday();
+   if(plannerScreen!=="recipe"){scheduleSlots=[recipe?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();}
    plannerScreen="schedule";render(root);
  }));
  root.querySelectorAll("[data-mp-schedule-day]").forEach(button=>button.addEventListener("click",()=>{
@@ -273,7 +295,7 @@ function render(root){
  root.querySelector("[data-mp-schedule-portions]")?.addEventListener("change",event=>{
    schedulePortions=Math.max(1,Math.min(12,Math.floor(Number(event.target.value)||1)));render(root);
  });
- root.querySelector("[data-mp-schedule-save]")?.addEventListener("click",()=>{
+ const saveSelectedRecipe=()=>{
    const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
    try{
      for(const i of scheduleOffsets)for(const slot of scheduleSlots){
@@ -285,7 +307,9 @@ function render(root){
      selectedPlanDate=dateForOffset(scheduleStart,scheduleOffsets[0]);
      plannerScreen="calendar";render(root);
    }catch(error){const msg=root.querySelector(".mp-schedule-error");if(msg){msg.hidden=false;msg.textContent=error.message;}}
- });
+ };
+ root.querySelector("[data-mp-schedule-save]")?.addEventListener("click",saveSelectedRecipe);
+ root.querySelector("[data-mp-recipe-save]")?.addEventListener("click",saveSelectedRecipe);
  root.querySelectorAll("[data-mp-slot]").forEach(button=>button.addEventListener("click",()=>{catalogSlot=button.dataset.mpSlot;render(root);}));
  root.querySelectorAll("[data-mp-filter]").forEach(button=>button.addEventListener("click",()=>{catalogFilter=button.dataset.mpFilter;render(root);}));
  root.querySelectorAll("[data-mp-food-type]").forEach(button=>button.addEventListener("click",()=>{catalogFoodType=button.dataset.mpFoodType;render(root);}));
@@ -319,7 +343,7 @@ function render(root){
   button.setAttribute("aria-label",active?"Remove favorite":"Save favorite");
  }));
  root.querySelectorAll("[data-mp-recipe]").forEach(button=>button.addEventListener("click",()=>{
-  catalogRecipeId=button.dataset.mpRecipe;plannerScreen="recipe";render(root);
+  catalogRecipeId=button.dataset.mpRecipe;const picked=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);scheduleSlots=[picked?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();plannerScreen="recipe";render(root);
  }));
  root.querySelector("[data-mp-use-recipe]")?.addEventListener("click",()=>{
   const id=root.querySelector("[data-mp-use-recipe]").dataset.mpUseRecipe;
