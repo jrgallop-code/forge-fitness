@@ -351,3 +351,8 @@ html[data-theme] .mp-recipe-scale-note{
  border-radius:10px;border:1px solid var(--line,#8885);
  font-size:13px;line-height:1.5;
 }
+
+/* The persistent SVG nav supersedes duplicate text navigation on Recipes. */
+html[data-theme] .mp-catalog-generate{display:flex;margin:10px 0 14px}
+html[data-theme] .mp-catalog-generate button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:11px 14px;background:var(--surface-raised,var(--card,#8882));border:1px solid var(--line,#8885);border-radius:12px;color:var(--text,inherit);font-weight:700;font:inherit}
+html[data-theme] .mp-catalog-generate svg{color:var(--accent,#e51b28)}
