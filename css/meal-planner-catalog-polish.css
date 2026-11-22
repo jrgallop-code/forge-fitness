@@ -356,3 +356,24 @@ html[data-theme] .mp-recipe-scale-note{
 html[data-theme] .mp-catalog-generate{display:flex;margin:10px 0 14px}
 html[data-theme] .mp-catalog-generate button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:11px 14px;background:var(--surface-raised,var(--card,#8882));border:1px solid var(--line,#8885);border-radius:12px;color:var(--text,inherit);font-weight:700;font:inherit}
 html[data-theme] .mp-catalog-generate svg{color:var(--accent,#e51b28)}
+
+
+/* Screenshot-style recipe nutrition per portion: calories, protein, fat, carbs. */
+html[data-theme] .mp-recipe-nutrition{margin:20px 0 22px}
+html[data-theme] .mp-recipe-nutrition h3{font-size:16px;font-weight:750;letter-spacing:-.02em;margin:0 0 13px}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid>div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:73px;padding:10px 3px;background:transparent;border:0;border-right:1px dashed var(--line,#8885);border-radius:0}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid>div:last-child{border-right:0}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid>div.mp-macro-calories{background:color-mix(in srgb,var(--accent,#e11) 10%,transparent);border-radius:14px;color:var(--accent,#e11)}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid strong{font-size:clamp(16px,5vw,23px);line-height:1.2;letter-spacing:-.035em}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid small{font-size:11px;margin-top:3px;color:var(--muted,inherit)}
+html[data-theme] .mp-recipe-nutrition .mp-recipe-macro-grid .mp-macro-calories small{color:var(--accent,#e11)}
+html[data-theme] .mp-recipe-nutrition>.mp-disclaimer{font-size:11px;color:var(--muted,inherit);margin-top:9px}
+
+/* Card-level more menu stays attached to its meal and never obscures the title. */
+html[data-theme] .lu-meal-card{position:relative}
+html[data-theme] .mp-meal-card-menu{position:absolute;top:8px;right:8px;z-index:3}
+html[data-theme] .mp-meal-card-menu>summary{list-style:none;display:grid;place-items:center;width:36px;height:36px;border-radius:12px;border:1px solid var(--line,#8885);background:var(--card,#17171c);color:var(--text,#fff);font-size:25px;line-height:1;cursor:pointer}
+html[data-theme] .mp-meal-card-menu>summary::-webkit-details-marker{display:none}
+html[data-theme] .mp-meal-card-menu[open]>button{display:block;position:absolute;right:0;top:41px;width:max-content;min-width:148px;padding:12px 16px;color:var(--text,#fff);background:var(--card,#17171c);border:1px solid var(--line,#8885);border-radius:11px;font-size:13px;font-weight:700;box-shadow:0 8px 22px #0004}
+html[data-theme] .lu-meal-card-head{padding-right:42px}
