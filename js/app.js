@@ -1,6 +1,6 @@
 import { initializeAppReviews } from "./feedback/app-reviews.js";
 import "./core/appearance-theme.js?v=appearance-themes-3";
-import { navigate } from "./core/router.js?v=ios-nutrition-polish-20261121";
+import { navigate } from "./core/router.js?v=food-log-navigation-and-meals-20261122";
 import { renderNavbar, initializeNavbar } from "./components/navbar.js?v=history-editor-route-1";
 import { initializeWorkoutRuntime } from "./workouts/workout-session.js?v=history-rir-edit-1";
 import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=icon-scheduler-1";
