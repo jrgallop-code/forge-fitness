@@ -183,3 +183,11 @@
 .food-calendar-days button i{position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent,#ff4b58)}
 .food-calendar-today{justify-self:end;min-height:36px;padding:5px 10px;border:0;border-radius:9px;background:var(--accent-soft,rgba(255,75,88,.16));color:var(--accent-text,#ff4b58);font-family:inherit;font-size:12px;font-weight:700}
 .food-log-calendar button:focus-visible,.food-log-date-nav [data-food-calendar-toggle]:focus-visible{outline:2px solid var(--accent,#ff4b58);outline-offset:2px}
+
+/* Meal-section headers are text only. Photos/icons belong to individual food rows. */
+.food-meal > summary img,
+.food-meal > summary picture,
+.food-meal > summary .food-entry-emoji,
+.food-meal > summary .food-meal-photo,
+.food-meal > summary .food-meal-thumbnail { display: none !important; }
+.food-meal > summary > span:first-child { display:flex; flex-direction:column; min-width:0; }
