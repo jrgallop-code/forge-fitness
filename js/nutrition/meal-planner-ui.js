@@ -225,7 +225,7 @@ function render(root){
   if(backup&&!img.dataset.photoRetry){img.dataset.photoRetry="1";img.src=backup;}
   else {img.parentElement?.classList.add("mp-photo-error");img.style.display="none";}
  }));
- root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";render(root);}));
+ root.querySelectorAll("[data-mp-favorites-filter]").forEach(button=>button.addEventListener("click",()=>{favoritesOnly=button.dataset.mpFavoritesFilter==="favorites";plannerScreen=favoritesOnly?"favorites":"catalog";render(root);}));
  root.querySelectorAll("[data-mp-home-date]").forEach(button=>button.addEventListener("click",()=>{selectedPlanDate=button.dataset.mpHomeDate;render(root);}));
  root.querySelectorAll("[data-mp-review-nav]").forEach(button=>button.addEventListener("click",()=>{
    const id=button.dataset.mpReviewNav;
