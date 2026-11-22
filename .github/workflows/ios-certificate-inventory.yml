@@ -1,5 +1,5 @@
 name: Inspect App Store signing certificates
-# Read-only certificate inventory before first-100 recipe review TestFlight release; never revokes assets.
+# Read-only check before Arctic focus contrast TestFlight build; never revokes assets.
 
 on:
   workflow_dispatch:
