@@ -30,3 +30,11 @@ export function scheduleRecipe(plan,recipe,{startDate,dayOffsets,slots,portionsP
  return {...(plan||{}),version:Math.max(3,plan?.version||0),startDate:plan?.startDate||startDate,preferences:plan?.preferences||{},entries,consumed:false,updatedAt:new Date().toISOString()};
 }
 export function batchPortionCount(entries,batchId){return (entries||[]).filter(x=>x.batchId===batchId).reduce((n,x)=>n+(Number(x.servings)||0),0);}
+
+/** Remove only a scheduled meal. Logged Food Log entries are intentionally untouched. */
+export function removeScheduledMeal(plan,date,slot){
+ if(!plan||!Array.isArray(plan.entries))return plan;
+ const entries=plan.entries.filter(entry=>!(entry.date===date&&entry.slot===slot));
+ if(entries.length===plan.entries.length)return plan;
+ return {...plan,entries,updatedAt:new Date().toISOString()};
+}
