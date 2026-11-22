@@ -486,7 +486,8 @@ function render(root){
 }
 
 let selectedPlanDate="";
-function renderDays(plan){
+let plannedDetailDate="", plannedDetailSlot="";
+function renderDaysFull(plan){
  const dates=[...new Set(plan.entries.map(x=>x.date))];
  if(!dates.length)return '<div class="mp-week-empty"><h3>Your week is empty</h3><p>Choose a recipe from Recipes and select the days you want to prepare it.</p><button type="button" data-mp-open="catalog">Browse recipes</button></div>';
  if(!dates.includes(selectedPlanDate))selectedPlanDate=dates[0]||"";
