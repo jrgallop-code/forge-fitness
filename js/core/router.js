@@ -7,7 +7,7 @@ import { initializeSmartBuild, openSmartBuild } from "../workouts/smart-build.js
 import { initializeSmartBuildSupersetGuard } from "../workouts/smart-build-superset-guard.js?v=superset-clean-1";
 import { initializeRoutineImporter } from "../workouts/routine-importer.js?v=launcher-grid-hotfix-1";
 import { renderDashboard } from "../dashboard/dashboard-ui.js?v=dashboard-workout-flow-1";
-import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=right-overflow-arc-1";
+import { initializeDashboardNutritionTargets } from "../dashboard/nutrition-target-card.js?v=dashboard-food-log-route-20261122";
 import { renderWorkoutPerformanceDashboard, initializeWorkoutPerformance } from "../dashboard/workout-performance.js?v=exercise-history-performance-1";
 import { renderDashboardSchedule, initializeWorkoutSchedule } from "../workouts/workout-schedule.js?v=onboarding-training-days-1";
 import { initializeWorkoutLandingLive } from "../workouts/workout-landing-live.js?v=saved-plan-edit-2";
@@ -30,7 +30,7 @@ import { renderSleepTracker, initializeSleepTracker } from "../progress/sleep-tr
 import { renderMeasurementsTracker, initializeMeasurementsTracker } from "../progress/measurements-tracker.js?v=backup-lifecycle-2";
 import { renderNutrition, renderWater, initializeNutrition, showNutritionView } from "../nutrition/nutrition-ui.js?v=water-only-1";
 import { renderEnergyProfile, initializeEnergyProfile } from "../nutrition/energy-profile.js?v=food-log-macro-bars-1";
-import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=featured-consumption-rating-20261122";
+import { renderCaloriesHub, initializeFoodLog } from "../nutrition/food-log.js?v=no-diary-header-photo-20261122";
 import { initializeProteinTargetExplanation } from "../nutrition/protein-target-ui.js?v=protein-target-1";
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
