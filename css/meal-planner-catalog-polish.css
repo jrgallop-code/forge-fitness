@@ -387,3 +387,43 @@ html[data-theme] .mp-week-empty h3{font-size:21px;margin:3px 0 8px}
 html[data-theme] .mp-week-empty p{font-size:14px;color:var(--muted,inherit)}
 html[data-theme] .mp-week-empty button{min-height:44px;padding:10px 18px;border:1px solid var(--accent,#e51b28);border-radius:12px;background:var(--accent,#e51b28);color:var(--accent-contrast,#fff);font-weight:700}
 html[data-theme] .mp-catalog-card .mp-catalog-text small{line-height:1.4}
+
+
+/* iOS scheduling redesign: theme-safe, compact and consistent with recipe pages */
+html[data-theme] .mp-standalone.mp-scheduler{background:var(--bg)!important;color:var(--text)!important}
+html[data-theme] .mp-scheduler .mp-schedule-body{max-width:760px;margin:0 auto;padding:7px 0 calc(env(safe-area-inset-bottom) + 48px)}
+html[data-theme] .mp-scheduler .mp-schedule-preview{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:18px;padding:12px;gap:13px;align-items:center}
+html[data-theme] .mp-scheduler .mp-schedule-preview h2{color:var(--heading,var(--text))!important;font-size:clamp(15px,4.7vw,21px);line-height:1.2;margin:3px 0}
+html[data-theme] .mp-scheduler .mp-schedule-preview .eyebrow{color:var(--accent)!important;letter-spacing:.12em;font-size:10px;font-weight:800}
+html[data-theme] .mp-scheduler .mp-schedule-preview .mp-disclaimer{font-size:11px;line-height:1.45;color:var(--muted)!important;margin:6px 0 0}
+html[data-theme] .mp-scheduler .mp-schedule-panel{border:1px solid var(--line)!important;background:var(--card)!important;color:var(--text)!important;border-radius:19px;padding:clamp(14px,4vw,22px);margin-top:14px}
+html[data-theme] .mp-scheduler .mp-schedule-title{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:18px}
+html[data-theme] .mp-scheduler .mp-schedule-title h3{font-size:clamp(19px,5vw,25px);line-height:1.15;margin:5px 0 7px;color:var(--heading,var(--text))}
+html[data-theme] .mp-scheduler .mp-schedule-title p{font-size:12px;margin:0;color:var(--muted)}
+html[data-theme] .mp-scheduler .mp-schedule-kicker{color:var(--accent);font-size:10px;letter-spacing:.11em;font-weight:800}
+html[data-theme] .mp-scheduler .mp-schedule-counter{font-size:12px;font-weight:800;white-space:nowrap;background:var(--surface-raised);border-radius:999px;border:1px solid var(--line);padding:7px 10px}
+html[data-theme] .mp-scheduler .mp-schedule-label{font-size:13px;font-weight:650;color:var(--text);gap:10px}
+html[data-theme] .mp-scheduler :is(.mp-schedule-label input,.mp-schedule-slots label){background:var(--surface-raised)!important;color:var(--text)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+html[data-theme] .mp-scheduler .mp-schedule-label input{min-height:43px;max-width:61%;border-radius:12px;font-size:13px}
+html[data-theme] .mp-scheduler .mp-schedule-weekdays{gap:5px;margin:14px 0 23px}
+html[data-theme] .mp-scheduler .mp-schedule-weekdays button{padding:12px 0;min-height:45px;background:var(--surface-raised)!important;color:var(--text)!important;border:1px solid var(--line)!important;font-size:clamp(10px,2.8vw,13px);font-weight:750;border-radius:10px}
+html[data-theme] .mp-scheduler .mp-schedule-weekdays button.active{background:var(--accent)!important;color:var(--accent-contrast)!important;border-color:var(--accent)!important}
+html[data-theme] .mp-scheduler .mp-schedule-section-label{font-size:14px;margin:0 0 11px;color:var(--heading,var(--text))}
+html[data-theme] .mp-scheduler .mp-schedule-slots{gap:8px;margin:0 0 18px}
+html[data-theme] .mp-scheduler .mp-schedule-slots label{min-height:49px;border-radius:11px;font-size:12px;font-weight:650;cursor:pointer}
+html[data-theme] .mp-scheduler .mp-schedule-slots label:has(input:checked){border-color:var(--accent)!important;background:var(--surface-raised)!important}
+html[data-theme] .mp-scheduler .mp-schedule-slots input{accent-color:var(--accent)!important;width:18px;height:18px}
+html[data-theme] .mp-scheduler .mp-schedule-summary{display:grid;grid-template-columns:32px 1fr;gap:2px 9px;background:var(--surface-raised)!important;color:var(--text)!important;border:1px solid var(--line);border-radius:14px;padding:14px;margin:16px 0}
+html[data-theme] .mp-scheduler .mp-schedule-summary-icon{grid-row:1/4;display:flex;align-items:start;color:var(--accent)}
+html[data-theme] .mp-scheduler .mp-schedule-summary strong{font-size:clamp(17px,4.5vw,22px);margin:0}
+html[data-theme] .mp-scheduler .mp-schedule-summary small{font-size:12px;color:var(--muted);opacity:1}
+html[data-theme] .mp-scheduler .mp-schedule-submit{min-height:48px;border-radius:13px;background:var(--accent)!important;color:var(--accent-contrast)!important;border-color:var(--accent)!important;font-weight:800}
+html[data-theme] .mp-scheduler .mp-disclaimer{color:var(--muted)!important;font-size:12px;line-height:1.6}
+
+/* Simple personal recipe rating. No review-status cards, notes, or QA forms. */
+html[data-theme] .mp-recipe-rate{display:flex;align-items:center;gap:14px;padding:12px 0;margin:8px 0 18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+html[data-theme] .mp-recipe-rate>span{font-weight:800;font-size:14px;color:var(--heading,var(--text))}
+html[data-theme] .mp-recipe-rate-actions{display:flex;gap:9px;align-items:center;margin-left:auto}
+html[data-theme] .mp-recipe-rate-actions button{display:grid;place-items:center;width:45px;height:43px;background:var(--surface-raised)!important;border:1px solid var(--line)!important;border-radius:12px;color:var(--accent)!important}
+html[data-theme] .mp-recipe-rate-actions button.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 14%,var(--card))!important}
+html[data-theme] .mp-recipe-rate-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
