@@ -179,7 +179,6 @@ export function recipeDetailMarkup(recipe,hasPlan=false,scale=1){
  recipeMacroSummary(recipe)+recipeRatingMarkup(recipe)+
  '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams*scale,'g'))+'</strong></li>').join("")+'</ul></section>'+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
-  recipeRatingMarkup(recipe)+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Choose days &amp; meals</button>'+
  '<p class="mp-disclaimer">AI-generated food photographs are illustrative, and recipes and nutrition remain estimates.</p></div></section>';
 }
