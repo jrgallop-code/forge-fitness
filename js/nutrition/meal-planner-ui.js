@@ -173,7 +173,7 @@ function scheduleMarkup(recipeId){
 function groceriesMarkup(saved){
  if(!saved)return '<section class="lu-meal-planner mp-standalone">'+screenHeader("Grocery list","catalog")+'<div class="mp-grocery-intro"><h1>No groceries yet</h1><p>Schedule recipes from the catalogue to create your shopping list.</p></div><button type="button" class="primary-btn" data-mp-open="catalog">Browse recipes</button></section>';
  const groups=groupedGrocery(saved);
- return '<section class="lu-meal-planner mp-groceries mp-standalone">'+screenHeader("Grocery list","calendar")+
+ return '<section class="lu-meal-planner mp-groceries mp-standalone">'+screenHeader("Grocery list","home")+
  '<div class="mp-grocery-intro"><span class="eyebrow">READY TO SHOP</span><h1>Your weekly groceries</h1><p>Combined quantities across every planned meal and household serving.</p></div>'+
  '<div class="mp-grocery-tools"><button type="button" class="primary-btn" data-mp-copy aria-label="Copy grocery list">⧉ Copy list</button><button type="button" data-mp-share>Share</button></div>'+
  '<p class="mp-copy-status" role="status" aria-live="polite"></p>'+
@@ -209,11 +209,11 @@ function render(root){
   '<div class="mp-onboarding-content">'+prefsMarkup(prefs)+'</div></section>';
  else if(page==="groceries")root.innerHTML=groceriesMarkup(saved);
   else if(page==="schedule")root.innerHTML=scheduleMarkup(catalogRecipeId);
-  else if(page==="calendar"&&!saved)root.innerHTML='<section class="lu-meal-planner mp-standalone">'+screenHeader("Your meal plan","catalog")+'<div class="mp-grocery-intro"><h1>Your week is empty</h1><p>Choose a recipe, then schedule the days and meal slots you want.</p></div><button type="button" class="primary-btn" data-mp-open="catalog">Explore recipes</button></section>';
+  else if(page==="calendar"&&!saved)root.innerHTML='<section class="lu-meal-planner mp-standalone">'+screenHeader("Your meal plan","home")+'<div class="mp-grocery-intro"><h1>Your week is empty</h1><p>Choose a recipe, then schedule the days and meal slots you want.</p></div><button type="button" class="primary-btn" data-mp-open="catalog">Explore recipes</button></section>';
  else{
   const allocation=saved?.targetAllocation;
   root.innerHTML='<section class="lu-meal-planner mp-standalone mp-calendar">'+
-   screenHeader("Your meal plan","catalog")+
+   screenHeader("Your meal plan","home")+
    '<div class="mp-calendar-actions"><div><span class="eyebrow">YOUR WEEK</span><h2>Plan & prep</h2>'+
    (allocation?'<p>Daily goal '+allocation.dailyCalories+' kcal · '+allocation.plannedCalories+' planned · '+allocation.reservedCalories+' flexible</p>':'<p>Planned meals never count as food consumed.</p>')+'</div>'+
    '<button type="button" data-mp-open="groceries">☷ Grocery list</button><button type="button" data-mp-open="catalog">Catalog</button><button type="button" data-mp-open="wizard">Preferences</button></div>'+
