@@ -3,7 +3,7 @@ import {mealPlannerHomeMarkup,mealPlannerShortcutMarkup} from "./meal-planner-ho
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getReviewDecision,saveReviewDecision,readReviewDecisions,reviewSummary} from "./mpm-review-first-100.js?v=1";
-import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount} from "./meal-planner-manual.js?v=1";
+import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount,removeScheduledMeal} from "./meal-planner-manual.js?v=remove-planned-meal-1";
 import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites,selectedRecipeStyles,saveRecipeStyles} from "./meal-planner-catalog-ui.js?v=persistent-icons-batchscale-hq-v3";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
@@ -12,7 +12,7 @@ import {generateGoalAwarePlan,refitRecipeForSlot} from "./meal-planner-planning.
 import {currentMealPlannerGoal,isWeightLossGoal,allocateMealCalories,fullnessEstimate} from "./meal-planner-goals.js?v=3";
 import {mealPhoto,ingredientPhoto,localFoodFallback,recipeSteps} from "./meal-planner-media.js?v=2";
 import {getFoodEmoji} from "./food-emoji.js?v=food-artwork-polish-1";
-import {hasConsumedMeal,markPlannedMealConsumed,undoPlannedMealConsumed} from "./meal-planner-consumption.js?v=1";
+import {hasConsumedMeal,markPlannedMealConsumed,undoPlannedMealConsumed} from "./meal-planner-consumption.js?v=complete-ingredient-logging-1";
 import {MEAL_CATALOG,MEAL_SLOTS,generatePlan,eligibleMeals,macrosForIngredients,groceryList,replacePlannedMeal,editPlannedIngredient,PLANNER_STORAGE_KEY} from "./meal-planner-data.js?v=1";
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const read=()=>{try{return JSON.parse(localStorage.getItem(PLANNER_STORAGE_KEY)||"null")}catch{return null}};
@@ -193,6 +193,25 @@ function bindImages(root){
   if(fallback&&!img.src.endsWith(fallback))img.src=fallback;
  },{once:true}));
 }
+// Re-rendering the recipe detail swaps its DOM. Preserve the page and nested
+// scroll offsets so selecting a day never jumps back to the image header.
+function renderWithoutScrollJump(root){
+ const doc=document.scrollingElement||document.documentElement;
+ const top=doc?.scrollTop||0;
+ const nested=[];
+ for(let node=root?.parentElement;node&&node!==document.body;node=node.parentElement){
+  if(node.scrollHeight>node.clientHeight+4)nested.push({node,top:node.scrollTop});
+ }
+ const focus=document.activeElement?.getAttribute?.("data-mp-schedule-day");
+ render(root);
+ const restore=()=>{
+  if(doc)doc.scrollTop=top;
+  for(const {node,top:offset} of nested)node.scrollTop=offset;
+  if(focus!==null&&focus!==undefined)root.querySelector('[data-mp-schedule-day="'+focus+'"]')?.focus({preventScroll:true});
+ };
+ restore();
+ requestAnimationFrame(restore);
+}
 function render(root){
  root.style.setProperty("--mp-art-sprite",'url("'+GENERATED_MEAL_ATLAS+'")');
  root.style.setProperty("--mp-hero-image",'url("'+MEAL_PLANNER_HERO+'")');
@@ -283,17 +302,17 @@ function render(root){
  }));
  root.querySelectorAll("[data-mp-schedule-day]").forEach(button=>button.addEventListener("click",()=>{
    const day=Number(button.dataset.mpScheduleDay);
-   scheduleOffsets=scheduleOffsets.includes(day)?scheduleOffsets.filter(x=>x!==day):[...scheduleOffsets,day].sort((a,b)=>a-b);render(root);
+   scheduleOffsets=scheduleOffsets.includes(day)?scheduleOffsets.filter(x=>x!==day):[...scheduleOffsets,day].sort((a,b)=>a-b);renderWithoutScrollJump(root);
  }));
  root.querySelectorAll("[data-mp-schedule-slot]").forEach(box=>box.addEventListener("change",()=>{
    const slot=box.dataset.mpScheduleSlot;
-   scheduleSlots=box.checked?[...new Set([...scheduleSlots,slot])]:scheduleSlots.filter(x=>x!==slot);render(root);
+   scheduleSlots=box.checked?[...new Set([...scheduleSlots,slot])]:scheduleSlots.filter(x=>x!==slot);renderWithoutScrollJump(root);
  }));
  root.querySelector("[data-mp-schedule-start]")?.addEventListener("change",event=>{
-   if(/^\d{4}-\d{2}-\d{2}$/.test(event.target.value)){scheduleStart=event.target.value;render(root);}
+   if(/^\d{4}-\d{2}-\d{2}$/.test(event.target.value)){scheduleStart=event.target.value;renderWithoutScrollJump(root);}
  });
  root.querySelector("[data-mp-schedule-portions]")?.addEventListener("change",event=>{
-   schedulePortions=Math.max(1,Math.min(12,Math.floor(Number(event.target.value)||1)));render(root);
+   schedulePortions=Math.max(1,Math.min(12,Math.floor(Number(event.target.value)||1)));renderWithoutScrollJump(root);
  });
  const saveSelectedRecipe=()=>{
    const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
@@ -441,8 +460,21 @@ function render(root){
  root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset,entry=read()?.entries?.find(x=>x.date===date&&x.slot===slot);
   if(!entry)return;
-  const result=markPlannedMealConsumed(date,slot,entry.ingredients);
+  const result=markPlannedMealConsumed(date,slot,entry.ingredients,entry.servings||1);
   if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log meal: "+result.reason);
+ }));
+ root.querySelectorAll("[data-meal-remove]").forEach(button=>button.addEventListener("click",()=>{
+  const {date,slot}=button.dataset;
+  const alreadyEaten=hasConsumedMeal(date,slot);
+  const message=alreadyEaten
+   ?"Remove this meal from My Week? Its ingredients already logged in Food Log will be kept."
+   :"Remove this planned meal from My Week? This does not change your Food Log.";
+  if(!window.confirm(message))return;
+  const current=read();
+  const next=removeScheduledMeal(current,date,slot);
+  if(next===current)return;
+  if(write(next))render(root);
+  else window.alert("Could not remove the planned meal from this device.");
  }));
  root.querySelectorAll("[data-meal-undo]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
@@ -486,7 +518,7 @@ function renderDays(plan){
      const sourcePending=Boolean(recipe?.groups);
     const m=macrosForIngredients(entry.ingredients);
     const satiety=fullnessEstimate(entry.ingredients);
-    return '<article class="lu-meal-card"><div class="lu-meal-card-head"><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
+    return '<article class="lu-meal-card"><div class="lu-meal-card-head"><details class="mp-meal-card-menu"><summary aria-label="Meal options for '+esc(entry.slot)+'" title="Meal options">⋯</summary><button type="button" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Remove meal</button></details><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
       (recipe&&!options.some(x=>x.id===recipe.id)?'<option value="'+esc(recipe.id)+'" selected>'+esc(recipe.name)+'</option>':'')+
       options.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===entry.recipeId?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></label>'+
       (recipe?(sourcePending?'<p>Source-linked · nutrition pending review · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>':'<p>≈ '+Math.round(m.calories)+' kcal · P '+Math.round(m.protein)+'g · C '+Math.round(m.carbs)+'g · F '+Math.round(m.fat)+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':'')):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
