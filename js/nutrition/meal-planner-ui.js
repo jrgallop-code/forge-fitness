@@ -556,5 +556,6 @@ export function renderMealPlannerShell(){return `
 
 </style><div data-meal-planner-root></div>`;}
 export function initializeMealPlanner(){
- const root=document.querySelector("[data-meal-planner-root]");if(root)render(root);
+ const root=document.querySelector("[data-meal-planner-root]");
+ if(root){plannerScreen="home";render(root);}
 }
