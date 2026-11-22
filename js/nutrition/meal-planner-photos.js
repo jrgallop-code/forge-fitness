@@ -31,6 +31,7 @@ export function recipePhoto(recipe){
   exactMatch:false,recipeId:recipe.id,backgroundSize:"400% 200%"
  };
  const i=recipeBaseIndex(recipe);
+ if(i>=20&&i<30){const tile=i-20;return {primary:"/assets/meal-photos/base20-29-hq.avif?v=1",tile,x:(tile%5)/4*100,y:Math.floor(tile/5)*100,source:PHOTO_SOURCE,exactMatch:true,recipeId:recipe?.id,backgroundSize:"500% 200%"};}
  // Restore the high-resolution photographic atlas for the first twenty
  // verified base-image positions. The tiny offline JS sprite is too low
  // resolution for iPhone retina recipe-card and full-screen detail sizes.
