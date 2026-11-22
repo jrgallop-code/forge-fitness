@@ -15,6 +15,10 @@ on:
       - tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-home-ios.test.mjs
       - tests/meal-planner-home-ios.test.mjs
       - tests/meal-planner-persistent-nav-batch.test.mjs
+      - tests/meal-planner-consumption.test.mjs
+      - tests/meal-planner-manual-scheduling.test.mjs
+      - js/nutrition/meal-planner-consumption.js
+      - js/nutrition/meal-planner-manual.js
       - assets/meal-photos/featured8-hq.avif
       - assets/meal-photos/base20-29-hq.avif
       - js/nutrition/meal-planner-home.js
@@ -42,7 +46,7 @@ jobs:
       - run: npm ci
       - name: Verify catalogue and first 100 review controls
         run: |
-          node --test tests/meal-planner-review-first-100.test.mjs tests/meal-prep-manual-discovery.test.mjs tests/meal-planner-manual-scheduling.test.mjs tests/meal-planner-source-batch-2.test.mjs tests/meal-planner-catalog.test.mjs tests/food-log-meals-ui.test.mjs tests/meal-planner-unique-image-regression.test.mjs tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-persistent-nav-batch.test.mjs
+          node --test tests/meal-planner-consumption.test.mjs tests/meal-planner-review-first-100.test.mjs tests/meal-prep-manual-discovery.test.mjs tests/meal-planner-manual-scheduling.test.mjs tests/meal-planner-source-batch-2.test.mjs tests/meal-planner-catalog.test.mjs tests/food-log-meals-ui.test.mjs tests/meal-planner-unique-image-regression.test.mjs tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-persistent-nav-batch.test.mjs
       - name: Verify updated front-end JavaScript syntax
         run: |
           node --check js/nutrition/food-log.js
