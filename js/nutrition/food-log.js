@@ -1,4 +1,4 @@
-import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=persistent-icons-batchscale-hq-v3";
+import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=macro-scroll-remove-complete-log-20261122";
 import {createFoodSpeechSession} from './food-speech.js';
 import {voiceIngredients,accurateVoiceMatch,voicePortion,replacementVoicePortion} from './voice-food-model.js';
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
