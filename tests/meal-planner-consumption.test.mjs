@@ -29,3 +29,30 @@ test("manual removal does not delete unrelated foods",()=>{
  assert.equal(undoPlannedMealConsumed(date,slot).ok,true);
  assert.equal(consumedEntries(date,slot).length,0);
 });
+
+test("multi-serving planned meal logs all positive ingredients and full quantities",()=>{
+ const date="2026-11-24",slot="Dinner";
+ const ingredients=[{food:"chicken breast",grams:140},{food:"brown rice",grams:170},{food:"broccoli",grams:120},{food:"olive oil",grams:13}];
+ const result=markPlannedMealConsumed(date,slot,ingredients,3);
+ assert.equal(result.ok,true);
+ assert.equal(result.ingredientCount,4);
+ const logged=consumedEntries(date,slot);
+ assert.equal(logged.length,ingredients.length);
+ assert.deepEqual(logged.map(x=>x.foodName||x.name||x.food?.name).filter(Boolean).length,4);
+ assert.ok(Math.abs(logged[0].nutrition.calories-165*1.4*3)<0.0001);
+ assert.equal(logged.every(x=>x.mealPlannerPortions===3),true);
+ assert.equal(undoPlannedMealConsumed(date,slot).ok,true);
+});
+test("unknown ingredient blocks all-or-nothing logging instead of silently dropping items",()=>{
+ const date="2026-11-26",slot="Lunch";
+ const result=markPlannedMealConsumed(date,slot,[{food:"chicken breast",grams:140},{food:"unknown custom spice",grams:3}]);
+ assert.equal(result.ok,false);
+ assert.match(result.reason,/unmapped_ingredients/);
+ assert.equal(entriesForDate(date).length,0);
+});
+test("zeroed-out optional ingredient is ignored without losing other ingredients",()=>{
+ const date="2026-11-27",slot="Lunch";
+ const result=markPlannedMealConsumed(date,slot,[{food:"tofu",grams:180},{food:"ginger",grams:0},{food:"brown rice",grams:145}]);
+ assert.equal(result.ok,true);
+ assert.equal(consumedEntries(date,slot).length,2);
+});
