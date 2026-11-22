@@ -40,7 +40,8 @@ export function mealPlannerHomeMarkup({plan,selectedDate="",recipes,photoMarkup,
  const active=dates.includes(selectedDate)?selectedDate:dates[0];
  const savedEntries=(plan?.entries||[]).filter(x=>x.date===active);
  const scheduled=savedEntries.map(e=>({recipe:recipes.find(r=>r.id===e.recipeId),entry:e})).filter(x=>x.recipe);
- const highlights=scheduled.length?scheduled:recipes.filter(r=>!r.indexOnly).slice(0,4).map(recipe=>({recipe,entry:null}));
+ const recommendations=["Chicken rice bowl","Lean beef rice skillet","Turkey avocado wrap","Salmon and sweet potato"].map(name=>recipes.find(r=>r.name===name)).filter(Boolean);
+ const highlights=scheduled.length?scheduled:recommendations.map(recipe=>({recipe,entry:null}));
  const favorites=new Set(favoriteIds);
  const actions=[["week","My Week","calendar"],["groceries","Grocery","groceries"],["recipes","Recipes","catalog"],["favorites","Favorites","favorites"]];
  const count=plan?.entries?.length||0;
