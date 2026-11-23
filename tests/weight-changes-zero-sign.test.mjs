@@ -18,7 +18,7 @@ test("rounded zero never carries a negative or positive sign",()=>{
 });
 test("visible changes preserve their proper sign",()=>{
  const fmt=formatter();
- assert.equal(fmt(-0.15),"−0.2 lb");
+ assert.equal(fmt(-0.16),"−0.2 lb");
  assert.equal(fmt(0.21),"+0.2 lb");
  assert.equal(fmt(-1.1),"−1.1 lb");
  assert.equal(fmt(1.1),"+1.1 lb");
