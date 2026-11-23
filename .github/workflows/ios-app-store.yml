@@ -187,13 +187,14 @@ jobs:
           APP_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app
           APP_EXTENSION_BUNDLE_IDENTIFIER: com.leveluphypertrophy.app.timer
           SIGNING_DIR: ${{ runner.temp }}/level-up-signing
-          # One-time reviewed rotation of the CI certificate created for successful
-          # TestFlight build 462 (VALID / IN_BETA_TESTING, run 45070176630).
-          # Exact target metadata confirmed by read-only inventory 45080157909.
-          # Never revoke either older personal distribution certificate.
-          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: U2SH4FGUT8
-          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 1684592E01D0FA9A6F817D4160E57ABA
-          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-22T20:59:11.000+00:00
+          # One-time CI signing rotation for the 300-recipe catalog.
+          # Previous release 45080202663 produced TestFlight build 463:
+          # VALID / IN_BETA_TESTING. Read-only inventory 45093853180
+          # confirmed ID, serial and expiry of its CI-generated certificate.
+          # Never revoke the two older personal distribution certificates.
+          LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE: QZA68NXF6B
+          LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE: 35E69B389170CD9BCA672CB4EF9F81D4
+          LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE: 2027-11-22T22:46:30.000+00:00
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
