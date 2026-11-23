@@ -14,8 +14,8 @@ test("all 40 complete base recipes show per-portion macros on their catalogue ca
   assert.ok(recipeDetailMarkup(recipe).includes("Nutrition per portion"));
  }
 });
-test("all 8 featured recipe cards use same published estimate as detail page",()=>{
- assert.equal(FEATURED_RECIPES.length,8);
+test("all sourced recipe cards use the publisher macro estimate in detail view",()=>{
+ assert.ok(FEATURED_RECIPES.length>=12);
  for(const recipe of FEATURED_RECIPES){
   const m=recipeNutritionEstimate(recipe),html=recipeCard(recipe);
   assert.match(html,new RegExp(Math.round(m.calories)+" kcal"));
