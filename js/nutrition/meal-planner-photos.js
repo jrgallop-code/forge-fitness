@@ -23,7 +23,22 @@ export function recipeBaseIndex(recipe){
  const id=Number(String(recipe?.id||"").replace(/^lu-meal-/,""));
  return Number.isFinite(id)&&id>0?Math.min(39,Math.floor((id-1)/20)):0;
 }
+// Source-index previews have no dedicated production photography yet. Use
+// a deterministic generated-food atlas illustration, never a blank tile.
+// This does not imply exact plating or a verified recipe.
+function illustrationTile(recipe){
+ const value=String(recipe?.id||recipe?.name||"meal");
+ let hash=2166136261;
+ for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619);
+ return (hash>>>0)%40;
+}
 export function recipePhoto(recipe){
+ if(recipe?.indexOnly || !/^lu-meal-/.test(String(recipe?.id||"")) && !Object.prototype.hasOwnProperty.call(FEATURED_TILES,recipe?.id)){
+  const tile=illustrationTile(recipe);
+  return {primary:GENERATED_MEAL_ATLAS,tile,x:tile%8/7*100,y:Math.floor(tile/8)/4*100,
+   source:"generated-illustrative-food-atlas",exactMatch:false,recipeId:recipe?.id,backgroundSize:"800% 500%"};
+ }
+
  const featuredIndex=FEATURED_TILES[recipe?.id];
  if(Number.isInteger(featuredIndex))return {
   primary:FEATURED_HQ_ATLAS,tile:featuredIndex,x:(featuredIndex%4)/3*100,
