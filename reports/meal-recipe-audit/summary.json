@@ -1,0 +1,12 @@
+{
+  "total": 340,
+  "source": 300,
+  "originals": 40,
+  "ready": 0,
+  "withSourceIngredients": 88,
+  "missingImage": 340,
+  "missingMappedIngredients": 292,
+  "missingInstructions": 332,
+  "missingMacros": 292,
+  "numberOfBatches": 14
+}
