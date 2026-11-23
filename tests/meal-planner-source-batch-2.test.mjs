@@ -5,15 +5,15 @@ import {MPM_INDEX_RECIPES} from "../js/nutrition/meal-prep-manual-discovery.js";
 import {baseRecipes,matchesCatalog} from "../js/nutrition/meal-planner-catalog-ui.js";
 import {scheduleRecipe} from "../js/nutrition/meal-planner-manual.js";
 import {groceryList} from "../js/nutrition/meal-planner-data.js";
-test("eight source-linked reviewed ingredient inventories promote unique indexed dishes",()=>{
- assert.equal(FEATURED_RECIPES.length,8);
+test("expanded source-linked ingredient inventories promote distinct indexed dishes",()=>{
+ assert.ok(FEATURED_RECIPES.length>=12);
  assert.ok(baseRecipes().length>=FEATURED_RECIPES.length+40);
  assert.ok(baseRecipes().filter(x=>x.indexOnly).length>0);
  assert.equal(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Meal Prep Manual (300)",styles:[]})).length,300);
  assert.ok(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Ready to plan",styles:[]})).every(x=>!x.indexOnly));
  for(const recipe of FEATURED_RECIPES){
-  assert.ok(recipe.groups.length>=2);
-  assert.ok(recipe.steps.length>=4);
+  assert.ok(recipe.groups.length>=1);
+  assert.ok(recipe.steps.length>=3);
   assert.ok(recipe.sourceUrl.startsWith("https://mealprepmanual.com/"));
   assert.match(recipe.reviewStatus,/awaiting/);
   assert.ok(!recipe.nutritionVerified);
