@@ -113,6 +113,9 @@ function formatChange(value) {
     if (!Number.isFinite(value)) return "—";
     const shown = displayMass(Math.abs(value), 1);
     if (!Number.isFinite(shown)) return "—";
+    // Round before determining the sign. Tiny negative trends (e.g. -0.03 lb)
+    // must display as "0.0 lb", never "−0.0 lb".
+    if (shown < 0.05) return `0.0 ${massUnit()}`;
     const sign = value > 0 ? "+" : value < 0 ? "−" : "";
     return `${sign}${shown.toFixed(1)} ${massUnit()}`;
 }
