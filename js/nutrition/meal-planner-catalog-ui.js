@@ -1,7 +1,7 @@
 // Recipe cards use one distinct generated food photo per displayed recipe; duplicates are rejected by regression tests.
 import {MEAL_CATALOG,macrosForIngredients} from "./meal-planner-data.js?v=3";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
-import {MPM_INDEX_RECIPES} from "./meal-prep-manual-discovery.js?v=1";
+import {MPM_CATALOG_300,MPM_CATALOG_300_SUMMARY} from "./mpm-catalog-300.js?v=1";
 import {getRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=featured-base-hq-v3";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
@@ -29,9 +29,15 @@ const SEAFOOD=/\b(salmon|cod|tuna|fish|shrimp|prawn|seafood|tilapia|anchovy|sard
 const MEAT=/\b(chicken|turkey|beef|steak|sirloin|pork|bacon|ham|sausage|lamb|chorizo|meatball)\b/i;
 const ANIMAL=/\b(egg|eggs|milk|yogurt|yoghurt|cheese|butter|cream|whey|honey|feta|cottage cheese)\b/i;
 export function recipeStyle(recipe){
+ // Never assert vegetarian/vegan compatibility without a complete ingredient list.
+ if(recipe?.indexOnly){
+  if(SEAFOOD.test(recipe.name))return "Fish & seafood";
+  if(MEAT.test(recipe.name))return "Meat & poultry";
+  return "Unverified";
+ }
  const names=(recipe.ingredients||featuredIngredients(recipe)).map(x=>String(x.food||x.name||"")).join(" ");
- if(MEAT.test(names)||recipe.diet==="omnivore")return "Meat & poultry";
  if(SEAFOOD.test(names)||recipe.diet==="pescatarian")return "Fish & seafood";
+ if(MEAT.test(names)||recipe.diet==="omnivore")return "Meat & poultry";
  if(recipe.diet==="vegan"&&!ANIMAL.test(names))return "Vegan";
  return "Vegetarian";
 }
@@ -44,7 +50,7 @@ export function isCompleteRecipe(recipe){
  return !recipe?.indexOnly&&((Array.isArray(recipe?.ingredients)&&recipe.ingredients.length>0)||(Array.isArray(recipe?.groups)&&recipe.groups.some(g=>g.ingredients?.length)));
 }
 
-export const CATALOG_FILTERS=["Complete recipes"];
+export const CATALOG_FILTERS=["Meal Prep Manual (300)","Ready to plan","All recipes","Level Up originals"];
 export const CATALOG_FOOD_TYPES=["All foods","Chicken & turkey","Beef & pork","Fish & seafood","Vegetarian","Vegan","Pasta & noodles","Rice & grains","Salads & vegetables","Breakfast foods"];
 const FOOD_TYPE_RULES=[
  ["Chicken & turkey", /\b(chicken|turkey|poultry)\b/i],
@@ -65,17 +71,19 @@ export function matchesFoodType(recipe, foodType="All foods"){
 }
 // Index-listed dishes are individually named; do not surface twenty invented
 // size variants of the same generic concept as distinct recipes.
+const normalizedRecipeName=name=>String(name||"").toLocaleLowerCase("en").replace(/[‘’]/g,"'").replace(/[^a-z0-9]+/g," ").trim();
 export function baseRecipes(){
- // Show only distinct recipes with ingredient records; title-only entries
- // remain in the separate internal review dataset, not the food catalogue.
- const classics=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
+ const originals=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
+ const promoted=new Map(FEATURED_RECIPES.map(recipe=>[normalizedRecipeName(recipe.name),recipe]));
  const seen=new Set();
- return [...FEATURED_RECIPES,...classics].filter(recipe=>{
-  const key=recipe.name.toLocaleLowerCase("en");
+ const source=MPM_CATALOG_300.map(recipe=>promoted.get(normalizedRecipeName(recipe.name))||recipe);
+ return [...source,...originals].filter(recipe=>{
+  const key=normalizedRecipeName(recipe.name);
   if(seen.has(key))return false;
   seen.add(key);return true;
  });
 }
+
 export function storedFavorites(){try{const ids=JSON.parse(localStorage.getItem(CATALOG_FAVORITES_KEY)||"[]");return Array.isArray(ids)?ids.filter(x=>typeof x==="string"):[]}catch{return []}}
 export function toggleFavorite(id){
  const list=new Set(storedFavorites());if(list.has(id))list.delete(id);else list.add(id);
@@ -93,10 +101,12 @@ export function matchesCatalog(recipe,{slot="All",filter="Complete recipes",sear
  const selectedSlot=slot==="Snacks"?"Meal 4":slot;
  if(selectedSlot!=="All"&&recipe.slot!==selectedSlot)return false;
  if(!matchesRecipeStyles(recipe,styles))return false;
- if(filter==="Complete recipes"&&!isCompleteRecipe(recipe))return false;
+ if(filter==="Meal Prep Manual (300)"&&!MPM_CATALOG_300.some(item=>normalizedRecipeName(item.name)===normalizedRecipeName(recipe.name)))return false;
+ if(filter==="Ready to plan"&&!isCompleteRecipe(recipe))return false;
+ if(filter==="Level Up originals"&&MPM_CATALOG_300.some(item=>normalizedRecipeName(item.name)===normalizedRecipeName(recipe.name)))return false;
  if(!matchesFoodType(recipe,foodType))return false;
  const query=String(search).trim().toLowerCase();
- const words=[recipe.name,recipe.cuisine||"",recipe.diet||"",...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food)].join(" ").toLowerCase();
+ const words=[recipe.name,recipe.cuisine||"",recipe.diet||"",...(recipe.ingredients||featuredIngredients(recipe)).map(x=>x.food),...(recipe.ingredientStatements||[]).map(x=>x.description)].join(" ").toLowerCase();
  if(query&&!words.includes(query))return false;
  
  if(filter==="Needs my review"&&(!reviewIdForRecipe(recipe)||getReviewDecision(reviewIdForRecipe(recipe)).decision!=="unreviewed"))return false;
@@ -115,13 +125,13 @@ export function recipeCard(recipe,favorite=false){
  const estimated=recipeNutritionEstimate(recipe);
  const hasNutrition=estimated&&["calories","protein","carbs","fat"].every(k=>Number.isFinite(Number(estimated[k])));
  const info=recipe.indexOnly
-   ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" source ingredients · review needed":"Source index · ingredient review pending")
+   ?(recipe.ingredientStatements?.length?recipe.ingredientStatements.length+" ingredients · details pending":"Source recipe · details pending")
    :hasNutrition?Math.round(estimated.calories)+" kcal · P "+Math.round(estimated.protein)+"g · C "+Math.round(estimated.carbs)+"g · F "+Math.round(estimated.fat)+"g · "+recipe.prepMinutes+" min":"Nutrition estimate unavailable";
  return '<article class="mp-catalog-card"><button type="button" class="mp-catalog-open" data-mp-recipe="'+esc(recipe.id)+'" aria-label="See '+esc(recipe.name)+'">'+photoMarkup(recipe)+
  '<span class="mp-catalog-text"><strong>'+esc(recipe.name)+'</strong><small>'+info+'</small>'+'</span></button>'+
  '<button type="button" class="mp-catalog-heart'+(favorite?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favorite?"Remove":"Save")+' favorite">'+(favorite?"♥":"♡")+'</button></article>';
 }
-export function catalogMarkup({slot="All",filter="Complete recipes",search="",foodType="All foods",styles=selectedRecipeStyles(),favoritesOnly=false}={}){
+export function catalogMarkup({slot="All",filter="Meal Prep Manual (300)",search="",foodType="All foods",styles=selectedRecipeStyles(),favoritesOnly=false}={}){
  const favorites=new Set(storedFavorites());
  const recipes=baseRecipes().filter(recipe=>matchesCatalog(recipe,{slot,filter,search,foodType,styles})&&(!favoritesOnly||favorites.has(recipe.id)));
 
@@ -134,10 +144,10 @@ export function catalogMarkup({slot="All",filter="Complete recipes",search="",fo
  '<div class="mp-catalog-chips" role="group" aria-label="Meal type">'+CATALOG_SLOTS.map(x=>'<button type="button" class="'+(slot===x?"active":"")+'" data-mp-slot="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
  '<div class="mp-food-type-filter"><div class="mp-filter-caption">FOOD TYPE</div><div class="mp-catalog-chips mp-food-type-chips" role="group" aria-label="Filter recipes by food type">'+CATALOG_FOOD_TYPES.map(x=>'<button type="button" class="'+(foodType===x?"active":"")+'" data-mp-food-type="'+esc(x)+'" aria-pressed="'+(foodType===x)+'">'+esc(x)+'</button>').join("")+'</div></div>'+
  '<div class="mp-catalog-chips mp-catalog-secondary" role="group" aria-label="Meal filters">'+CATALOG_FILTERS.map(x=>'<button type="button" class="'+(filter===x?"active":"")+'" data-mp-filter="'+esc(x)+'">'+esc(x)+'</button>').join("")+'</div>'+
- '<p class="mp-catalog-count">'+recipes.length+' recipes</p>'+
+ '<p class="mp-catalog-count">'+recipes.length+' recipes · '+MPM_CATALOG_300_SUMMARY.withSourceIngredients+' source ingredient lists available for review</p>'+
  '<div class="mp-catalog-grid">'+recipes.map(recipe=>recipeCard(recipe,favorites.has(recipe.id))).join("")+'</div>'+
  (recipes.length?"":'<p class="mp-catalog-empty">No recipes match these filters. Try another meal type or search.</p>')+
- '<p class="mp-disclaimer">Nutrition values are estimates. Complete recipes include ingredients and preparation steps.</p></div></section>';
+ '<p class="mp-disclaimer">The 300-dish collection contains named publisher recipes. Only entries marked Ready to plan have full Level Up ingredients and preparation details. Others are browseable and can be favourited, but cannot be scheduled or logged until reviewed.</p></div></section>';
 }
 const svgThumb=(down=false)=>'<svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"'+(down?' style="transform:rotate(180deg)"':'')+'><path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3Zm0 0 4.6-7.2a2.2 2.2 0 0 1 3.9 1.7L14 9h5.1a3 3 0 0 1 2.9 3.6l-1.4 6A3 3 0 0 1 17.7 21H7"/></svg>';
 export function recipeRatingMarkup(recipe){
@@ -164,9 +174,17 @@ function featuredRecipeDetail(recipe,scale=1){
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+'<p class="mp-disclaimer">You can mark this meal eaten from My Week. Nutrition is a published estimate and has not been independently verified.</p></div></section>';
 }
 function sourceReviewDetail(recipe){
- return '<section class="lu-meal-planner mp-recipe-detail mp-standalone">'+
- '<header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe unavailable</h2><span></span></header>'+
- '<div class="mp-recipe-content"><h1>'+esc(recipe.name)+'</h1><p>This entry is still missing complete ingredients or preparation steps. It cannot be scheduled as a finished recipe.</p></div></section>';
+ const facts=Array.isArray(recipe.ingredientStatements)?recipe.ingredientStatements:[];
+ const estimate=recipe.publishedEstimate;
+ const nutrition=estimate?'<p class="mp-disclaimer">Publisher estimate per serving: '+(Number.isFinite(Number(estimate.calories))?Math.round(estimate.calories)+' kcal · ':'')+(Number.isFinite(Number(estimate.protein))?Math.round(estimate.protein)+'g protein · ':'')+'not independently verified.</p>':'<p class="mp-disclaimer">Nutrition data not yet available.</p>';
+ const source=recipe.sourceUrl||recipe.sourceIndexUrl;
+ return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to recipes">‹</button><h2>Recipe preview</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
+ '<h1>'+esc(recipe.name)+'</h1><p class="mp-disclaimer">The Meal Prep Manual · Source-indexed recipe · not yet ready for planning.</p>'+nutrition+
+ (recipe.sourceYield?'<p>Publisher yield: '+esc(recipe.sourceYield)+' servings</p>':'')+
+ (facts.length?'<section><h3>Published ingredients · review pending</h3><ul>'+facts.map(x=>'<li>'+esc(x.description)+'</li>').join("")+'</ul></section>':'<p>Full ingredients and seasoning quantities have not yet been imported.</p>')+
+ '<section><h3>Preparation</h3><p>Cooking instructions and food-safety checks are pending Level Up review. No recipe directions have been fabricated.</p></section>'+
+ '<a href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">View original recipe information</a>'+
+ '<p class="mp-disclaimer">Save this dish to Favourites now. Scheduling, shopping calculations and marking eaten will be available after the recipe is completed and verified.</p></div></section>';
 }
 export function recipeDetailMarkup(recipe,hasPlan=false,scale=1){
  if(recipe?.indexOnly)return sourceReviewDetail(recipe);
