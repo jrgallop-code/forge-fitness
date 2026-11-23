@@ -1,5 +1,5 @@
 name: Inspect App Store signing certificates
-# Read-only Apple distribution inventory before 300-recipe catalogue TestFlight release; never revokes.
+# Read-only Apple distribution inventory before signed-zero Weight Changes TestFlight release; never revokes.
 
 on:
   workflow_dispatch:
