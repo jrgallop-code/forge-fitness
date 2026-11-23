@@ -1,0 +1,36 @@
+name: Audit bundled recipe catalogue
+on:
+  push:
+    branches: [ios/capacitor-app-store]
+    paths:
+      - scripts/audit-recipe-catalog.mjs
+      - .github/workflows/audit-recipe-catalog.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios/capacitor-app-store
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Audit and flag incomplete recipe records in batches of 25
+        run: node scripts/audit-recipe-catalog.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: level-up-recipe-audit
+          path: reports/meal-recipe-audit/
+          retention-days: 30
+      - name: Publish repeatable static-catalogue audit
+        run: |
+          git config user.name "Level Up Recipe Audit Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/meal-recipe-audit/
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Publish recipe completeness audit and batches of 25'
+          git pull --rebase origin ios/capacitor-app-store
+          git push origin HEAD:ios/capacitor-app-store
