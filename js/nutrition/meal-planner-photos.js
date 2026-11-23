@@ -33,6 +33,16 @@ function illustrationTile(recipe){
  return (hash>>>0)%40;
 }
 export function recipePhoto(recipe){
+ const cloudImage=recipe?.image;
+ if(cloudImage && typeof cloudImage==="object" && /^\\/assets\\/meal-photos\\/[a-z0-9-]+\\.(?:avif|png|webp)$/.test(cloudImage.asset||"")){
+  const cols=Math.max(1,Math.min(10,Number(cloudImage.columns)||1));
+  const rows=Math.max(1,Math.min(10,Number(cloudImage.rows)||1));
+  const tile=Math.max(0,Math.min(cols*rows-1,Number(cloudImage.tile)||0));
+  return {primary:cloudImage.asset,tile,x:cols>1?(tile%cols)/(cols-1)*100:50,
+   y:rows>1?Math.floor(tile/cols)/(rows-1)*100:50,source:"generated-representative-photo",
+   exactMatch:false,recipeId:recipe?.id,backgroundSize:(cols*100)+"% "+(rows*100)+"%"};
+ }
+
  if(recipe?.indexOnly || !/^lu-meal-/.test(String(recipe?.id||"")) && !Object.prototype.hasOwnProperty.call(FEATURED_TILES,recipe?.id)){
   const tile=illustrationTile(recipe);
   return {primary:GENERATED_MEAL_ATLAS,tile,x:tile%8/7*100,y:Math.floor(tile/8)/4*100,
