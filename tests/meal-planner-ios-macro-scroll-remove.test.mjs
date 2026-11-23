@@ -6,7 +6,7 @@ import {FEATURED_RECIPES} from "../js/nutrition/meal-planner-featured-recipes.js
 const source=async path=>readFile(new URL(path,import.meta.url),"utf8");
 
 test("both base and featured recipe detail show four per-portion nutrition metrics",()=>{
- for(const recipe of [baseRecipes().find(x=>!x.groups),FEATURED_RECIPES[0]]){
+ for(const recipe of [baseRecipes().find(x=>!x.groups&&!x.indexOnly),FEATURED_RECIPES[0]]){
   const html=recipeDetailMarkup(recipe,false,3);
   assert.match(html,/Nutrition per portion/);
   assert.match(html,/mp-macro-calories/);
