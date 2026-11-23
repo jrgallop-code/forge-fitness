@@ -3,10 +3,12 @@
   "source": 300,
   "originals": 40,
   "ready": 0,
-  "withSourceIngredients": 88,
+  "withSourceIngredients": 92,
+  "detailedSourceRecipes": 12,
+  "sourceLockedKnown": 1,
   "missingImage": 340,
-  "missingMappedIngredients": 292,
-  "missingInstructions": 332,
-  "missingMacros": 292,
+  "missingMappedIngredients": 288,
+  "missingInstructions": 328,
+  "missingMacros": 288,
   "numberOfBatches": 14
 }
