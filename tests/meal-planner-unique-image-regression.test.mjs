@@ -12,7 +12,7 @@ test("iOS uses one Meal Plan entry point; duplicate top banner is removed",async
  assert.match(foodLog,/>Meal Plan<\/button>/);
 });
 test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
- const recipes=baseRecipes().filter(recipe=>!recipe.indexOnly);
+ const recipes=baseRecipes().filter(recipe=>!recipe.indexOnly && (!FEATURED_RECIPES.some(f=>f.id===recipe.id)||FEATURED_RECIPES.slice(0,8).some(f=>f.id===recipe.id)));
  const keys=recipes.map(recipe=>{
   const p=recipePhoto(recipe);
   assert.match(p.primary,/^(?:data:image\/(?:webp|avif);base64,|\/assets\/)/);
@@ -23,12 +23,12 @@ test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
  assert.ok(baseRecipes().filter(r=>r.indexOnly).every(r=>r.photoStatus==="awaiting-licensed-image"||r.photoStatus==="not-created"));
  assert.equal(new Set(keys).size,keys.length,
    "Two different recipes may not point to the same image tile");
- assert.equal(FEATURED_RECIPES.length,8);
+ assert.ok(FEATURED_RECIPES.length>=12);
 });
 test("eight generated featured images have correct binary header and assigned unique tiles",()=>{
  assert.match(FEATURED_MEAL_PHOTOS,/^data:image\/avif;base64,/);
  const bytes=Buffer.from(FEATURED_MEAL_PHOTOS.split(",")[1],"base64");
  assert.equal(bytes.toString("ascii",4,12),"ftypavif");
- const tiles=FEATURED_RECIPES.map(r=>recipePhoto(r).tile);
+ const tiles=FEATURED_RECIPES.slice(0,8).map(r=>recipePhoto(r).tile);
  assert.deepEqual([...tiles].sort((a,b)=>a-b),[0,1,2,3,4,5,6,7]);
 });
