@@ -18,7 +18,7 @@ import { initializeMonthlyReports, initializeMonthlyReportDashboardPrompt } from
 import { initializeWeightTracker, selectProgressTab } from "../progress/weight-tracker.js?v=steps-tab-cardio-1";
 import { initializePhotoJournal } from "../progress/photo-journal.js?v=progress-photo-share-1";
 import { initializeCardioAnalytics } from "../progress/cardio-analytics.js?v=theme-accent-calendar-1";
-import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=smoothed-visible-trend-release-1";
+import { initializeWeightProgressCompact } from "../progress/weight-progress-compact.js?v=negative-zero-fixed-20261123";
 import { initializeTrainingProgress } from "../progress/training-progress.js?v=analytics-bar-polish-1";
 import { initializeExerciseProgressV2 } from "../progress/exercise-progress-v2.js?v=weight-reps-progress-1";
 import { initializeOverallStrengthIndex } from "../progress/overall-strength-index.js?v=analytics-summary-polish-1";
