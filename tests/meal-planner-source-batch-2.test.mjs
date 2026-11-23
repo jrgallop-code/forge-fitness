@@ -8,8 +8,9 @@ import {groceryList} from "../js/nutrition/meal-planner-data.js";
 test("eight source-linked reviewed ingredient inventories promote unique indexed dishes",()=>{
  assert.equal(FEATURED_RECIPES.length,8);
  assert.ok(baseRecipes().length>=FEATURED_RECIPES.length+40);
- assert.equal(baseRecipes().filter(x=>x.indexOnly).length,0);
- assert.equal(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Complete recipes"})).length,baseRecipes().length);
+ assert.ok(baseRecipes().filter(x=>x.indexOnly).length>0);
+ assert.equal(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Meal Prep Manual (300)",styles:[]})).length,300);
+ assert.ok(baseRecipes().filter(x=>matchesCatalog(x,{filter:"Ready to plan",styles:[]})).every(x=>!x.indexOnly));
  for(const recipe of FEATURED_RECIPES){
   assert.ok(recipe.groups.length>=2);
   assert.ok(recipe.steps.length>=4);
