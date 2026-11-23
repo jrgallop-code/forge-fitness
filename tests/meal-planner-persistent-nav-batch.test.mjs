@@ -44,7 +44,7 @@ test("three selected days create exactly three unconsumed portions and matching 
 });
 test("featured and ten later recipes use non-duplicated higher-resolution photo assets",async()=>{
  const recipes=baseRecipes();
- const featured=recipes.filter(x=>x.groups).slice(0,8);
+ const featured=FEATURED_RECIPES.slice(0,8);
  assert.equal(featured.length,8);
  const f=featured.map(recipePhoto);
  assert.equal(new Set(f.map(p=>p.tile)).size,8);
