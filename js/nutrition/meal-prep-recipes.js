@@ -123,12 +123,14 @@ export const mealPrepRecipes = [
     ],
     "verified": false,
     "sourceChecked": true,
+    "sourceUrl": "https://mealprepmanual.com/creamy-cilantro-lime-chicken-bowls/",
     "nutritionSource": "Published recipe estimate, not independently verified",
     "sourceNutrition": {
       "calories": 490,
       "protein": 43,
       "carbs": 46,
-      "fat": 15
+      "fat": 15,
+      "fiber": 4.8
     },
     "prepMinutes": 20,
     "cookMinutes": 60,
