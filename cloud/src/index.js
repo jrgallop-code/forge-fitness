@@ -83,6 +83,26 @@ async function handleRequest(request, env, ctx) {
     if (request.method === "OPTIONS") return preflight(request, env);
     if (origin && !allowedOrigins(env).has(origin)) return json({ error: "Origin not allowed." }, 403, request, env);
     if (url.pathname === "/health" && request.method === "GET") return json({ ok: true }, 200, request, env);
+    // Public, read-only catalogue. Incomplete recipes remain flagged and cannot be scheduled.
+    if (url.pathname === "/v1/meal-recipes" && request.method === "GET") {
+        const requestedLimit = Number(url.searchParams.get("limit"));
+        const requestedOffset = Number(url.searchParams.get("offset"));
+        const limit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(100, Math.floor(requestedLimit)) : 50;
+        const offset = Number.isFinite(requestedOffset) && requestedOffset >= 0 ? Math.min(10000, Math.floor(requestedOffset)) : 0;
+        const statement = env.DB.prepare("SELECT recipe_id, name, meal_slot, source_name, source_url, servings, ingredients_json, instructions_json, publisher_nutrition_json, image_asset, image_tile, image_columns, image_rows, image_status, content_status, can_schedule FROM meal_recipe_catalogue ORDER BY name LIMIT ? OFFSET ?");
+        const result = await statement.bind(limit, offset).all();
+        const recipes = (result.results || []).map(row => ({
+            id: row.recipe_id, name: row.name, slot: row.meal_slot, sourceName: row.source_name,
+            sourceUrl: row.source_url, servings: row.servings,
+            ingredients: JSON.parse(row.ingredients_json || "[]"),
+            instructions: JSON.parse(row.instructions_json || "[]"),
+            publishedNutrition: row.publisher_nutrition_json ? JSON.parse(row.publisher_nutrition_json) : null,
+            image: {asset: row.image_asset, tile: row.image_tile, columns: row.image_columns, rows: row.image_rows, status: row.image_status},
+            status: row.content_status, canSchedule: row.can_schedule === 1
+        }));
+        return json({ recipes, limit, offset, hasMore: recipes.length === limit }, 200, request, env);
+    }
+
     if (url.pathname === "/r/ios-launch" && request.method === "GET") {
         return recordIosLaunchClick(request, env);
     }
