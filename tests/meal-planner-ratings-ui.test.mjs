@@ -7,7 +7,7 @@ import {getRecipeRating,setRecipeRating,readRecipeRatings} from "../js/nutrition
 const store=new Map();
 globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
 test("recipes offer a single thumb up/down rating row, not review notes or review status",()=>{
- for(const recipe of [FEATURED_RECIPES[0],baseRecipes().find(x=>!x.groups)]){
+ for(const recipe of [FEATURED_RECIPES[0],baseRecipes().find(x=>!x.groups&&!x.indexOnly)]){
   const html=recipeDetailMarkup(recipe);
   assert.equal((html.match(/data-mp-vote="up"/g)||[]).length,1);
   assert.equal((html.match(/data-mp-vote="down"/g)||[]).length,1);
