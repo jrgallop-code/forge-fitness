@@ -34,7 +34,7 @@ function illustrationTile(recipe){
 }
 export function recipePhoto(recipe){
  const cloudImage=recipe?.image;
- if(cloudImage && typeof cloudImage==="object" && /^\\/assets\\/meal-photos\\/[a-z0-9-]+\\.(?:avif|png|webp)$/.test(cloudImage.asset||"")){
+ if(cloudImage && typeof cloudImage==="object" && String(cloudImage.asset||"").startsWith("/assets/meal-photos/") && [".avif",".png",".webp"].some(ext=>String(cloudImage.asset).endsWith(ext))){
   const cols=Math.max(1,Math.min(10,Number(cloudImage.columns)||1));
   const rows=Math.max(1,Math.min(10,Number(cloudImage.rows)||1));
   const tile=Math.max(0,Math.min(cols*rows-1,Number(cloudImage.tile)||0));
