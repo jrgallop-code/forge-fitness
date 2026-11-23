@@ -17,14 +17,15 @@ globalThis.localStorage={
  setItem:(key,value)=>values.set(key,String(value)),
  removeItem:key=>values.delete(key)
 };
-test("catalog includes only usable unique recipes with ingredients",()=>{
+test("catalog includes 300 genuine source listings plus preserved finished Level Up recipes",()=>{
  const recipes=baseRecipes();
- assert.ok(recipes.length>=40);
+ assert.ok(recipes.length>=300);
  assert.equal(new Set(recipes.map(r=>r.name.toLowerCase())).size,recipes.length);
- assert.ok(recipes.every(isCompleteRecipe));
- assert.ok(!recipes.some(r=>r.indexOnly));
+ assert.equal(recipes.filter(r=>matchesCatalog(r,{filter:"Meal Prep Manual (300)",styles:[]})).length,300);
+ assert.ok(recipes.filter(r=>matchesCatalog(r,{filter:"Ready to plan",styles:[]})).every(isCompleteRecipe));
  assert.deepEqual(CATALOG_SLOTS,["All","Breakfast","Lunch","Dinner","Snacks"]);
- assert.deepEqual(CATALOG_FILTERS,["Complete recipes"]);
+ assert.ok(CATALOG_FILTERS.includes("Meal Prep Manual (300)"));
+ assert.ok(CATALOG_FILTERS.includes("Ready to plan"));
  for(const slot of ["Breakfast","Lunch","Dinner","Meal 4"])assert.ok(recipes.some(r=>r.slot===slot));
 });
 test("meal time, food type and ingredient search are independent",()=>{
@@ -52,7 +53,7 @@ test("food preferences save, allow multiple styles and exclude incompatible reci
  assert.equal(values.get(RECIPE_STYLE_SETTINGS_KEY),"[]");
 });
 test("food preferences, meal photos and complete recipes appear in catalogue",()=>{
- const out=catalogMarkup({filter:"Complete recipes"});
+ const out=catalogMarkup({filter:"Ready to plan"});
  assert.match(out,/mp-catalog-search/);
  assert.match(out,/data-mp-style-settings/);
  assert.match(out,/data-mp-style-choice/);
