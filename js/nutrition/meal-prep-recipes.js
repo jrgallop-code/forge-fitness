@@ -143,7 +143,12 @@ export const mealPrepRecipes = [
       "Slice the cooked chicken and divide it with rice and vegetables among five containers. Package the dressing separately until serving."
     ],
     "safety": "Refrigerate promptly; use refrigerated portions within 2–3 days or freeze. Reheat chicken and leftovers to 74°C.",
-    "image": "/assets/meal-prep/cilantro-lime-chicken.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/cilantro-lime-chicken.svg",
+    "imageTile": 0,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "korean-beef",
@@ -240,7 +245,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/korean-beef.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/korean-beef.svg",
+    "imageTile": 2,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "teriyaki-chicken",
@@ -337,7 +347,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/teriyaki-chicken.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/teriyaki-chicken.svg",
+    "imageTile": 1,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "med-chicken-wrap",
@@ -433,7 +448,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/med-chicken-wrap.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/med-chicken-wrap.svg",
+    "imageTile": 6,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "taco-mac",
@@ -524,7 +544,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/taco-mac.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/taco-mac.svg",
+    "imageTile": 12,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "turkey-chili",
@@ -615,7 +640,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/turkey-chili.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/turkey-chili.svg",
+    "imageTile": 15,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "breakfast-burrito",
@@ -693,7 +723,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/breakfast-burrito.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/breakfast-burrito.svg",
+    "imageTile": 5,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "protein-oats",
@@ -765,7 +800,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/protein-oats.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/protein-oats.svg",
+    "imageTile": 0,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "peanut-noodles",
@@ -856,7 +896,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/peanut-noodles.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/peanut-noodles.svg",
+    "imageTile": 7,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "med-chickpea",
@@ -941,7 +986,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/med-chickpea.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/med-chickpea.svg",
+    "imageTile": 8,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "bbq-burger-bowl",
@@ -1026,7 +1076,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/bbq-burger-bowl.svg"
+    "image": "/assets/meal-photos/generated-001-020.png",
+    "imageFallback": "/assets/meal-prep/bbq-burger-bowl.svg",
+    "imageTile": 13,
+    "imageColumns": 5,
+    "imageRows": 4,
+    "imageMatch": "representative-ai-photo"
   },
   {
     "id": "chicken-curry",
@@ -1111,7 +1166,12 @@ export const mealPrepRecipes = [
     ],
     "instructionsStatus": "Original adaptation; kitchen testing pending",
     "safety": "Refrigerate at 4°C or colder within 2 hours. Use refrigerated leftovers within 2–3 days or freeze; reheat cooked leftovers to 74°C.",
-    "image": "/assets/meal-prep/chicken-curry.svg"
+    "image": "/assets/meal-photos/featured8-hq.avif",
+    "imageFallback": "/assets/meal-prep/chicken-curry.svg",
+    "imageTile": 4,
+    "imageColumns": 4,
+    "imageRows": 2,
+    "imageMatch": "representative-ai-photo"
   }
 ];
 export const getMealPrepRecipe = id => mealPrepRecipes.find(r => r.id === id);
