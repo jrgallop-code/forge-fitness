@@ -746,3 +746,5 @@ Release latest native branch, 48 completed recipe cards (40 base, 8 featured), F
 Complete 48 recipe summary cards use same per-portion nutrition as detail views. My Week cards have visible Remove and overflow Remove actions, confirmation, and empty-week screen. Existing Food Log entries are preserved. iOS only; PWA unchanged. Current signing guard verified via read-only inventory 44980539916.
 
 Recipe imagery and sourced preparation update — 2026-11-23 (photo fallbacks and source-index guidance).
+
+Release refresh: D1 recipe library sync, original preparation guidance, and generated photo display — 2026-11-23.
