@@ -6,6 +6,7 @@ import {getRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=featured-base-hq-v3";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 import {sourceRecipeSteps} from "./meal-planner-source-prep.js?v=1";
+import {cloudRecipe,cloudRecipes} from "./meal-planner-cloud-catalog.js?v=1";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const CATALOG_FAVORITES_KEY="level_up_meal_catalog_favorites_v1";
@@ -73,12 +74,45 @@ export function matchesFoodType(recipe, foodType="All foods"){
 // Index-listed dishes are individually named; do not surface twenty invented
 // size variants of the same generic concept as distinct recipes.
 const normalizedRecipeName=name=>String(name||"").toLocaleLowerCase("en").replace(/[‘’]/g,"'").replace(/[^a-z0-9]+/g," ").trim();
+function cloudSourceRecipe(recipe){
+ const row=cloudRecipe(recipe.id);
+ if(!row)return recipe;
+ return {...recipe,
+  ingredientStatements:Array.isArray(row.ingredients)&&row.ingredients.length?row.ingredients:recipe.ingredientStatements,
+  sourceUrl:row.sourceUrl||recipe.sourceUrl,
+  sourceYield:row.servings||recipe.sourceYield,
+  publishedEstimate:row.publishedNutrition||recipe.publishedEstimate,
+  sourcePreparation:Array.isArray(row.instructions)?row.instructions:[],
+  image:row.image||recipe.image,
+  cloudStatus:row.status,
+  indexOnly:true,canSchedule:false};
+}
+function cloudAdaptation(row){
+ if(!row?.canSchedule||!Array.isArray(row.ingredients)||!Array.isArray(row.instructions)||!row.instructions.length)return null;
+ const servings=Math.max(1,Number(row.servings)||1);
+ const ingredients=row.ingredients.filter(x=>Array.isArray(x)&&x.length>=3&&Number.isFinite(Number(x[1])))
+  .map(x=>({food:String(x[0]),grams:Math.max(0,Number(x[1]))*servings,unit:String(x[2]||"g")}));
+ if(!ingredients.length)return null;
+ return {id:row.id,name:row.name,slot:row.slot,servings,cuisine:"Level Up adaptation",
+  sourceName:row.sourceName||"Level Up",sourceUrl:row.sourceUrl||null,
+  groups:[{label:"Ingredients",ingredients}],steps:row.instructions,
+  publishedEstimate:row.publishedNutrition||null,image:row.image,
+  storage:"Cool cooked food promptly; keep at or below 4°C and use within 2–3 days or freeze.",
+  reviewStatus:"original-adaptation-awaiting-kitchen-and-nutrition-review",nutritionVerified:false,
+  prepMinutes:null};
+}
 export function baseRecipes(){
  const originals=MEAL_CATALOG.filter(recipe=>!recipe.name.includes(" · "));
- const promoted=new Map(FEATURED_RECIPES.map(recipe=>[normalizedRecipeName(recipe.name),recipe]));
+ const adaptations=cloudRecipes().filter(x=>x.canSchedule).map(cloudAdaptation).filter(Boolean);
+ const promoted=new Map(adaptations.map(recipe=>[normalizedRecipeName(recipe.name),recipe]));
+ // Existing detailed and source-reviewed featured recipes always take priority.
+ for(const recipe of FEATURED_RECIPES)promoted.set(normalizedRecipeName(recipe.name),recipe);
  const seen=new Set();
- const source=MPM_CATALOG_300.map(recipe=>promoted.get(normalizedRecipeName(recipe.name))||recipe);
- return [...source,...originals].filter(recipe=>{
+ const source=MPM_CATALOG_300.map(raw=>{
+  const recipe=cloudSourceRecipe(raw);
+  return promoted.get(normalizedRecipeName(recipe.name))||recipe;
+ });
+ return [...source,...adaptations,...originals].filter(recipe=>{
   const key=normalizedRecipeName(recipe.name);
   if(seen.has(key))return false;
   seen.add(key);return true;
@@ -166,7 +200,7 @@ function featuredRecipeDetail(recipe,scale=1){
  const m=recipe.publishedEstimate;
  const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,(item.grams/Math.max(1,recipe.servings))*scale,item.unit))+'</strong></li>').join("")+'</ul></section>').join("");
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
- '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+recipe.prepMinutes+' minutes · original batch '+recipe.servings+' servings</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong> (scaled from the original recipe).</p>'+
+ '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+(Number.isFinite(Number(recipe.prepMinutes))&&Number(recipe.prepMinutes)>0?recipe.prepMinutes+' minutes':'Timing varies')+' · original batch '+recipe.servings+' servings</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong> (scaled from the original recipe).</p>'+
  recipeMacroSummary(recipe)+recipeRatingMarkup(recipe)+
  groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
