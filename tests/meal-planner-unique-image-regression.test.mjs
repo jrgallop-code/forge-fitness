@@ -12,7 +12,7 @@ test("iOS uses one Meal Plan entry point; duplicate top banner is removed",async
  assert.match(foodLog,/>Meal Plan<\/button>/);
 });
 test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
- const recipes=baseRecipes();
+ const recipes=baseRecipes().filter(recipe=>!recipe.indexOnly);
  const keys=recipes.map(recipe=>{
   const p=recipePhoto(recipe);
   assert.match(p.primary,/^(?:data:image\/(?:webp|avif);base64,|\/assets\/)/);
@@ -20,6 +20,7 @@ test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
   return p.primary.slice(0,40)+"|"+p.backgroundSize+"|"+p.tile;
  });
  assert.equal(recipes.length,48);
+ assert.ok(baseRecipes().filter(r=>r.indexOnly).every(r=>r.photoStatus==="awaiting-licensed-image"||r.photoStatus==="not-created"));
  assert.equal(new Set(keys).size,keys.length,
    "Two different recipes may not point to the same image tile");
  assert.equal(FEATURED_RECIPES.length,8);
