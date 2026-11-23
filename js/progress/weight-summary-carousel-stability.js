@@ -1,4 +1,4 @@
-import { initializeWeightProgressCompact } from "./weight-progress-compact.js?v=weight-carousel-position-1";
+import { initializeWeightProgressCompact } from "./weight-progress-compact.js?v=negative-zero-fixed-20261123";
 
 let queued = false;
 
