@@ -99,7 +99,7 @@ function showWizardStep(root,next){
 }
 
 
-let plannerScreen="home",catalogSlot="All",catalogFilter="Complete recipes",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let plannerScreen="home",catalogSlot="All",catalogFilter="Meal Prep Manual (300)",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let scheduleStart=nextMonday(),scheduleOffsets=[0],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -345,7 +345,7 @@ function render(root){
   button.setAttribute("aria-label",active?"Remove favorite":"Save favorite");
  }));
  root.querySelectorAll("[data-mp-recipe]").forEach(button=>button.addEventListener("click",()=>{
-  catalogRecipeId=button.dataset.mpRecipe;const picked=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);scheduleSlots=[picked?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();plannerScreen="recipe";render(root);
+  catalogRecipeId=button.dataset.mpRecipe;const picked=baseRecipes().find(x=>x.id===catalogRecipeId);scheduleSlots=[picked?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();plannerScreen="recipe";render(root);
  }));
  root.querySelector("[data-mp-use-recipe]")?.addEventListener("click",()=>{
   const id=root.querySelector("[data-mp-use-recipe]").dataset.mpUseRecipe;
