@@ -1,5 +1,6 @@
 import {dietRecipeBaseIndex} from "./meal-planner-photos.js?v=2";
 import {mealPlannerHomeMarkup,mealPlannerShortcutMarkup} from "./meal-planner-home.js?v=persistent-svg-menu-20261121";
+import {syncCloudRecipes} from "./meal-planner-cloud-catalog.js?v=1";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getRecipeRating,setRecipeRating} from "./meal-planner-ratings.js?v=1";
@@ -658,5 +659,14 @@ export function renderMealPlannerShell(){return `
 </style><div data-meal-planner-root></div>`;}
 export function initializeMealPlanner(){
  const root=document.querySelector("[data-meal-planner-root]");
- if(root){plannerScreen="home";render(root);}
+ if(!root)return;
+ plannerScreen="home";render(root);
+ // Cloud recipes supplement the bundled offline catalogue without erasing plans.
+ syncCloudRecipes().then(count=>{
+  if(!count||!root.isConnected)return;
+  const scroller=document.scrollingElement||document.documentElement;
+  const previousScroll=scroller.scrollTop;
+  render(root);
+  scroller.scrollTop=previousScroll;
+ });
 }
