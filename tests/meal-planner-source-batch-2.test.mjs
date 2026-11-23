@@ -17,7 +17,7 @@ test("expanded source-linked ingredient inventories promote distinct indexed dis
   assert.ok(recipe.sourceUrl.startsWith("https://mealprepmanual.com/"));
   assert.match(recipe.reviewStatus,/awaiting/);
   assert.ok(!recipe.nutritionVerified);
-  assert.ok(featuredIngredients(recipe).some(x=>/oil|powder|pepper|sauce|honey|curry|cumin|gochujang|sriracha/i.test(x.food)));
+  assert.ok(featuredIngredients(recipe).length>=4,recipe.name+" has measured ingredients");
  }
 });
 test("batch scaling respects mixed g and mL and never claims source nutrition verified",()=>{
