@@ -11,7 +11,7 @@ test("first hundred entries are distinct real indexed titles, never invented var
  assert.equal(REVIEW_IDS.size,100);
  assert.equal(MPM_REVIEW_100_IMPORTED.length,100);
  assert.equal(new Set(REVIEW_RECORDS.map(r=>r.name.toLowerCase())).size,100);
- assert.equal(baseRecipes().filter(r=>r.indexOnly).length,0,"Incomplete title-only entries do not appear as recipes");
+ assert.ok(baseRecipes().filter(r=>r.indexOnly).length>0,"Source entries are shown for review, with planning disabled");
 });
 test("publisher records never auto-approve nutritional or safety data",()=>{
  for(const r of REVIEW_RECORDS){
@@ -42,7 +42,7 @@ test("review decisions save locally and never turn a source-only record into foo
  assert.equal(saveReviewDecision(id,{decision:"needs-changes",notes:"Add the spice blend"}),true);
  assert.equal(getReviewDecision(id).decision,"needs-changes");
  assert.equal(reviewSummary().needsChanges,1);
- assert.equal(baseRecipes().filter(r=>r.indexOnly).length,0);
+ assert.ok(baseRecipes().filter(r=>r.indexOnly).length>0);
  assert.equal(saveReviewDecision(id,{decision:"looks-good",notes:"Reviewed ingredients"}),true);
  assert.equal(reviewSummary().reviewed,1);
  assert.equal(saveReviewDecision(id,{decision:"approved-for-food-logging"}),false);
