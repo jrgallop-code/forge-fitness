@@ -5,6 +5,7 @@ import {MPM_CATALOG_300,MPM_CATALOG_300_SUMMARY} from "./mpm-catalog-300.js?v=1"
 import {getRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=featured-base-hq-v3";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
+import {sourceRecipeSteps} from "./meal-planner-source-prep.js?v=1";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 export const CATALOG_FAVORITES_KEY="level_up_meal_catalog_favorites_v1";
@@ -181,7 +182,7 @@ function sourceReviewDetail(recipe){
  '<h1>'+esc(recipe.name)+'</h1><p class="mp-disclaimer">The Meal Prep Manual · Source-indexed recipe · not yet ready for planning.</p>'+nutrition+
  (recipe.sourceYield?'<p>Publisher yield: '+esc(recipe.sourceYield)+' servings</p>':'')+
  (facts.length?'<section><h3>Published ingredients · review pending</h3><ul>'+facts.map(x=>'<li>'+esc(x.description)+'</li>').join("")+'</ul></section>':'<p>Full ingredients and seasoning quantities have not yet been imported.</p>')+
- '<section><h3>Preparation</h3><p>Cooking instructions and food-safety checks are pending Level Up review. No recipe directions have been fabricated.</p></section>'+
+ '<section><h3>Preparation guidance</h3>'+(facts.length?'<p class="mp-disclaimer">Original Level Up guidance based on available ingredients; not the publisher’s cooking method or a kitchen-tested recipe.</p><ol>'+sourceRecipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join('')+'</ol>':'<p>Cooking instructions are pending ingredient review.</p>')+'</section>'+
  '<a href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">View original recipe information</a>'+
  '<p class="mp-disclaimer">Save this dish to Favourites now. Scheduling, shopping calculations and marking eaten will be available after the recipe is completed and verified.</p></div></section>';
 }
