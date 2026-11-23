@@ -90,7 +90,8 @@ export function toggleFavorite(id){
  try{localStorage.setItem(CATALOG_FAVORITES_KEY,JSON.stringify([...list]));return list.has(id)}catch{return false}
 }
 export function photoMarkup(recipe,cls=""){
- if(recipe?.indexOnly)return '<span class="mp-real-photo mp-awaiting-photo '+esc(cls)+'" role="img" aria-label="No recipe-specific photo approved" style="display:flex;align-items:center;justify-content:center;background:var(--surface-2,#384a43);color:var(--text-primary,#fff);padding:18px;text-align:center"><span aria-hidden="true" style="font-size:25px">▤</span></span>';
+ const isNewDetailed=FEATURED_RECIPES.some((item,index)=>index>=8&&item.id===recipe?.id);
+ if(recipe?.indexOnly||isNewDetailed)return '<span class="mp-real-photo mp-awaiting-photo '+esc(cls)+'" role="img" aria-label="Recipe image awaiting generation and review" style="display:flex;align-items:center;justify-content:center;background:var(--surface-2,#384a43);color:var(--text-primary,#fff);padding:18px;text-align:center"><span aria-hidden="true" style="font-size:25px">▤</span></span>';
  const photo=recipePhoto(recipe);
  const style="background-image:url("+photo.primary+");background-size:"+photo.backgroundSize+";background-position:"+photo.x+"% "+photo.y+"%;";
  const label=(photo.exactMatch?"AI-generated image for ":"Illustrative AI image for ")+String(recipe?.name||"meal");
