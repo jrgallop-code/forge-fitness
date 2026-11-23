@@ -4,6 +4,7 @@ on:
     branches: [ios/capacitor-app-store]
     paths:
       - scripts/audit-recipe-catalog.mjs
+      - js/nutrition/meal-planner-featured-recipes.js
       - .github/workflows/audit-recipe-catalog.yml
   workflow_dispatch:
 permissions:
