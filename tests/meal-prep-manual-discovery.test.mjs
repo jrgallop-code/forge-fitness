@@ -14,12 +14,12 @@ test("indexed recipes are discovery-only and cannot masquerade as nutritional da
  assert.ok(MPM_INDEX_RECIPES.every(x=>x.verificationStatus==="title-index-only"&&!x.photo));
  assert.ok(MPM_INDEX_RECIPES.every(x=>x.sourceIndexUrl.startsWith("https://mealprepmanual.com/recipes/")));
 });
-test("normal catalogue contains finished distinct recipes and does not expose title-only references",()=>{
+test("normal catalogue displays 300 source entries with unready records clearly gated",()=>{
  const recipes=baseRecipes();
- assert.ok(recipes.length>=40);
+ assert.ok(recipes.length>=300);
  assert.equal(new Set(recipes.map(x=>x.name.toLowerCase())).size,recipes.length);
  assert.ok(recipes.some(x=>x.id===FEATURED_RECIPES[0].id));
- assert.equal(recipes.filter(x=>x.indexOnly).length,0);
- assert.ok(recipes.every(x=>matchesCatalog(x,{filter:"Complete recipes",styles:[]})));
- assert.ok(!recipes.some(x=>x.sourceIndexUrl && x.indexOnly));
+ assert.equal(recipes.filter(x=>matchesCatalog(x,{filter:"Meal Prep Manual (300)",styles:[]})).length,300);
+ assert.ok(recipes.some(x=>x.indexOnly));
+ assert.ok(recipes.filter(x=>matchesCatalog(x,{filter:"Ready to plan",styles:[]})).every(x=>!x.indexOnly));
 });
