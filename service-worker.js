@@ -1,10 +1,10 @@
-const CACHE_VERSION = "traverse-orange-20261124";
+const CACHE_VERSION = "traverse-macros-20261124";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
-    "./css/appearance-themes.css?v=traverse-orange-20261124",
+    "./css/appearance-themes.css?v=traverse-macros-20261124",
     "./js/core/appearance-theme.js?v=traverse-pwa-1",
     "./js/core/muscle-map-colors.js?v=traverse-pwa-1",
     "./js/core/pwa-gym-tools.js?v=stopwatch-blank-20261120",
