@@ -48,8 +48,8 @@ test("featured and ten later recipes use non-duplicated higher-resolution photo 
  assert.equal(featured.length,8);
  const f=featured.map(recipePhoto);
  assert.equal(new Set(f.map(p=>p.primary+"|"+p.tile)).size,8);
- assert.equal(f.filter(p=>p.primary.includes("/assets/meal-photos/featured8-hq.avif")).length,7);
- assert.equal(f.filter(p=>p.primary.includes("/assets/meal-photos/source-recreations/")).length,1);
+ assert.equal(f.filter(p=>p.primary.includes("/assets/meal-photos/featured8-hq.avif")).length,6);
+ assert.equal(f.filter(p=>p.primary.includes("/assets/meal-photos/source-recreations/")).length,2);
  const later=recipes.filter(x=>x.id?.startsWith("lu-meal-")&&Number(x.id.replace("lu-meal-",""))>=401&&Number(x.id.replace("lu-meal-",""))<=581);
  assert.equal(later.length,10);
  assert.ok(later.every(r=>recipePhoto(r).primary.includes("base20-29-hq.avif")));
