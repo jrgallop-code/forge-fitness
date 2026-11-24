@@ -442,3 +442,19 @@ html[data-theme] .mp-recipe-rate-actions button:focus-visible{outline:2px solid 
 .mp-photo-pending>span{font-size:clamp(26px,6vw,44px);line-height:1}
 .mp-photo-pending>small{font:650 clamp(9px,2.5vw,13px)/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;max-width:95%;overflow-wrap:break-word}
 .mp-week-recipe .mp-photo-pending{gap:2px}.mp-week-recipe .mp-photo-pending>span{font-size:21px}.mp-week-recipe .mp-photo-pending>small{font-size:8px}
+
+/* Keep each overflow action on its own row; previous absolute positioning
+   placed multiple buttons on top of each other. */
+html[data-theme] .mp-meal-card-menu[open]{z-index:12!important}
+html[data-theme] .mp-meal-card-menu[open]>button {
+ position:absolute!important;right:0!important;left:auto!important;
+ width:max-content!important;min-width:178px!important;
+ top:42px!important;margin:0!important;white-space:nowrap;
+ background:var(--card,#fff)!important;color:var(--text,#13223a)!important;
+ border:1px solid var(--line,#cad4e3)!important;
+ box-shadow:0 5px 16px #0002!important;
+}
+html[data-theme] .mp-meal-card-menu[open]>button:nth-of-type(2){top:87px!important}
+html[data-theme] .mp-meal-card-menu[open]>button:nth-of-type(3){top:132px!important}
+html[data-theme] .mp-week-recipe{position:relative;overflow:visible}
+html[data-theme] .mp-week-compact-list{overflow:visible}
