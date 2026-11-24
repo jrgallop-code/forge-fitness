@@ -1,4 +1,4 @@
-const CACHE_VERSION = "nav-stack-fix-20261124";
+const CACHE_VERSION = "pwa-meal-planner-paused-20261124";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
