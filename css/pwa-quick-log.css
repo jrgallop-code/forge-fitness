@@ -379,3 +379,32 @@ body > .ios-quick-log-nav:focus-visible {
     min-width:58px!important;min-height:58px!important;
   }
 }
+
+/* 2026-11-23: Readable, uncrowded shared iOS/PWA navigation. */
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn {
+  gap:3px!important;
+  overflow:visible;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn .nav-icon {
+  width:clamp(21px,5.7vw,25px)!important;
+  height:clamp(21px,5.7vw,25px)!important;
+  flex-shrink:0;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn span {
+  font-size:clamp(9px,2.35vw,12px)!important;
+  line-height:1.2!important;
+  letter-spacing:-.035em!important;
+}
+body > .ios-quick-log-nav > span {
+  font-size:43px!important;
+}
+@media (max-width:360px) {
+  .bottom-nav.ios-quick-log-nav-enabled > .nav-btn span {
+    font-size:clamp(8.5px,2.5vw,10px)!important;
+  }
+  .bottom-nav.ios-quick-log-nav-enabled > .nav-btn .nav-icon {
+    width:21px!important;
+    height:21px!important;
+  }
+  body > .ios-quick-log-nav > span { font-size:40px!important; }
+}
