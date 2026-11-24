@@ -32,6 +32,10 @@ const PHOTO_PENDING=Object.freeze({
  x:50,y:50,tile:null,requiresReview:true
 });
 export function recipePhoto(recipe){
+ // An indexed source recipe only earns a photo after manual ingredient/image
+ // approval; a valid asset path alone does not establish the right dish.
+ if(recipe?.indexOnly && recipe?.imageReviewed !== true)
+  return {...PHOTO_PENDING,recipeId:recipe?.id};
  const cloudImage=recipe?.image;
  if(cloudImage && typeof cloudImage==="object" && String(cloudImage.asset||"").startsWith("/assets/meal-photos/") && [".avif",".png",".webp"].some(ext=>String(cloudImage.asset).endsWith(ext))){
   const cols=Math.max(1,Math.min(10,Number(cloudImage.columns)||1));
