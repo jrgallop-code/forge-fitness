@@ -98,7 +98,7 @@ function ingredientCategory(name){
 function splitSourceStatement(statement){
  const original=String(statement?.description||statement||"").trim();
  // Preserve publisher measurements instead of estimating missing conversions.
- const match=original.match(/^((?:\\d+(?:\\.\\d+)?|\\.\\d+|[¼½¾⅓⅔])(?:\\s*[-/]\\s*\\d+)?\\s*(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|lbs?|pounds?|oz|ounces?|grams?|g|kg|ml|cloves?|cans?|large|small|medium|whole|pieces?)?)(?:\\s+)(.+)$/i);
+ const match=original.match(/^((?:\d+(?:\.\d+)?|\.\d+|[¼½¾⅓⅔])(?:\s*[-/]\s*\d+)?\s*(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|lbs?|pounds?|oz|ounces?|grams?|g|kg|ml|cloves?|cans?|large|small|medium|whole|pieces?)?)(?:\s+)(.+)$/i);
  if(!match)return {name:original,quantity:"—"};
  return {name:match[2],quantity:match[1].trim()};
 }
@@ -191,10 +191,11 @@ function ingredientIllustrationMarkup(recipe,cls=""){
  if(has(/cheese|cheddar/))scatter(30,(x,y)=>ellipse(x,y,9,3,"#e9a626"));
  if(has(/yogurt|cream|mayo|dressing/))scatter(19,(x,y)=>ellipse(x,y,9,2,"#f7f0de"));
  // A neutral garnish only when a real herb or green is in the ingredient list.
+ const artId="mp-art-"+(h>>>0).toString(36);
  const top='<svg viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ingredient-based illustration of '+esc(recipe?.name||"meal")+'">'+
-  '<defs><radialGradient id="bg"><stop stop-color="#d8c4a9"/><stop offset="1" stop-color="#afa08c"/></radialGradient><radialGradient id="bowl"><stop stop-color="#f4efe6"/><stop offset=".89" stop-color="#e4dcd0"/><stop offset="1" stop-color="#c9bdb0"/></radialGradient><clipPath id="food"><ellipse cx="250" cy="180" rx="164" ry="112"/></clipPath></defs>'+
-  '<rect width="500" height="350" fill="url(#bg)"/><ellipse cx="253" cy="198" rx="190" ry="131" fill="#594638" opacity=".24"/><ellipse cx="250" cy="175" rx="190" ry="128" fill="url(#bowl)"/>'+
-  '<ellipse cx="250" cy="180" rx="168" ry="113" fill="#d9c5a5"/><g clip-path="url(#food)">'+parts.join("")+'</g>'+
+  '<defs><radialGradient id="'+artId+'-bg"><stop stop-color="#d8c4a9"/><stop offset="1" stop-color="#afa08c"/></radialGradient><radialGradient id="bowl"><stop stop-color="#f4efe6"/><stop offset=".89" stop-color="#e4dcd0"/><stop offset="1" stop-color="#c9bdb0"/></radialGradient><clipPath id="food"><ellipse cx="250" cy="180" rx="164" ry="112"/></clipPath></defs>'+
+  '<rect width="500" height="350" fill="url(#'+artId+'-bg)"/><ellipse cx="253" cy="198" rx="190" ry="131" fill="#594638" opacity=".24"/><ellipse cx="250" cy="175" rx="190" ry="128" fill="url(#bowl)"/>'+
+  '<ellipse cx="250" cy="180" rx="168" ry="113" fill="#d9c5a5"/><g clip-path="url(#'+artId+'-food)">'+parts.join("")+'</g>'+
   '<ellipse cx="250" cy="175" rx="190" ry="128" fill="none" stroke="#f3ece2" stroke-width="17"/></svg>';
  return '<span class="mp-real-photo mp-ingredient-illustration '+esc(cls)+'" data-image-status="ingredient-illustration" role="img" aria-label="Illustration based on listed ingredients for '+esc(recipe.name)+'">'+top+'</span>';
 }
