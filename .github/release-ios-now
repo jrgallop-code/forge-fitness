@@ -762,3 +762,5 @@ Release #473 retry: preserve Wednesday-only reviews and allow Tuesday's correct 
 # 2026-11-24 fix stale signing certificate and guard pending builds
 
 2026-11-24 recipe actions & photo integrity: deploy Swap/Remove menus, block mismatched MPM atlas photos, publish 300-recipe audit, and include four original preparation drafts. Regression gate fixed for modal class assertion.
+
+Release request 2026-11-24: fix My Week SVG overflow layout, route Swap to full recipe catalogue, display quantities by ingredient group, and generate ingredient-grounded SVG illustrations for 45 reviewed source entries. Keep 255 incomplete source entries identified as pending.
