@@ -117,7 +117,7 @@
         if (document.querySelector('script[data-weekly-checkin-status]')) return;
         const script = document.createElement("script");
         script.type = "module";
-        script.src = "js/nutrition/weekly-check-in-status.js?v=calendar-checkin-day-1-weekly-informational-checkin-1";
+        script.src = "js/nutrition/weekly-check-in-status.js?v=wednesday-checkin-20261123";
         script.dataset.weeklyCheckinStatus = "1";
         document.head.appendChild(script);
     }
