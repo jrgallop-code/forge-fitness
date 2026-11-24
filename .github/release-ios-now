@@ -754,3 +754,5 @@ Release navigation polish 2026-11-23: five-tab glass bottom bar with Nutrition o
 Release #472 retry: correct the five legacy Monday-check-in test fixtures to the newly required Wednesday schedule; retain Nutrition tab icon/label, Quick Log visible bottom bar, and direct Log Food.
 
 Release #473 retry: preserve Wednesday-only reviews and allow Tuesday's correct 'Check-in tomorrow' status in the regression suite. Upload the updated iOS Nutrition navigation and Quick Log food sheet to TestFlight.
+
+# 2026-11-23 nav readability and smaller quick-log plus release
