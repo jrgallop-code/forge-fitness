@@ -82,17 +82,18 @@ test("Traverse macro charts use green carbs, orange fat and grey protein without
   assert.match(css,/\.food-edit-calorie-ring \{/);
 });
 
-test("Traverse splash keeps existing dumbbell collision timing with branded colours", () => {
- assert.match(html,/pwa-splash-spin\\.css\\?v=traverse-launch-20261124/);
- assert.match(html,/pwa-splash-screen\\.css\\?v=traverse-launch-20261124/);
- assert.match(html,/traverse:"assets\\/level-up-splash-pure-fullbleed/);
- assert.match(splashStyle,/html\\[data-theme="traverse"\\]\\.level-up-installed-pwa #pwa-splash/);
- assert.match(splashStyle,/background:#faf7f1/);
- assert.match(splashStyle,/background:linear-gradient\\(90deg,#909962 0%,#c67e50 100%\\)/);
- assert.match(splashSpin,/html\\[data-theme="traverse"\\] #pwa-splash \\.splash-spin/);
- assert.match(splashSpin,/--spin-ink: #302b2d/);
- assert.match(splashSpin,/--spin-accent: #c67e50/);
+test("Traverse splash uses the original collision animation and its colours", () => {
+ const rev="traverse-launch-20261124";
+ assert.ok(html.includes("pwa-splash-spin.css?v="+rev));
+ assert.ok(html.includes("pwa-splash-screen.css?v="+rev));
+ assert.ok(html.includes('traverse:"assets/level-up-splash-pure-fullbleed'));
+ assert.ok(splashStyle.includes('html[data-theme="traverse"].level-up-installed-pwa #pwa-splash'));
+ assert.ok(splashStyle.includes("background:#faf7f1"));
+ assert.ok(splashStyle.includes("linear-gradient(90deg,#909962 0%,#c67e50 100%)"));
+ assert.ok(splashSpin.includes('html[data-theme="traverse"] #pwa-splash .splash-spin'));
+ assert.ok(splashSpin.includes("--spin-ink: #302b2d"));
+ assert.ok(splashSpin.includes("--spin-accent: #c67e50"));
  for(const rule of ["level-up-spin-bar","level-up-spin-pop","level-up-spin-name"]) assert.ok(splashSpin.includes(rule));
- assert.match(splashSpin,/rotate\\(360deg\\)/);
- assert.match(worker,/splash-spin\\.css\\?v=traverse-launch-20261124/);
+ assert.ok(splashSpin.includes("rotate(360deg)"));
+ assert.ok(worker.includes("splash-spin.css?v="+rev));
 });
