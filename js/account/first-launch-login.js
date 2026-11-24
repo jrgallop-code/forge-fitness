@@ -92,37 +92,72 @@ function isNativeIOS() {
     return window.Capacitor?.getPlatform?.() === "ios";
 }
 
+let nativeGoogleRedemptionInProgress = false;
+
+async function handleNativeGoogleAuthReturn(rawUrl) {
+    let url;
+    try { url = new URL(rawUrl); } catch { return; }
+    if (url.protocol !== "leveluphypertrophy:" || url.hostname !== "auth") return;
+    if (nativeGoogleRedemptionInProgress) return;
+    nativeGoogleRedemptionInProgress = true;
+    const code = url.searchParams.get("code") || "";
+    try {
+        await window.Capacitor?.Plugins?.Browser?.close?.();
+        if (!code) {
+            setMessage(url.searchParams.get("error") || "Google sign-in could not be completed.", "error");
+            return;
+        }
+        await redeemTransferCode(code, "Google account connected. Restoring your data…");
+    } catch (error) {
+        setMessage(error?.message || "Google sign-in could not be completed.", "error");
+    } finally {
+        nativeGoogleRedemptionInProgress = false;
+    }
+}
+
 function initializeNativeProviders() {
     if (!isNativeIOS()) return;
     document.getElementById("level-up-login-apple")?.addEventListener("click", completeAppleLogin);
     document.getElementById("level-up-login-google-native")?.addEventListener("click", openNativeGoogleLogin);
+    const app = window.Capacitor?.Plugins?.App;
     try {
-        void window.Capacitor?.Plugins?.App?.addListener?.("appUrlOpen", async event => {
-            const url = new URL(event?.url || "");
-            if (url.protocol !== "leveluphypertrophy:" || url.hostname !== "auth") return;
-            const code = url.searchParams.get("code") || "";
-            await window.Capacitor?.Plugins?.Browser?.close?.();
-            if (code) {
-                try { await redeemTransferCode(code, "Google account connected. Restoring your data…"); }
-                catch (error) { setMessage(error?.message || "Google sign-in could not be completed.", "error"); }
-            }
-            else setMessage(url.searchParams.get("error") || "Google sign-in could not be completed.", "error");
-        });
-    } catch {}
+        void Promise.resolve(app?.addListener?.("appUrlOpen", event =>
+            handleNativeGoogleAuthReturn(event?.url || ""))).catch(error =>
+            console.warn("Native Google sign-in callback listener unavailable:", error));
+        // iOS can deliver a redirect before the JavaScript listener is installed,
+        // particularly following process restoration after the browser returns.
+        void Promise.resolve(app?.getLaunchUrl?.()).then(result => {
+            if (result?.url) return handleNativeGoogleAuthReturn(result.url);
+        }).catch(error => console.warn("Could not inspect initial sign-in URL:", error));
+    } catch (error) {
+        console.warn("Native Google sign-in callback listener unavailable:", error);
+    }
 }
 
 async function openNativeGoogleLogin() {
+    const button = document.getElementById("level-up-login-google-native");
+    if (button?.disabled) return;
+    if (button) button.disabled = true;
     setMessage("Opening secure Google sign-in…");
     try {
+        const browser = window.Capacitor?.Plugins?.Browser;
+        const app = window.Capacitor?.Plugins?.App;
+        if (typeof browser?.open !== "function" || typeof app?.addListener !== "function") {
+            throw new Error("Secure Google sign-in is unavailable in this app build. Please update Level Up or use email sign-in.");
+        }
         const context = await analyticsRuntimeContext();
         const params = new URLSearchParams({ platform: "ios" });
         if (context.appVersion) params.set("appVersion", context.appVersion);
         if (context.appBuild) params.set("appBuild", context.appBuild);
-        await window.Capacitor?.Plugins?.Browser?.open?.({
+        await browser.open({
             url: `https://app.leveluphypertrophy.com/ios-auth.html?${params.toString()}`,
             presentationStyle: "popover"
         });
-    } catch { setMessage("Google sign-in could not be opened.", "error"); }
+    } catch (error) {
+        setMessage(error?.message || "Google sign-in could not be opened. Use email sign-in instead.", "error");
+    } finally {
+        if (button) button.disabled = false;
+    }
 }
 
 async function completeAppleLogin() {
