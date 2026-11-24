@@ -24,7 +24,8 @@ export const THEME_MUSCLE_MAP_DEFAULTS = {
     ocean: { recovery: "#00CFE8", sets: "#2F80FF" },
     midnight: { recovery: "#00CFE8", sets: "#8B5CFF" },
     slate: { recovery: "#17BFA6", sets: "#72C7FF" },
-    pulse: { recovery: "#FF3EB5", sets: "#8B5CFF" }
+    pulse: { recovery: "#FF3EB5", sets: "#8B5CFF" },
+    traverse: { recovery: "#C67E50", sets: "#909962" }
 };
 
 // Shared by male/female anatomy, summaries and exported cards. Position retains
@@ -33,7 +34,8 @@ export const SET_DISTRIBUTION_PALETTES = {
     arctic: ['#6558A6','#427BC4','#23A7BE','#62B86C','#E6CC55','#E99A43','#DC655D'],
     'level-up': ['#8170C9','#5598EC','#35C3D3','#83CF70','#F1D65A','#F3A24B','#F27768'],
     midnight: ['#8B80D6','#68A9F2','#48CAD8','#8ED481','#F4DB70','#FFB366','#FF8A7D'],
-    pulse: ['#7862B7','#5688C9','#36AABD','#75BA82','#D8C65C','#E79B61','#D96B86']
+    pulse: ['#7862B7','#5688C9','#36AABD','#75BA82','#D8C65C','#E79B61','#D96B86'],
+    traverse: ['#A4B2B0','#819C98','#909962','#B1AA64','#C67E50','#BA6747','#9D453A']
 };
 export function getSetDistributionPalette(theme = getAppearanceTheme()) {
     const effective = resolveAppearanceTheme(theme);
@@ -43,7 +45,7 @@ export function getSetDistributionPalette(theme = getAppearanceTheme()) {
 export function getSetDistributionColor(intensity, theme = getAppearanceTheme()) {
     const palette = getSetDistributionPalette(theme);
     const amount = Math.max(0, Math.min(1, Number(intensity) || 0));
-    if (!amount) return ['arctic','pure','ocean'].includes(resolveAppearanceTheme(theme)) ? '#E2E8F0' : '#353D49';
+    if (!amount) return ['arctic','pure','ocean','traverse'].includes(resolveAppearanceTheme(theme)) ? '#E2E8F0' : '#353D49';
     const position = amount * (palette.length - 1);
     const index = Math.min(palette.length - 2, Math.floor(position));
     return mix(palette[index], palette[index + 1], position - index);
