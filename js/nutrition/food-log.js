@@ -562,7 +562,7 @@ function closeFoodSheet() {
         setFoodVoiceState(false);
     }
     closeBarcodeScanner();
-    document.body.classList.remove("food-sheet-open");
+    document.body.classList.remove("food-sheet-open", "ios-quick-food-entry");
     addContext = "log";
     editingEntryId = null;
     editingMealItemIndex = null;
