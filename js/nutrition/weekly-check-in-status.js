@@ -221,7 +221,8 @@ export function getWeeklyCheckInStatus() {
         progress = clamp(((phaseDay - FIRST_INFORMATIONAL_CHECK_DAY) / WEEKLY_CADENCE_DAYS) * 100);
     } else if (!calendarReviewDue) {
         state = "upcoming";
-        reviewDate = currentCheckDate || nextUnreachedWednesday;
+        reviewDate = currentCheckDate && today <= currentCheckDate
+            ? currentCheckDate : nextUnreachedWednesday;
         const remaining = Math.max(0, daysBetween(today, reviewDate) ?? WEEKLY_CADENCE_DAYS);
         headline = remaining === 1 ? "Check-in tomorrow" : `Next check-in ${formatWeekday(reviewDate)}`;
         detail = `${remaining} day${remaining === 1 ? "" : "s"} remaining · ${formatDate(reviewDate)}`;
