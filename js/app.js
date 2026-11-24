@@ -58,5 +58,5 @@ initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
 import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
 
-import { initializePWAQuickLog } from "./core/pwa-quick-log.js?v=stopwatch-blank-20261120";
+import { initializePWAQuickLog } from "./core/pwa-quick-log.js?v=nav-side-log-20261123";
 initializePWAQuickLog();
