@@ -157,7 +157,8 @@ export function getWeeklyCheckInStatus() {
     const nextCheckDate = wednesdayOnOrAfter(trend.nextCheckDate || shiftDateKey(currentCheckDate, WEEKLY_CADENCE_DAYS));
     // A stale phase anchor must not display an early, actionable review.
     const nextUnreachedWednesday = wednesdayOnOrAfter(today);
-    const calendarReviewDue = today >= currentCheckDate;
+    const calendarReviewDue = new Date(`${today}T12:00:00`).getDay() === 3
+        && today >= currentCheckDate;
 
     let state = "upcoming";
     let reviewDate = nextCheckDate;
