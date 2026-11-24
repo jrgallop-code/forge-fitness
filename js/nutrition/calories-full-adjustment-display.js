@@ -511,11 +511,12 @@ function syncSuggestedCalories(metrics, phase) {
         : null;
     const acceptedRecommendation = handled ? buildSharedRecommendation(metrics, phase) : null;
     const canReopen = canReopenAcceptedReview(phase, metrics, acceptedRecommendation);
-    const reviewReady = canReopen || Boolean(
+    // Never surface the nutrition review banner before Wednesday.
+    const reviewReady = new Date(`${localDateKey()}T12:00:00`).getDay() === 3 && (canReopen || Boolean(
         sharedRecommendation
         && Number.isFinite(actual)
         && Number.isFinite(target)
-    );
+    ));
     const reviewReason = canReopen ? "ready" : hold ? "hold" : handled ? "handled"
         : !metrics.recommendationReady ? "weight-data"
         : !baseline.useLoggedAverage ? "food-data"
