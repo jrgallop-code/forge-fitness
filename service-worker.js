@@ -1,9 +1,12 @@
-const CACHE_VERSION = "pwa-meal-planner-paused-20261124";
+const CACHE_VERSION = "traverse-appearance-20261124";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
+    "./css/appearance-themes.css?v=traverse-pwa-20261124",
+    "./js/core/appearance-theme.js?v=traverse-pwa-1",
+    "./js/core/muscle-map-colors.js?v=traverse-pwa-1",
     "./js/core/pwa-gym-tools.js?v=stopwatch-blank-20261120",
     "./js/core/gym-tools-math.js",
     "./css/pwa-gym-tools.css?v=stopwatch-blank-20261120",
