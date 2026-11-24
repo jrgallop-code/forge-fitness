@@ -29,6 +29,9 @@ test("eight generated featured images have correct binary header and assigned un
  assert.match(FEATURED_MEAL_PHOTOS,/^data:image\/avif;base64,/);
  const bytes=Buffer.from(FEATURED_MEAL_PHOTOS.split(",")[1],"base64");
  assert.equal(bytes.toString("ascii",4,12),"ftypavif");
- const tiles=FEATURED_RECIPES.slice(0,8).map(r=>recipePhoto(r).tile);
- assert.deepEqual([...tiles].sort((a,b)=>a-b),[0,1,2,3,4,5,6,7]);
+ const photos=FEATURED_RECIPES.slice(0,8).map(recipePhoto);
+ const tiles=photos.filter(p=>p.primary.includes("/featured8-hq.avif")).map(p=>p.tile);
+ assert.deepEqual([...tiles].sort((a,b)=>a-b),[0,1,3,4,5,6,7]);
+ assert.equal(photos.filter(p=>p.primary.includes("/source-recreations/big-boy-korean-bbq-beef-bowls.webp")).length,1);
+ assert.equal(new Set(photos.map(p=>p.primary+"|"+p.tile)).size,8);
 });
