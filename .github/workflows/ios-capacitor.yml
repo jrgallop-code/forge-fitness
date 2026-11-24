@@ -72,7 +72,7 @@ jobs:
           node --check js/core/ios-quick-log.js
           node --check js/core/router.js
           node --check js/progress/progress-ui.js
-          node --test tests/ios-quick-workout.test.mjs tests/ios-nav-food-wednesday.test.mjs tests/maintenance-check-in.test.mjs tests/weekly-informational-checkin.test.mjs tests/dashboard-whats-new.test.mjs tests/ios-gym-tools.test.mjs
+          node --test tests/meal-planner-photo-audit-actions.test.mjs tests/ios-quick-workout.test.mjs tests/ios-nav-food-wednesday.test.mjs tests/maintenance-check-in.test.mjs tests/weekly-informational-checkin.test.mjs tests/dashboard-whats-new.test.mjs tests/ios-gym-tools.test.mjs
 
   build-ios:
     name: Build iOS on Xcode 26
