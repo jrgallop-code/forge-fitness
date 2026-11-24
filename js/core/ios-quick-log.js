@@ -316,16 +316,17 @@ function handleQuickWorkout(action, source) {
 
 function openExisting(destination) {
     closeSheet();
-    const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
+    // Photos retains its dedicated route; the generic Progress overview is not
+    // a substitute for the photo journal.
+    const page = destination === "food" ? "energy" : destination === "photos" ? "progress-photos" : destination;
+    const navPage = page === "progress-photos" ? "progress" : page;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
-        btn.classList.toggle("active", btn.dataset.page === page));
+        btn.classList.toggle("active", btn.dataset.page === navPage));
     document.dispatchEvent(new CustomEvent("levelup:navigate", { detail: { page } }));
-    if (destination === "photos") {
-        requestAnimationFrame(() => document.getElementById("photo-log-tab")?.click());
-    }
     if (destination === "food") {
-        // Bypass Nutrition overview and open the normal food-entry sheet.
-        requestAnimationFrame(() => document.querySelector("[data-food-add]")?.click());
+        // Open the standard food-entry sheet, never stop at Nutrition overview.
+        // Route handlers normally mount synchronously; defer for one microtask.
+        queueMicrotask(() => document.querySelector("[data-food-add]")?.click());
     }
 }
 function ensureNavigation() {
