@@ -31,7 +31,7 @@ test("Traverse maps the five user-selected colours onto shared tokens", () => {
   }
   assert.match(css, /\.theme-preview-traverse\{/);
   assert.match(css, /html\[data-theme="traverse"\] \.bottom-nav/);
-  assert.match(css, /html\[data-theme="traverse"\] \.ios-quick-log-nav>span/);
+  assert.match(css, /html\[data-theme="traverse"\] body > \.ios-quick-log-nav > span/);
   assert.match(muscle, /traverse: \{ recovery: "#C67E50", sets: "#909962" \}/);
 });
 test("Traverse contrast remains legible and warnings remain distinct", () => {
