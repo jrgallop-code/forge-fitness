@@ -53,9 +53,9 @@ test("Traverse contrast remains legible and warnings remain distinct", () => {
 });
 test("new PWA asset revisions invalidate old service-worker cache",()=>{
   assert.match(app,/appearance-theme\.js\?v=traverse-pwa-1/);
-  assert.match(html,/appearance-themes\.css\?v=traverse-splash-20261124/);
+  assert.match(html,/appearance-themes\.css\?v=traverse-macros-20261124/);
   assert.match(html,/app\.js\?v=traverse-pwa-20261124/);
-  assert.match(worker,/CACHE_VERSION = "traverse-macros-20261124"/);
+  assert.match(worker,/CACHE_VERSION = "traverse-splash-20261124"/);
 });
 
 test("Traverse visibly uses terracotta on PWA actions and highlights",()=>{
