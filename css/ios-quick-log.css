@@ -422,3 +422,27 @@ body > .ios-quick-log-nav:focus-visible { outline:2px solid var(--accent,#1769e9
   display:flex!important;
   flex-direction:column!important;
 }
+
+/* Quick Log > Log Food keeps the primary glass bar visible and interactive.
+   Normal Nutrition > + Log Food retains the existing full-screen sheet. */
+body.ios-quick-food-entry.food-sheet-open .bottom-nav.ios-quick-log-nav-enabled {
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  z-index:30000!important;
+}
+body.ios-quick-food-entry.food-sheet-open > .ios-quick-log-nav {
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+body.ios-quick-food-entry .food-sheet {
+  align-items:flex-end!important;
+}
+body.ios-quick-food-entry .food-sheet-card {
+  height:calc(100dvh - 92px - env(safe-area-inset-bottom))!important;
+  max-height:calc(100dvh - 92px - env(safe-area-inset-bottom))!important;
+  min-height:0!important;
+  margin-bottom:calc(92px + env(safe-area-inset-bottom))!important;
+  border-radius:22px 22px 18px 18px!important;
+}
