@@ -758,3 +758,5 @@ Release #473 retry: preserve Wednesday-only reviews and allow Tuesday's correct 
 # 2026-11-23 nav readability and smaller quick-log plus release
 
 # 2026-11-23 native Google sign-in callback recovery TestFlight
+
+# 2026-11-24 fix stale signing certificate and guard pending builds
