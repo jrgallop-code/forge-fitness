@@ -249,7 +249,13 @@ function render(root){
    const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
    const total=scheduleOffsets.length*scheduleSlots.length*schedulePortions;
    root.innerHTML=selected?recipeDetailMarkup(selected,Boolean(saved),Math.max(1,total)):catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch});
-   if(selected&&!selected.indexOnly){
+   if(swapTarget&&selected){
+     const markup=selected.indexOnly
+      ? '<p class="mp-disclaimer">This recipe is missing approved ingredient quantities and cannot replace a planned meal yet.</p>'
+      : '<button type="button" class="primary-btn mp-swap-card-action" data-mp-swap-choose="'+esc(selected.id)+'">Swap to this recipe</button>';
+     root.querySelector(".mp-recipe-content h1")?.insertAdjacentHTML("afterend",markup);
+   }
+   if(selected&&!selected.indexOnly&&!swapTarget){
      const panel='<div class="mp-recipe-plan-panel"><div class="mp-recipe-plan-heading"><h3>Choose your meal prep days</h3><span>'+total+' meal'+(total===1?'':'s')+'</span></div>'+
      '<label class="mp-schedule-label">Week starting <input type="date" data-mp-schedule-start value="'+esc(scheduleStart)+'"></label>'+
      '<div class="mp-schedule-weekdays" role="group" aria-label="Days to prepare this recipe">'+SCHEDULE_DAYS.map((day,i)=>'<button type="button" data-mp-schedule-day="'+i+'" aria-pressed="'+scheduleOffsets.includes(i)+'" class="'+(scheduleOffsets.includes(i)?'active':'')+'">'+day+'</button>').join("")+'</div>'+
