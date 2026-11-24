@@ -1,4 +1,4 @@
-const CACHE_VERSION = "nav-readability-20261123";
+const CACHE_VERSION = "nav-stack-fix-20261124";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -8,7 +8,7 @@ const CORE_ASSETS = [
     "./js/core/gym-tools-math.js",
     "./css/pwa-gym-tools.css?v=stopwatch-blank-20261120",
     "./js/core/pwa-quick-log.js?v=nav-side-log-20261123",
-    "./css/pwa-quick-log.css?v=nav-readability-20261123",
+    "./css/pwa-quick-log.css?v=nav-stack-fix-20261124",
     "./js/dashboard/pwa-release-notes.js?v=theme-sync-20261120",
     "./css/pwa-release-notes.css?v=theme-sync-20261120",
     "./js/nutrition/food-nutrients.js",
