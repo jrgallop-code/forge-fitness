@@ -69,6 +69,13 @@ html[data-theme="level-up"] {
   --rir-3:#6f5a9a;--rir-3-contrast:#fff;
   --rir-4:#5d7180;--rir-4-contrast:#fff;
 }
+html[data-theme="traverse"] {
+  --rir-0:#b44346;--rir-0-contrast:#fff;
+  --rir-1:#a76334;--rir-1-contrast:#fff;
+  --rir-2:#747d47;--rir-2-contrast:#fff;
+  --rir-3:#5b7777;--rir-3-contrast:#fff;
+  --rir-4:#596d74;--rir-4-contrast:#fff;
+}
 html[data-theme="arctic"] {
   --rir-0:#a92f52;--rir-0-contrast:#fff;
   --rir-1:#5b3fa1;--rir-1-contrast:#fff;
