@@ -33,7 +33,7 @@ import { initializeProteinTargetExplanation } from "../nutrition/protein-target-
 import { initializeNutritionPlanUI } from "../nutrition/nutrition-plan-ui-v4.js?v=current-goal-1-weekly-informational-checkin-1";
 import { initializeUnifiedGoalsCalories } from "../nutrition/unified-goals-calories.js?v=calorie-target-rounding-1";
 
-import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=pwa-coach-existing-account-1";
+import { renderMore, initializeMore } from "../more/more-ui-v2.js?v=traverse-pwa-1";
 import { renderWorkoutHistory, initializeWorkoutHistory } from "../workouts/workout-history.js?v=pwa-oct02-parity-1";
 import { initializeWorkoutPrBadges } from "../workouts/workout-pr-badges.js?v=pwa-oct02-parity-1";
 import { initializeBackupManager } from "./backup-manager.js?v=backup-complete-7";
