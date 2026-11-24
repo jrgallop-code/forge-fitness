@@ -750,3 +750,5 @@ Recipe imagery and sourced preparation update — 2026-11-23 (photo fallbacks an
 Release refresh: D1 recipe library sync, original preparation guidance, and generated photo display — 2026-11-23.
 
 Release navigation polish 2026-11-23: five-tab glass bottom bar with Nutrition overview, standalone side Quick Log, direct Log Food, and removed red highlight behind the plus button.
+
+Release #472 retry: correct the five legacy Monday-check-in test fixtures to the newly required Wednesday schedule; retain Nutrition tab icon/label, Quick Log visible bottom bar, and direct Log Food.
