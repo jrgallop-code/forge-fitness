@@ -1,0 +1,27 @@
+name: Traverse PWA appearance verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'js/core/appearance-theme.js'
+      - 'js/core/muscle-map-colors.js'
+      - 'js/more/appearance-settings.js'
+      - 'css/appearance-themes.css'
+      - 'index.html'
+      - 'js/app.js'
+      - 'service-worker.js'
+      - 'tests/traverse-appearance-pwa.test.mjs'
+      - '.github/workflows/traverse-appearance.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify theme registration, contrast, navigation and cache
+        run: node --test tests/traverse-appearance-pwa.test.mjs
