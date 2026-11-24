@@ -485,10 +485,58 @@ html[data-theme="traverse"] .appearance-theme-card.is-selected {
   border-color:var(--accent)!important;background:var(--accent-soft)!important;color:var(--accent-text)!important;
 }
 html[data-theme="traverse"] .bottom-nav button.active .nav-icon{color:var(--accent-text)!important;fill:var(--accent-text)!important}
-html[data-theme="traverse"] .ios-quick-log-nav>span{
-  background:var(--accent)!important;color:var(--accent-contrast)!important;
-  box-shadow:0 5px 18px var(--accent-glow)!important;
+/* Make the fifth swatch unmistakable: Terracotta is the action/highlight
+   colour, while sage remains the primary metric and training accent. */
+html[data-theme="traverse"] {
+  --traverse-orange-text:#87471f;
+  --traverse-orange-soft:rgba(198,126,80,.16);
+  --traverse-orange-line:rgba(198,126,80,.42);
 }
+html[data-theme="traverse"] body > .ios-quick-log-nav > span,
+html[data-theme="traverse"] .ios-quick-log-nav > span {
+  background:var(--traverse-terracotta)!important;
+  color:var(--traverse-charcoal)!important;
+  border-color:rgba(48,43,45,.16)!important;
+  box-shadow:0 5px 18px rgba(198,126,80,.33)!important;
+}
+html[data-theme="traverse"] .ios-quick-log-overlay .ios-quick-log-grid .ios-ql-svg,
+html[data-theme="traverse"] .ios-quick-log-overlay .ios-ql-workout-option .ios-ql-svg{
+  color:var(--traverse-orange-text)!important;
+}
+html[data-theme="traverse"] .dashboard-command-date,
+html[data-theme="traverse"] .dashboard-command-weekly-head .eyebrow,
+html[data-theme="traverse"] .dashboard-command-insights-heading .eyebrow,
+html[data-theme="traverse"] .dashboard-habit-section-heading .eyebrow{
+  color:var(--traverse-orange-text)!important;
+}
+html[data-theme="traverse"] .dashboard-command-weekly .dashboard-weekly-toggle button.active{
+  background:var(--traverse-terracotta)!important;
+  color:var(--traverse-charcoal)!important;
+}
+html[data-theme="traverse"] .dashboard-command-weekly .dashboard-weekly-metric:nth-child(2) .dashboard-weekly-bar span,
+html[data-theme="traverse"] .dashboard-command-weekly .dashboard-weekly-metric:nth-child(3) .dashboard-weekly-bar span {
+  background:var(--traverse-terracotta)!important;
+}
+html[data-theme="traverse"] .dashboard-food-summary-card .dashboard-macro-progress--fat span,
+html[data-theme="traverse"] .food-daily-summary .macro-fat .progress-fill{
+  background:var(--traverse-terracotta)!important;
+}
+html[data-theme="traverse"] .dashboard-food-summary-card .dashboard-calorie-arc-overflow{
+  stroke:var(--traverse-terracotta)!important;
+}
+html[data-theme="traverse"] :is(.dashboard-habit-card--checkins,.dashboard-command-insights .metric-card:nth-child(2)){
+  border-color:var(--traverse-orange-line)!important;
+  background:linear-gradient(135deg,var(--traverse-orange-soft),transparent 67%),var(--card)!important;
+}
+html[data-theme="traverse"] :is(.personal-record-badge,.new-pr-badge,.streak-badge){
+  background:var(--traverse-orange-soft)!important;
+  border-color:var(--traverse-orange-line)!important;
+  color:var(--traverse-orange-text)!important;
+}
+html[data-theme="traverse"] .appearance-theme-card.theme-preview-traverse .appearance-preview-top{
+  background:linear-gradient(90deg,var(--preview-accent) 0 65%,#c67e50 65% 100%)!important;
+}
+
 html[data-theme="traverse"] :is(.meal-planner-card,.mp-week-card,.food-meal,.food-daily-summary,.food-sheet-card,.plate-calculator-card,.dashboard-habit-card){
   border-color:var(--card-border)!important;background:var(--card)!important;color:var(--text)!important;
 }
