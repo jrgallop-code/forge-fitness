@@ -1,4 +1,4 @@
-const CACHE_VERSION = "reopen-calorie-review-20261111";
+const CACHE_VERSION = "ios-wednesday-nav-20261123";
 const CACHE_PREFIX = "level-up-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;
@@ -44,8 +44,8 @@ const CORE_ASSETS = [
     "./js/nutrition/restaurant-menu.js?v=eating-out-9",
     "./js/nutrition/restaurant-directory.js?v=eating-out-directory-1",
     "./css/restaurant-menu.css?v=eating-out-9",
-    "./js/nutrition/weekly-check-in-status.js?v=weekly-checkin-status-1-weekly-informational-checkin-1",
-    "./js/nutrition/check-in-calendar.js?v=checkin-calendar-1-weekly-informational-checkin-1",
+    "./js/nutrition/weekly-check-in-status.js?v=wednesday-checkin-20261123",
+    "./js/nutrition/check-in-calendar.js?v=wednesday-checkin-20261123",
     "./js/nutrition/tdee-calorie-expenditure-carousel.js?v=energy-balance-range-3",
     "./js/nutrition/energy-balance-state.js?v=energy-balance-range-1",
     "./js/nutrition/tdee-energy-balance-summary.js?v=energy-balance-range-3",
