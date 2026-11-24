@@ -49,7 +49,7 @@ test("Stopwatch is styled for PWA without claiming native lock screen capability
   assert.match(css, /gym-tools-clock/);
   assert.match(css, /gym-tools-stopwatch-panel/);
   assert.match(index, /css\/pwa-gym-tools\.css\?v=stopwatch-blank-20261120/);
-  assert.match(index, /js\/app\.js\?v=stopwatch-blank-20261120/);
+  assert.match(index, /js\/app\.js\?v=[a-z0-9-]+/); // app revision can change without altering stopwatch functionality
   assert.match(sw, /stopwatch-blank-20261120/);
 });
 
