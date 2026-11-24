@@ -55,3 +55,13 @@ test("new PWA asset revisions invalidate old service-worker cache",()=>{
   assert.match(html,/app\.js\?v=traverse-pwa-20261124/);
   assert.match(worker,/CACHE_VERSION = "traverse-appearance-20261124"/);
 });
+
+test("Traverse visibly uses terracotta on PWA actions and highlights",()=>{
+  assert.match(css,/html\[data-theme="traverse"\] body > \.ios-quick-log-nav > span/);
+  assert.match(css,/background:var\(--traverse-terracotta\)!important/);
+  assert.match(css,/\.dashboard-command-weekly \.dashboard-weekly-toggle button\.active/);
+  assert.match(css,/\.dashboard-macro-progress--fat span/);
+  assert.match(css,/\.dashboard-habit-card--checkins/);
+  assert.match(css,/\.dashboard-calorie-arc-overflow/);
+  assert.match(css,/--traverse-orange-text:#87471f/);
+});
