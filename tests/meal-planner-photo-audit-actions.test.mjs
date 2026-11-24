@@ -69,3 +69,19 @@ test("image audit only marks sourced recipes as ingredient-grounded",()=>{
  assert.equal(rows.filter(row=>row.includes("Ingredient-grounded generated SVG illustration")).length,45);
  assert.equal(rows.filter(row=>row.includes("Photo pending: no ingredient list")).length,255);
 });
+
+test("AI photos map only to their five matching source recipe names",()=>{
+ const expected={
+  "big boy korean bbq beef bowls":"big-boy-korean-bbq-beef-bowls.webp",
+  "mediterranean spiced beef":"mediterranean-spiced-beef.webp",
+  "broccoli cheddar rice":"broccoli-cheddar-rice.webp",
+  "veggie rice":"veggie-rice.webp",
+  "creamy cilantro lime chicken bowls":"creamy-cilantro-lime-chicken-bowls.webp"
+ };
+ for(const [name,file] of Object.entries(expected)){
+  assert.ok(photos.includes('"'+name+'":"/assets/meal-photos/source-recreations/'+file+'"'));
+  assert.ok(photos.includes('source:"recipe-matched-ai-food-photograph"'));
+ }
+ assert.match(photos,/if\(matched\)return \{primary:matched/);
+ assert.match(photos,/if\(recipe\?\.indexOnly && recipe\?\.imageReviewed !== true\)/);
+});
