@@ -125,7 +125,7 @@ function openMenu() {
         <div class="ios-quick-log-handle"></div><div class="ios-quick-log-heading"><h2 id="ios-ql-heading">Quick Log</h2><button type="button" aria-label="Close quick log" data-ql-close>×</button></div>
         <div class="ios-quick-log-grid${showNutrition ? "" : " is-five"}">
           <button type="button" data-ql-action="weight">${icon("weight")}<strong>Weight</strong></button>
-          ${showNutrition ? `<button type="button" data-ql-action="food">${icon("food")}<strong>Nutrition</strong></button>` : ""}
+          ${showNutrition ? `<button type="button" data-ql-action="food">${icon("food")}<strong>Log Food</strong></button>` : ""}
           <button type="button" data-ql-action="water">${icon("water")}<strong>Water</strong></button>
           <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
           <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
@@ -326,20 +326,29 @@ function openExisting(destination) {
         detail: { page: page === "progress-photos" ? "progress" : page }
     }));
     if (page === "progress-photos") document.getElementById("photo-log-tab")?.click();
+    if (destination === "food") {
+        // Reuse the exact food editor opened by the overview's + Log Food button.
+        // Navigation renders synchronously in the current router; defer one frame
+        // for its food-log handlers to attach before opening the entry sheet.
+        requestAnimationFrame(() => document.querySelector("[data-food-add]")?.click());
+    }
 }
 function ensureNavigation() {
     const nav = document.querySelector(".bottom-nav");
     if (!nav || nav.querySelector(".ios-quick-log-nav")) return;
-    // Keep existing nutrition routing; remove only its redundant bottom tab on iOS.
-    nav.querySelector('[data-page="energy"]')?.remove();
+    // Five destinations stay in the glass bar; Quick Log floats alongside it.
+    // Nutrition intentionally opens the Food Log overview, not the entry sheet.
+    const nutrition = nav.querySelector('[data-page="energy"]');
+    const progress = nav.querySelector('[data-page="progress"]');
+    if (nutrition && progress) nav.insertBefore(nutrition, progress);
     nav.classList.add("ios-quick-log-nav-enabled");
     const button = document.createElement("button");
     button.type = "button";
     button.className = "ios-quick-log-nav";
     button.setAttribute("aria-label", "Quick Log");
     button.innerHTML = '<span aria-hidden="true">+</span>';
-    const progress = nav.querySelector('[data-page="progress"]');
-    nav.insertBefore(button, progress);
+    // Outside the bar prevents its glass/active background from bleeding behind +.
+    document.body.append(button);
 }
 function hideProgressAddWeight() {
     // Retain history editing; only hide the redundant new-entry control.
