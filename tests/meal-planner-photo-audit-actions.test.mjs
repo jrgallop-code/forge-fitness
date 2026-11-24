@@ -15,10 +15,13 @@ test("scheduled meals expose Swap and Remove actions on the dot menu",()=>{
  assert.match(ui,/class="mp-meal-card-menu mp-week-menu"/);
  assert.match(ui,/querySelectorAll\("\[data-meal-swap\]"\)/);
  assert.match(ui,/querySelectorAll\("\[data-meal-remove\]"\)/);
- assert.ok(ui.includes('overlay.className="mp-swap-overlay"'));
- assert.match(ui,/scheduleRecipe\(read\(\),recipe,\{startDate:date,dayOffsets:\[0\],slots:\[slot\]/);
- assert.match(polish,/nth-of-type\(2\)/);
- assert.match(polish,/nth-of-type\(3\)/);
+ assert.match(ui,/swapTarget=\{date,slot\}/);
+ assert.match(ui,/plannerScreen="catalog";render\(root\)/);
+ assert.match(ui,/data-mp-swap-choose/);
+ assert.match(ui,/class="mp-week-menu-panel"/);
+ assert.match(ui,/scheduleRecipe\(plan,recipe,\{startDate:date,dayOffsets:\[0\],slots:\[slot\]/);
+ assert.match(polish,/\.mp-week-menu-panel/);
+ assert.match(ui,/<svg viewBox=/);
 });
 test("unreviewed source-index recipe cannot receive arbitrary atlas tile",()=>{
  assert.doesNotMatch(photos,/function illustrationTile/);
@@ -33,4 +36,14 @@ test("first missing-recipe drafts are ingredient-grounded and flagged pending re
  assert.ok(existsSync("docs/meal-recipe-photo-audit-300.csv"));
  const lines=read("docs/meal-recipe-photo-audit-300.csv").trim().split("\n");
  assert.equal(lines.length,301);
+});
+
+test("source entries show categorized quantity rows and only ingredient-grounded images",()=>{
+ assert.match(catalog,/function sourceIngredientSections/);
+ assert.match(catalog,/function splitSourceStatement/);
+ assert.match(catalog,/function ingredientIllustrationMarkup/);
+ assert.match(catalog,/Array\.isArray\(recipe\?\.ingredientStatements\)/);
+ assert.match(catalog,/groupIngredientRows\(ingredients\)/);
+ assert.match(polish,/\.mp-ingredient-group li/);
+ assert.match(polish,/\.mp-ingredient-illustration svg/);
 });
