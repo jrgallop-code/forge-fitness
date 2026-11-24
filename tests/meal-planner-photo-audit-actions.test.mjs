@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
+import vm from "node:vm";
 const read=p=>readFileSync(p,"utf8");
 const ui=read("js/nutrition/meal-planner-ui.js");
 const photos=read("js/nutrition/meal-planner-photos.js");
@@ -46,4 +47,25 @@ test("source entries show categorized quantity rows and only ingredient-grounded
  assert.match(catalog,/groupIngredientRows\(ingredients\)/);
  assert.match(polish,/\.mp-ingredient-group li/);
  assert.match(polish,/\.mp-ingredient-illustration svg/);
+});
+
+test("publisher ingredient quantities preserve units without inventing weights",()=>{
+ const start=catalog.indexOf("function splitSourceStatement(");
+ const end=catalog.indexOf("function sourceIngredientSections(",start);
+ assert.ok(start>=0&&end>start);
+ const split=vm.runInNewContext(catalog.slice(start,end)+"\n splitSourceStatement");
+ const beef=split({description:"2 lbs ground beef (85/15)"});
+ assert.equal(beef.quantity,"2 lbs");
+ assert.equal(beef.name,"ground beef (85/15)");
+ const rice=split({description:"1.75 cups rice (uncooked)"});
+ assert.equal(rice.quantity,"1.75 cups");
+ const broccoli=split({description:".75 lb frozen broccoli florets"});
+ assert.equal(broccoli.quantity,".75 lb");
+ const ambiguous=split({description:"salt and pepper to taste"});
+ assert.equal(ambiguous.quantity,"—");
+});
+test("image audit only marks sourced recipes as ingredient-grounded",()=>{
+ const rows=read("docs/meal-recipe-photo-audit-300.csv").trim().split("\n").slice(1);
+ assert.equal(rows.filter(row=>row.includes("Ingredient-grounded generated SVG illustration")).length,45);
+ assert.equal(rows.filter(row=>row.includes("Photo pending: no ingredient list")).length,255);
 });
