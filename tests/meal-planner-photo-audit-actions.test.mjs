@@ -15,7 +15,7 @@ test("scheduled meals expose Swap and Remove actions on the dot menu",()=>{
  assert.match(ui,/class="mp-meal-card-menu mp-week-menu"/);
  assert.match(ui,/querySelectorAll\("\[data-meal-swap\]"\)/);
  assert.match(ui,/querySelectorAll\("\[data-meal-remove\]"\)/);
- assert.match(ui,/overlay\\.className="mp-swap-overlay"/);
+ assert.ok(ui.includes('overlay.className="mp-swap-overlay"'));
  assert.match(ui,/scheduleRecipe\(read\(\),recipe,\{startDate:date,dayOffsets:\[0\],slots:\[slot\]/);
  assert.match(polish,/nth-of-type\(2\)/);
  assert.match(polish,/nth-of-type\(3\)/);
