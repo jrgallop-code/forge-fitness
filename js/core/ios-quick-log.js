@@ -326,7 +326,13 @@ function openExisting(destination) {
     if (destination === "food") {
         // Open the standard food-entry sheet, never stop at Nutrition overview.
         // Route handlers normally mount synchronously; defer for one microtask.
-        queueMicrotask(() => document.querySelector("[data-food-add]")?.click());
+        queueMicrotask(() => {
+            const add = document.querySelector("[data-food-add]");
+            if (!add) return;
+            // Keep the glass navigation visible when opening food from Quick Log.
+            document.body.classList.add("ios-quick-food-entry");
+            add.click();
+        });
     }
 }
 function ensureNavigation() {
