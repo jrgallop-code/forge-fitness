@@ -1,6 +1,6 @@
 import { getNutritionPhaseHistory } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
-import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
-import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=calendar-checkin-day-1-weekly-informational-checkin-1";
+import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=wednesday-gate-20261123";
+import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=wednesday-checkin-20261123";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
 const FIRST_INFORMATIONAL_CHECK_DAY = 7;
@@ -16,6 +16,13 @@ function shiftDate(value, days) {
     const date = new Date(`${value}T12:00:00`);
     if (!Number.isFinite(date.getTime())) return "";
     date.setDate(date.getDate() + days);
+    return localDate(date);
+}
+
+function wednesdayOnOrAfter(key) {
+    const date = new Date(`${key}T12:00:00`);
+    if (!Number.isFinite(date.getTime())) return key;
+    date.setDate(date.getDate() + (3 - date.getDay() + 7) % 7);
     return localDate(date);
 }
 
@@ -63,14 +70,15 @@ function eventFor({ date, checkDay = null, phase, state }) {
     };
 }
 
-function canonicalPhaseEvents(phase, bounds, handledState, today) {
+function canonicalPhaseEvents(phase, bounds, handledState, today, anchorWednesday = false) {
     const events = [];
     if (!phase?.startDate) return events;
     const phaseEnd = phase.endDate || bounds.end;
     const lastDate = phaseEnd < bounds.end ? phaseEnd : bounds.end;
     const handled = handledState[phaseKey(phase)];
     const lastHandledCheckDay = Number(handled?.lastHandledCheckDay);
-    const informationalDate = shiftDate(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
+    const informationalMilestone = shiftDate(phase.startDate, FIRST_INFORMATIONAL_CHECK_DAY - 1);
+    const informationalDate = anchorWednesday ? wednesdayOnOrAfter(informationalMilestone) : informationalMilestone;
     if (informationalDate >= bounds.start && informationalDate <= lastDate) {
         events.push(eventFor({
             date: informationalDate,
@@ -81,7 +89,8 @@ function canonicalPhaseEvents(phase, bounds, handledState, today) {
     }
 
     let checkDay = FIRST_CALORIE_REVIEW_DAY;
-    let date = shiftDate(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
+    const firstReviewMilestone = shiftDate(phase.startDate, FIRST_CALORIE_REVIEW_DAY - 1);
+    let date = anchorWednesday ? wednesdayOnOrAfter(firstReviewMilestone) : firstReviewMilestone;
 
     while (date && date <= lastDate) {
         if (date >= bounds.start) {
@@ -104,7 +113,7 @@ function activePhaseEvents(phase, status, bounds, handledState, today) {
 
     // Scheduling is anchored to the original phase week, never to the day
     // a late review or a troubleshooting calorie adjustment was accepted.
-    const events = canonicalPhaseEvents(phase, bounds, handledState, today);
+    const events = canonicalPhaseEvents(phase, bounds, handledState, today, true);
     if (status?.reviewDate && (status.state === "ready" || status.state === "waiting")) {
         const scheduled = events.find(event => event.date === status.reviewDate);
         if (scheduled) {
