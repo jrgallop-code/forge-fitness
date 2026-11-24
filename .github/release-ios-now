@@ -760,3 +760,5 @@ Release #473 retry: preserve Wednesday-only reviews and allow Tuesday's correct 
 # 2026-11-23 native Google sign-in callback recovery TestFlight
 
 # 2026-11-24 fix stale signing certificate and guard pending builds
+
+2026-11-24 recipe actions & photo integrity: deploy Swap/Remove menus, block mismatched MPM atlas photos, publish 300-recipe audit, and include four original preparation drafts. Regression gate fixed for modal class assertion.
