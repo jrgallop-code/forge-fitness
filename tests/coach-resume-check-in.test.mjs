@@ -48,7 +48,8 @@ test('returning from manual to coach preserves the phase and waits for Wednesday
 test('a missing recommendation is not presented as a completed no-change assessment', () => {
  seed(7);
  assert.equal(getWeeklyCheckInStatus().headline,
-   isReviewDay() ? 'Check-in due — review pending' : `Next check-in Wednesday`);
+   isReviewDay() ? 'Check-in due — review pending'
+     : new Date().getDay() === 2 ? 'Check-in tomorrow' : 'Next check-in Wednesday');
  document.documentElement.dataset.weeklyCalorieReviewReason='no-change';
  assert.equal(getWeeklyCheckInStatus().state,'upcoming');
 });
