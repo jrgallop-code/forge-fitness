@@ -51,7 +51,7 @@ test("Traverse contrast remains legible and warnings remain distinct", () => {
 });
 test("new PWA asset revisions invalidate old service-worker cache",()=>{
   assert.match(app,/appearance-theme\.js\?v=traverse-pwa-1/);
-  assert.match(html,/appearance-themes\.css\?v=traverse-orange-20261124/);
+  assert.match(html,/appearance-themes\.css\?v=traverse-macros-20261124/);
   assert.match(html,/app\.js\?v=traverse-pwa-20261124/);
   assert.match(worker,/CACHE_VERSION = "traverse-orange-20261124"/);
 });
@@ -60,8 +60,22 @@ test("Traverse visibly uses terracotta on PWA actions and highlights",()=>{
   assert.match(css,/html\[data-theme="traverse"\] body > \.ios-quick-log-nav > span/);
   assert.match(css,/background:var\(--traverse-terracotta\)!important/);
   assert.match(css,/\.dashboard-command-weekly \.dashboard-weekly-toggle button\.active/);
-  assert.match(css,/\.dashboard-macro-progress--fat span/);
+  assert.match(css,/\.dashboard-macro-progress--fat > i > b/);
   assert.match(css,/\.dashboard-habit-card--checkins/);
   assert.match(css,/\.dashboard-calorie-arc-overflow/);
   assert.match(css,/--traverse-orange-text:#87471f/);
+});
+
+test("Traverse macro charts use green carbs, orange fat and grey protein without highlighting labels",()=>{
+  for(const [name,hex] of Object.entries({carbs:"#909962",fat:"#c67e50",protein:"#a4b2b0"})){
+    assert.match(css,new RegExp("--traverse-macro-"+name+":"+hex));
+    assert.match(css,new RegExp("dashboard-macro-progress--"+name+" \\{ --macro-color:var\\(--traverse-macro-"+name+"\\)!important"));
+    assert.match(css,new RegExp("food-macro-total--"+name+" i > b"));
+    assert.match(css,new RegExp("calorie-stat-macro--"+name+" \\.calorie-stat-macro-trend i"));
+  }
+  assert.match(css,/\.dashboard-macro-summary \.dashboard-macro-progress > span/);
+  assert.match(css,/background:transparent!important/);
+  assert.doesNotMatch(css,/dashboard-macro-progress--fat span,\s*html\[data-theme/);
+  assert.match(css,/\.macro-goals-layout \{/);
+  assert.match(css,/\.food-edit-calorie-ring \{/);
 });
