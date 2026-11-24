@@ -99,7 +99,7 @@ function renderFoodLogShell() {
     return `
         <section class="food-log-page" data-food-log>
             <header class="food-log-heading">
-                <div><span class="eyebrow">DAILY NUTRITION</span><h2>Food Log</h2><button class="food-log-plan-link" type="button" data-food-open-plan>Calorie goals, lean bulk &amp; planning →</button></div>
+                <div><span class="eyebrow">DAILY NUTRITION</span><h2>Food Log</h2>${window.Capacitor?.isNativePlatform?.() ? `<button class="food-log-plan-link" type="button" data-food-open-plan>Calorie goals, lean bulk &amp; planning →</button>` : ""}</div>
                 <button class="food-log-add primary-btn" type="button" data-food-add>+ Log Food</button>
             </header>
             <div class="food-log-date-nav">
