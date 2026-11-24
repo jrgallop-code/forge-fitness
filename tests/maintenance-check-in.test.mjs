@@ -14,7 +14,7 @@ test("offers a weekly maintenance update when data and change are meaningful", (
         currentMaintenance: 2275,
         currentTarget: 2400,
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.ready, true);
     assert.equal(result.change, 100);
@@ -27,7 +27,7 @@ test("does not interrupt for a change below 50 calories", () => {
         currentMaintenance: 2275,
         currentTarget: 2400,
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.ready, false);
     assert.equal(result.meaningful, false);
@@ -39,7 +39,7 @@ test("requires four recent food days and one recent weigh-in", () => {
         currentMaintenance: 2275,
         currentTarget: 2400,
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.ready, false);
     assert.equal(result.enoughWeeklyData, false);
@@ -57,7 +57,7 @@ test("an active phase waits for its qualifying pace review before TDEE becomes a
             targetRateLbPerWeek: 0.25
         },
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.adaptiveGateReady, false);
     assert.equal(result.ready, false);
@@ -76,7 +76,7 @@ test("the same TDEE change unlocks once the shared pace review is ready", () => 
             trend: { checkDay: 14 }
         },
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.adaptiveGateReady, true);
     assert.equal(result.ready, true);
@@ -95,7 +95,7 @@ test("pace alone unlocks the weekly review when calculated maintenance is unchan
             trend: { checkDay: 14 }
         },
         state: {},
-        today: new Date("2026-08-31T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.change, 0);
     assert.equal(result.meaningful, true);
@@ -120,7 +120,7 @@ test("does not offer a zero TDEE when the estimate is unavailable", () => {
         currentMaintenance: 2275,
         currentTarget: 2400,
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.ready, false);
     assert.equal(result.proposedMaintenance, null);
@@ -159,7 +159,7 @@ test("a shared adjustment hold suppresses a second maintenance decision", () => 
         currentTarget: 2400,
         adjustmentHold: { daysRemaining: 5 },
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     assert.equal(result.ready, false);
     assert.equal(result.nextCheckInDays, 5);
@@ -177,11 +177,24 @@ test("automatic maintenance and adaptive pace corrections become one capped targ
             trend: { checkDay: 21 }
         },
         state: {},
-        today: new Date("2026-08-29T12:00:00")
+        today: new Date("2026-09-02T12:00:00")
     });
     const update = buildAutomaticMaintenanceUpdate(result);
     assert.equal(update.maintenanceChange, 100);
     assert.equal(update.requestedPaceCorrection, -250);
     assert.equal(update.targetChange, -150);
     assert.equal(update.targetCalories, 2250);
+});
+
+
+test("a scheduled calorie check-in never triggers on Monday", () => {
+    const result = getMaintenanceCheckIn({
+        estimate,
+        currentMaintenance: 2275,
+        currentTarget: 2400,
+        state: {},
+        today: new Date("2026-11-23T12:00:00")
+    });
+    assert.equal(result.due, false);
+    assert.equal(result.ready, false);
 });
