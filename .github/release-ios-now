@@ -756,3 +756,5 @@ Release #472 retry: correct the five legacy Monday-check-in test fixtures to the
 Release #473 retry: preserve Wednesday-only reviews and allow Tuesday's correct 'Check-in tomorrow' status in the regression suite. Upload the updated iOS Nutrition navigation and Quick Log food sheet to TestFlight.
 
 # 2026-11-23 nav readability and smaller quick-log plus release
+
+# 2026-11-23 native Google sign-in callback recovery TestFlight
