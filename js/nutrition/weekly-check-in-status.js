@@ -1,6 +1,6 @@
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
-import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=calendar-checkin-day-1";
+import { getMaintenanceCheckIn, getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=wednesday-gate-20261123";
 import { readAdjustmentHold } from "./calorie-adjustment-coordinator.js?v=calendar-checkin-day-1";
 import { getLoggedCalorieWindow, readFoodLog, localDateKey, previousDateKey } from "./food-log-data.js?v=adaptive-calorie-average-1";
 
