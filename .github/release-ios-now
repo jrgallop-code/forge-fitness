@@ -748,3 +748,5 @@ Complete 48 recipe summary cards use same per-portion nutrition as detail views.
 Recipe imagery and sourced preparation update — 2026-11-23 (photo fallbacks and source-index guidance).
 
 Release refresh: D1 recipe library sync, original preparation guidance, and generated photo display — 2026-11-23.
+
+Release navigation polish 2026-11-23: five-tab glass bottom bar with Nutrition overview, standalone side Quick Log, direct Log Food, and removed red highlight behind the plus button.
