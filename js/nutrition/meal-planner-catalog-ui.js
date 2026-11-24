@@ -89,6 +89,7 @@ function cloudSourceRecipe(recipe){
 }
 function ingredientCategory(name){
  const t=String(name||"").toLowerCase();
+ if(/broth|stock|vinegar|seasoning|powder|extract/.test(t))return "Sauces, oils & seasonings";
  if(/chicken|turkey|beef|pork|salmon|fish|shrimp|egg|tofu|tempeh|sausage|bacon/.test(t))return "Protein";
  if(/rice|pasta|noodle|tortilla|bread|quinoa|oat|potato|flour/.test(t))return "Grains & starches";
  if(/broccoli|onion|garlic|carrot|pepper|tomato|kale|spinach|zucchini|cucumber|lime|lemon|avocado|mushroom|celery/.test(t))return "Produce";
@@ -167,7 +168,10 @@ export function toggleFavorite(id){
 function ingredientIllustrationMarkup(recipe,cls=""){
  const statements=(recipe?.ingredientStatements||[]).map(x=>String(x?.description||x||"").toLowerCase());
  if(!statements.length)return "";
- const has=(pattern)=>statements.some(s=>pattern.test(s));
+ // Do not infer a main ingredient from a seasoning or broth (e.g. rice
+ // wine vinegar must not turn a sauce-only recipe into a rice bowl).
+ const visible=statements.filter(s=>!/vinegar|broth|stock|powder|extract|seasoning/.test(s));
+ const has=(pattern)=>visible.some(s=>pattern.test(s));
  const parts=[];
  const seed=String(recipe.id||recipe.name||"meal");
  let h=2166136261;
@@ -186,7 +190,7 @@ function ingredientIllustrationMarkup(recipe,cls=""){
  if(has(/salmon|tuna|cod|fish|shrimp/))scatter(22,(x,y,i)=>ellipse(x,y,14,6,i%3?"#e3976c":"#f9b48b"));
  if(has(/broccoli/))scatter(16,(x,y)=>ellipse(x,y,13,9,"#3e873e","#27602d"));
  if(has(/carrot|sweet potato|pumpkin|squash/))scatter(22,(x,y,i)=>ellipse(x,y,8,5,i%2?"#e78b30":"#f6ac42"));
- if(has(/tomato|red pepper|paprika|salsa/))scatter(17,(x,y)=>ellipse(x,y,8,6,"#bd493a"));
+ if(has(/tomato|red pepper|salsa/))scatter(17,(x,y)=>ellipse(x,y,8,6,"#bd493a"));
  if(has(/bean|chickpea|lentil/))scatter(20,(x,y)=>ellipse(x,y,6,4,has(/kidney bean/)?"#853b42":"#caa16c"));
  if(has(/cheese|cheddar/))scatter(30,(x,y)=>ellipse(x,y,9,3,"#e9a626"));
  if(has(/yogurt|cream|mayo|dressing/))scatter(19,(x,y)=>ellipse(x,y,9,2,"#f7f0de"));
