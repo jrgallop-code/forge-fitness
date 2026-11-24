@@ -161,11 +161,51 @@ export function toggleFavorite(id){
  const list=new Set(storedFavorites());if(list.has(id))list.delete(id);else list.add(id);
  try{localStorage.setItem(CATALOG_FAVORITES_KEY,JSON.stringify([...list]));return list.has(id)}catch{return false}
 }
+// Ingredient-grounded illustrations for source entries with an imported
+// ingredient list. No component is painted unless that ingredient is present.
+// These are not photographs and do not imply a reviewed recipe.
+function ingredientIllustrationMarkup(recipe,cls=""){
+ const statements=(recipe?.ingredientStatements||[]).map(x=>String(x?.description||x||"").toLowerCase());
+ if(!statements.length)return "";
+ const has=(pattern)=>statements.some(s=>pattern.test(s));
+ const parts=[];
+ const seed=String(recipe.id||recipe.name||"meal");
+ let h=2166136261;
+ for(const ch of seed)h=Math.imul(h^ch.charCodeAt(0),16777619);
+ const rand=(n)=>{let x=Math.sin((h>>>0)*.001+n*17.93)*43758.5453;return x-Math.floor(x)};
+ const scatter=(count,make)=>{for(let i=0;i<count;i++){
+  const angle=rand(i+10)*Math.PI*2,rad=Math.sqrt(rand(i+90))*118;
+  const x=250+Math.cos(angle)*rad*1.3,y=181+Math.sin(angle)*rad*.73;
+  parts.push(make(x,y,i));
+ }};
+ const ellipse=(x,y,rx,ry,color,stroke="none")=>'<ellipse cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" rx="'+rx+'" ry="'+ry+'" fill="'+color+'" stroke="'+stroke+'"/>';
+ if(has(/rice|quinoa|couscous|oat|pasta|noodle/))scatter(105,(x,y)=>ellipse(x,y,6,2.8,has(/oat/)? "#cfaf72":"#f6edcf"));
+ if(has(/kale|spinach|lettuce|parsley|cilantro|basil|herb/))scatter(27,(x,y)=>ellipse(x,y,12,6,iColor(x,y,"#377d49","#4fa55d")));
+ if(has(/beef|steak|burger|ground pork|sausage/))scatter(30,(x,y,i)=>ellipse(x,y,10+(i%3)*2,6+(i%2)*2,"#854327","#633522"));
+ if(has(/chicken|turkey/))scatter(25,(x,y,i)=>ellipse(x,y,15,5,i%3?"#d9a16b":"#bb7447"));
+ if(has(/salmon|tuna|cod|fish|shrimp/))scatter(22,(x,y,i)=>ellipse(x,y,14,6,i%3?"#e3976c":"#f9b48b"));
+ if(has(/broccoli/))scatter(16,(x,y)=>ellipse(x,y,13,9,"#3e873e","#27602d"));
+ if(has(/carrot|sweet potato|pumpkin|squash/))scatter(22,(x,y,i)=>ellipse(x,y,8,5,i%2?"#e78b30":"#f6ac42"));
+ if(has(/tomato|red pepper|paprika|salsa/))scatter(17,(x,y)=>ellipse(x,y,8,6,"#bd493a"));
+ if(has(/bean|chickpea|lentil/))scatter(20,(x,y)=>ellipse(x,y,6,4,has(/kidney bean/)?"#853b42":"#caa16c"));
+ if(has(/cheese|cheddar/))scatter(30,(x,y)=>ellipse(x,y,9,3,"#e9a626"));
+ if(has(/yogurt|cream|mayo|dressing/))scatter(19,(x,y)=>ellipse(x,y,9,2,"#f7f0de"));
+ // A neutral garnish only when a real herb or green is in the ingredient list.
+ const top='<svg viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ingredient-based illustration of '+esc(recipe?.name||"meal")+'">'+
+  '<defs><radialGradient id="bg"><stop stop-color="#d8c4a9"/><stop offset="1" stop-color="#afa08c"/></radialGradient><radialGradient id="bowl"><stop stop-color="#f4efe6"/><stop offset=".89" stop-color="#e4dcd0"/><stop offset="1" stop-color="#c9bdb0"/></radialGradient><clipPath id="food"><ellipse cx="250" cy="180" rx="164" ry="112"/></clipPath></defs>'+
+  '<rect width="500" height="350" fill="url(#bg)"/><ellipse cx="253" cy="198" rx="190" ry="131" fill="#594638" opacity=".24"/><ellipse cx="250" cy="175" rx="190" ry="128" fill="url(#bowl)"/>'+
+  '<ellipse cx="250" cy="180" rx="168" ry="113" fill="#d9c5a5"/><g clip-path="url(#food)">'+parts.join("")+'</g>'+
+  '<ellipse cx="250" cy="175" rx="190" ry="128" fill="none" stroke="#f3ece2" stroke-width="17"/></svg>';
+ return '<span class="mp-real-photo mp-ingredient-illustration '+esc(cls)+'" data-image-status="ingredient-illustration" role="img" aria-label="Illustration based on listed ingredients for '+esc(recipe.name)+'">'+top+'</span>';
+}
+function iColor(x,y,a,b){return (Math.floor(x+y)%2)?a:b;}
 export function photoMarkup(recipe,cls=""){
  const photo=recipePhoto(recipe);
  // Do not represent an unrelated atlas tile as the meal in the recipe card.
  // A truthful visual placeholder is better until its exact image is approved.
  if(!photo?.primary){
+  if(Array.isArray(recipe?.ingredientStatements)&&recipe.ingredientStatements.length)
+   return ingredientIllustrationMarkup(recipe,cls);
   const name=String(recipe?.name||"meal");
   return '<span class="mp-real-photo mp-photo-pending '+esc(cls)+'" role="img" aria-label="Photo being prepared for '+esc(name)+'"><span aria-hidden="true">🍽</span><small>Photo pending</small></span>';
  }
