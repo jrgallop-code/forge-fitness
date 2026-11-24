@@ -112,7 +112,8 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     } else if (earliestReviewDate) {
         nextEligibleScheduledDate = wednesdayOnOrAfter(nextScheduledCheckDate || earliestReviewDate);
     }
-    const due = daysSinceReview >= CHECK_IN_DAYS
+    const due = now.getDay() === 3
+        && daysSinceReview >= CHECK_IN_DAYS
         && Boolean(nextEligibleScheduledDate)
         && localDateKey(now) >= nextEligibleScheduledDate;
     const coordinatedTargetChange = Number(coordinatedUpdate?.targetCalories) - Number(target);
