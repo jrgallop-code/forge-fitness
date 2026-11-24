@@ -7,7 +7,7 @@ import { scheduleIconDecoration } from "./core/icon-decoration-scheduler.js?v=ic
 import "./workouts/exercise-search.js?v=exercise-search-4";
 import "./workouts/exercise-guide-resolution-fix.js?v=1";
 import "./workouts/exercise-guide-comprehensive.js?v=comprehensive-form-guides-1";
-import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=calendar-checkin-day-1";
+import { initializeMaintenanceCheckInAlert } from "./nutrition/maintenance-check-in.js?v=wednesday-gate-20261123";
 import { initializeSatisfactionSurvey } from "./feedback/satisfaction-survey.js?v=satisfaction-survey-1";
 import { applyAppFeaturePreferences } from "./core/app-feature-preferences.js?v=nutrition-feature-choice-1";
 
@@ -55,5 +55,5 @@ initializeNavbar();
 initializeMaintenanceCheckInAlert();
 decorateAppIcons(document);
 import "./core/non-timer-notification-cleanup.js?v=remove-non-timer-notifications-1";
-import { initializeIOSQuickLog } from "./core/ios-quick-log.js?v=nav-side-log-20261123";
+import { initializeIOSQuickLog } from "./core/ios-quick-log.js?v=nav-checkin-food-20261123";
 initializeIOSQuickLog();
