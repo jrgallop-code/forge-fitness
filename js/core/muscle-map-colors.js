@@ -1,4 +1,4 @@
-import { getAppearanceTheme, resolveAppearanceTheme } from "./appearance-theme.js?v=appearance-themes-3";
+import { getAppearanceTheme, resolveAppearanceTheme } from "./appearance-theme.js?v=traverse-pwa-1";
 
 export const MUSCLE_MAP_COLOR_STORAGE_KEY = "level_up_muscle_map_colors_v1";
 
