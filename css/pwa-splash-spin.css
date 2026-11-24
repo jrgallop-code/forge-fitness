@@ -29,6 +29,19 @@
         html[data-theme="midnight"] #pwa-splash .splash-spin { --spin-accent: #6095ff; }
         html[data-theme="slate"] #pwa-splash .splash-spin { --spin-accent: #95b6d5; }
         html[data-theme="pulse"] #pwa-splash .splash-spin { --spin-accent: #ff2d95; }
+        /* Traverse shares the exact Level Up dumbbell, logo masks and
+           360-degree collision animation with the existing appearances. */
+        html[data-theme="traverse"] #pwa-splash .splash-spin {
+            --spin-ink: #302b2d;
+            --spin-accent: #c67e50;
+            background:
+              radial-gradient(ellipse at 52% 37%, rgba(198,126,80,.17), transparent 38%),
+              radial-gradient(ellipse at 35% 68%, rgba(144,153,98,.19), transparent 53%);
+        }
+        html[data-theme="traverse"] #pwa-splash .splash-spin-tagline {
+            color: #5c653d;
+        }
+
 
         #pwa-splash .splash-spin-lockup {
             position: relative;
