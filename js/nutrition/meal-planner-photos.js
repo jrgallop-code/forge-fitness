@@ -23,15 +23,14 @@ export function recipeBaseIndex(recipe){
  const id=Number(String(recipe?.id||"").replace(/^lu-meal-/,""));
  return Number.isFinite(id)&&id>0?Math.min(39,Math.floor((id-1)/20)):0;
 }
-// Source-index previews have no dedicated production photography yet. Use
-// a deterministic generated-food atlas illustration, never a blank tile.
-// This does not imply exact plating or a verified recipe.
-function illustrationTile(recipe){
- const value=String(recipe?.id||recipe?.name||"meal");
- let hash=2166136261;
- for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619);
- return (hash>>>0)%40;
-}
+// A hashed tile is not a recipe match. Unreviewed dishes must not display
+// another dish's photo (e.g. chia pudding presented as Mediterranean beef).
+// Give them an honest pending-image state until a recipe-specific asset is
+// created and approved in the catalogue manifest.
+const PHOTO_PENDING=Object.freeze({
+ primary:null,source:"photo-pending",exactMatch:false,backgroundSize:null,
+ x:50,y:50,tile:null,requiresReview:true
+});
 export function recipePhoto(recipe){
  const cloudImage=recipe?.image;
  if(cloudImage && typeof cloudImage==="object" && String(cloudImage.asset||"").startsWith("/assets/meal-photos/") && [".avif",".png",".webp"].some(ext=>String(cloudImage.asset).endsWith(ext))){
@@ -43,10 +42,8 @@ export function recipePhoto(recipe){
    exactMatch:false,recipeId:recipe?.id,backgroundSize:(cols*100)+"% "+(rows*100)+"%"};
  }
 
- if(recipe?.indexOnly || !/^lu-meal-/.test(String(recipe?.id||"")) && !Object.prototype.hasOwnProperty.call(FEATURED_TILES,recipe?.id)){
-  const tile=illustrationTile(recipe);
-  return {primary:GENERATED_MEAL_ATLAS,tile,x:tile%8/7*100,y:Math.floor(tile/8)/4*100,
-   source:"generated-illustrative-food-atlas",exactMatch:false,recipeId:recipe?.id,backgroundSize:"800% 500%"};
+ if(recipe?.indexOnly || (!/^lu-meal-/.test(String(recipe?.id||"")) && !Object.prototype.hasOwnProperty.call(FEATURED_TILES,recipe?.id))){
+  return {...PHOTO_PENDING,recipeId:recipe?.id};
  }
 
  const featuredIndex=FEATURED_TILES[recipe?.id];
