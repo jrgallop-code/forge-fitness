@@ -9,6 +9,8 @@ const app = read("js/app.js");
 const more = read("js/more/appearance-settings.js");
 const muscle = read("js/core/muscle-map-colors.js");
 const worker = read("service-worker.js");
+const splashStyle = read("css/pwa-splash-screen.css");
+const splashSpin = read("css/pwa-splash-spin.css");
 
 test("Traverse is a persistent, selectable light theme, PWA only", () => {
   assert.match(theme, /id: "traverse", name: "Traverse"[^\n]*mode: "light"/);
@@ -51,7 +53,7 @@ test("Traverse contrast remains legible and warnings remain distinct", () => {
 });
 test("new PWA asset revisions invalidate old service-worker cache",()=>{
   assert.match(app,/appearance-theme\.js\?v=traverse-pwa-1/);
-  assert.match(html,/appearance-themes\.css\?v=traverse-macros-20261124/);
+  assert.match(html,/appearance-themes\.css\?v=traverse-splash-20261124/);
   assert.match(html,/app\.js\?v=traverse-pwa-20261124/);
   assert.match(worker,/CACHE_VERSION = "traverse-macros-20261124"/);
 });
@@ -78,4 +80,19 @@ test("Traverse macro charts use green carbs, orange fat and grey protein without
   assert.doesNotMatch(css,/dashboard-macro-progress--fat span,\s*html\[data-theme/);
   assert.match(css,/\.macro-goals-layout \{/);
   assert.match(css,/\.food-edit-calorie-ring \{/);
+});
+
+test("Traverse splash keeps existing dumbbell collision timing with branded colours", () => {
+ assert.match(html,/pwa-splash-spin\\.css\\?v=traverse-launch-20261124/);
+ assert.match(html,/pwa-splash-screen\\.css\\?v=traverse-launch-20261124/);
+ assert.match(html,/traverse:"assets\\/level-up-splash-pure-fullbleed/);
+ assert.match(splashStyle,/html\\[data-theme="traverse"\\]\\.level-up-installed-pwa #pwa-splash/);
+ assert.match(splashStyle,/background:#faf7f1/);
+ assert.match(splashStyle,/background:linear-gradient\\(90deg,#909962 0%,#c67e50 100%\\)/);
+ assert.match(splashSpin,/html\\[data-theme="traverse"\\] #pwa-splash \\.splash-spin/);
+ assert.match(splashSpin,/--spin-ink: #302b2d/);
+ assert.match(splashSpin,/--spin-accent: #c67e50/);
+ for(const rule of ["level-up-spin-bar","level-up-spin-pop","level-up-spin-name"]) assert.ok(splashSpin.includes(rule));
+ assert.match(splashSpin,/rotate\\(360deg\\)/);
+ assert.match(worker,/splash-spin\\.css\\?v=traverse-launch-20261124/);
 });
