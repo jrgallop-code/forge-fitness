@@ -1,5 +1,5 @@
 import { getNutritionPhaseHistory } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
-import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=wednesday-gate-20261123";
+import { getMaintenanceUpdateMode } from "./maintenance-check-in.js?v=wednesday-gate-final-20261123";
 import { getWeeklyCheckInStatus } from "./weekly-check-in-status.js?v=wednesday-checkin-20261123";
 
 const CHECK_STATE_KEY = "level_up_weekly_phase_checkin_state";
