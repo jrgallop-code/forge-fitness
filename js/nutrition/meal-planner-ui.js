@@ -101,6 +101,8 @@ function showWizardStep(root,next){
 
 
 let plannerScreen="home",catalogSlot="All",catalogFilter="Meal Prep Manual (300)",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
+let swapTarget=null;
+
 let scheduleStart=nextMonday(),scheduleOffsets=[0],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
  ["Produce",/apple|banana|berries|pineapple|spinach|broccoli|pepper|tomato|cucumber|zucchini|avocado|potato|mushrooms|lime|ginger|garlic|salsa/],
@@ -223,7 +225,26 @@ function render(root){
  const page=plannerScreen;
  if(page==="home")root.innerHTML=mealPlannerHomeMarkup({plan:saved,selectedDate:selectedPlanDate,recipes:[...baseRecipes(),...MEAL_CATALOG],photoMarkup,favoriteIds:storedFavorites()});
  else if(page==="landing")root.innerHTML=landingMarkup(saved);
- else if(page==="catalog"||page==="favorites")root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly:page==="favorites"||favoritesOnly});
+ else if(page==="catalog"||page==="favorites"){
+  root.innerHTML=catalogMarkup({slot:catalogSlot,filter:catalogFilter,foodType:catalogFoodType,search:catalogSearch,favoritesOnly:page==="favorites"||favoritesOnly});
+  if(swapTarget){
+   const banner=document.createElement("div");
+   banner.className="mp-swap-banner";
+   banner.innerHTML='<div><strong>Swap '+esc(swapTarget.slot)+'</strong><small>'+esc(swapTarget.date)+' · Select a complete recipe below</small></div><button type="button" data-mp-swap-cancel>Cancel</button>';
+   root.querySelector(".mp-catalog-content")?.prepend(banner);
+   root.querySelectorAll(".mp-catalog-card").forEach(card=>{
+    const id=card.querySelector("[data-mp-recipe]")?.dataset.mpRecipe;
+    const recipe=baseRecipes().find(item=>item.id===id);
+    if(!recipe)return;
+    const chooser=document.createElement("button");
+    chooser.type="button";chooser.className="mp-swap-card-action";
+    if(recipe.indexOnly||!(recipe.ingredients?.length||recipe.groups?.some(g=>g.ingredients?.length))){
+     chooser.textContent="Recipe details pending";chooser.disabled=true;
+    }else {chooser.textContent="Swap to this meal";chooser.dataset.mpSwapChoose=id;}
+    card.append(chooser);
+   });
+  }
+ }
  else if(page==="recipe"){
    const selected=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
    const total=scheduleOffsets.length*scheduleSlots.length*schedulePortions;
@@ -450,41 +471,26 @@ function render(root){
  }));
  root.querySelectorAll("[data-meal-swap]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
-  if(hasConsumedMeal(date,slot)){
-   window.alert("This meal has already been logged. Undo its food-log entry before swapping.");return;
-  }
-  const plan=read(),current=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
-  if(!current)return;
-  const candidates=[...FEATURED_RECIPES,...baseRecipes(),...MEAL_CATALOG.filter(x=>!x.name.includes(" · "))].filter(x=>
-    x&&x.id!==current.recipeId&&!x.indexOnly&&
-    (Array.isArray(x.ingredients)&&x.ingredients.length||Array.isArray(x.groups)&&x.groups.some(g=>g.ingredients?.length))
-  );
-  const seen=new Set();
-  const unique=candidates.filter(x=>{const key=String(x.name||"").toLowerCase().trim();if(seen.has(key))return false;seen.add(key);return true});
-  root.querySelector(".mp-swap-overlay")?.remove();
-  const overlay=document.createElement("div");
-  overlay.className="mp-swap-overlay";
-  overlay.innerHTML='<div class="mp-swap-dialog" role="dialog" aria-modal="true" aria-label="Swap planned meal">'+
-   '<header><div><strong>Swap meal</strong><small>'+esc(slot)+' · '+esc(date)+'</small></div><button type="button" data-mp-swap-close aria-label="Close">×</button></header>'+
-   '<input type="search" data-mp-swap-search placeholder="Find a complete recipe" aria-label="Search complete recipes">'+
-   '<div class="mp-swap-options">'+unique.map(x=>'<button type="button" data-mp-swap-pick="'+esc(x.id)+'"><strong>'+esc(x.name)+'</strong><small>'+esc(x.slot||"Meal")+'</small></button>').join("")+'</div></div>';
-  root.append(overlay);
-  const close=()=>overlay.remove();
-  overlay.addEventListener("click",event=>{if(event.target===overlay||event.target.closest("[data-mp-swap-close]"))close()});
-  overlay.querySelector("[data-mp-swap-search]")?.addEventListener("input",event=>{
-   const value=String(event.target.value||"").trim().toLowerCase();
-   overlay.querySelectorAll("[data-mp-swap-pick]").forEach(option=>{option.hidden=!option.textContent.toLowerCase().includes(value)});
-  });
-  overlay.querySelectorAll("[data-mp-swap-pick]").forEach(option=>option.addEventListener("click",()=>{
-   const recipe=unique.find(x=>x.id===option.dataset.mpSwapPick);
-   if(!recipe)return;
-   try{
-    const updated=scheduleRecipe(read(),recipe,{startDate:date,dayOffsets:[0],slots:[slot],portionsPerDay:current.servings||1});
-    if(!write(updated))throw new Error("Could not save the swapped meal.");
-    close();render(root);
-   }catch(error){window.alert(error?.message||"Unable to swap this meal.");}
-  }));
-  overlay.querySelector("[data-mp-swap-search]")?.focus();
+  if(hasConsumedMeal(date,slot)){window.alert("This meal is already in Food Log. Undo the logged entry before swapping.");return;}
+  if(!read()?.entries?.some(x=>x.date===date&&x.slot===slot))return;
+  swapTarget={date,slot};
+  catalogSlot="All";catalogFilter="All recipes";catalogFoodType="All foods";catalogSearch="";
+  favoritesOnly=false;plannerScreen="catalog";render(root);
+ }));
+ root.querySelector("[data-mp-swap-cancel]")?.addEventListener("click",()=>{
+  swapTarget=null;plannerScreen="calendar";render(root);
+ });
+ root.querySelectorAll("[data-mp-swap-choose]").forEach(button=>button.addEventListener("click",()=>{
+  if(!swapTarget)return;
+  const {date,slot}=swapTarget,plan=read();
+  const old=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
+  const recipe=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===button.dataset.mpSwapChoose);
+  if(!recipe||recipe.indexOnly||!old)return;
+  try {
+   const updated=scheduleRecipe(plan,recipe,{startDate:date,dayOffsets:[0],slots:[slot],portionsPerDay:old.servings||1});
+   if(!write(updated))throw new Error("Could not save meal swap.");
+   swapTarget=null;plannerScreen="calendar";render(root);
+  } catch(error){window.alert(error?.message||"Unable to swap this meal.");}
  }));
  root.querySelectorAll("[data-meal-remove]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
@@ -550,7 +556,7 @@ function renderDaysFull(plan){
     const sourcePending=featured&&!recipe?.publishedEstimate;
     const m=macrosForIngredients(entry.ingredients);
     const satiety=fullnessEstimate(entry.ingredients);
-    return '<article class="lu-meal-card"><div class="lu-meal-card-head"><details class="mp-meal-card-menu"><summary aria-label="Meal options for '+esc(entry.slot)+'" title="Meal options">⋯</summary><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Swap meal</button><button type="button" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Remove meal</button></details><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
+    return '<article class="lu-meal-card"><div class="lu-meal-card-head"><details class="mp-meal-card-menu"><summary aria-label="Meal options for '+esc(entry.slot)+'" title="Meal options">⋯</summary><div class="mp-week-menu-panel"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details><span class="lu-meal-photo" role="img" aria-label="Meal thumbnail">'+thumbnail+'</span><div class="lu-meal-card-info"><label><strong>'+esc(entry.slot)+'</strong><select '+(consumed?'disabled ':'')+'data-meal-replace data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">'+
       (recipe&&!options.some(x=>x.id===recipe.id)?'<option value="'+esc(recipe.id)+'" selected>'+esc(recipe.name)+'</option>':'')+
       options.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===entry.recipeId?' selected':'')+'>'+esc(x.name)+'</option>').join("")+'</select></label>'+
       (recipe?(sourcePending?'<p>Nutrition estimate unavailable · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p>':'<p>≈ '+Math.round((featured?recipe.publishedEstimate.calories:m.calories)*Number(entry.servings||1))+' kcal · P '+Math.round((featured?recipe.publishedEstimate.protein:m.protein)*Number(entry.servings||1))+'g · C '+Math.round((featured?recipe.publishedEstimate.carbs:m.carbs)*Number(entry.servings||1))+'g · F '+Math.round((featured?recipe.publishedEstimate.fat:m.fat)*Number(entry.servings||1))+'g · '+Number(entry.servings||1)+' serving(s) · Prep ~'+recipe.prepMinutes+' min</p><p class="mp-meal-target">Target ≈ '+Math.round(Number(entry.targetCalories)||m.calories)+' kcal'+(entry.targetCalories?' · '+Math.round(m.calories-Number(entry.targetCalories))+' kcal difference':'')+'</p>'+(isWeightLossGoal(plan.goalId)?'<p class="mp-fullness">Estimated fullness '+satiety.score+'/100 · '+satiety.level+'</p>':'')):'<p>'+esc(entry.warning||"No matching meal")+'</p>')+
@@ -578,7 +584,7 @@ function renderDays(plan) {
    const m=recipe?.groups&&recipe.publishedEstimate?recipe.publishedEstimate:macrosForIngredients(entry.ingredients);
    const cal=Number(m?.calories),total=Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
    const image=recipe?photoMarkup(recipe):'<span aria-hidden="true">🍽</span>';
-   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(recipe?.name||entry.recipeName||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Swap meal</button><button type="button" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">Remove meal</button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'">View recipe & ingredients</button></details></article>';
+   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(recipe?.name||entry.recipeName||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><div class="mp-week-menu-panel" role="group" aria-label="Meal actions"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M10 14 21 3m-7 0h7v7"/></svg><span>View recipe & ingredients</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details></article>';
   }).join("")+'</div></section>';
  }).join("")+'</div>';
 }
