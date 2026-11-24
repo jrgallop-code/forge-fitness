@@ -1,4 +1,4 @@
-import { APPEARANCE_THEMES, applyAppearanceTheme, getAppearanceTheme, resolveAppearanceTheme } from "../core/appearance-theme.js?v=appearance-themes-3";
+import { APPEARANCE_THEMES, applyAppearanceTheme, getAppearanceTheme, resolveAppearanceTheme } from "../core/appearance-theme.js?v=traverse-pwa-1";
 import { getAnatomyConfig } from "../core/anatomy-profile.js?v=female-recovery-parity-1";
 import { hapticNotification } from "../core/native-capabilities.js?v=lock-screen-timers-2";
 import {
@@ -8,7 +8,7 @@ import {
     getThemeDefaultMuscleMapColors,
     resetMuscleMapColors,
     setMuscleMapColor
-} from "../core/muscle-map-colors.js?v=set-spectrum-1";
+} from "../core/muscle-map-colors.js?v=traverse-pwa-1";
 
 const PALETTE_ICON = `<svg class="app-silhouette-icon more-appearance-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1.3a2.3 2.3 0 0 0 0-4.6H12a1.8 1.8 0 0 1 0-3.6h3.1A5.9 5.9 0 0 0 21 6.9C18.9 4.4 15.8 3 12 3Z"/><circle cx="7.2" cy="11.8" r="1"/><circle cx="8.7" cy="7.7" r="1"/><circle cx="13" cy="6.2" r="1"/><circle cx="16.8" cy="8.4" r="1"/></svg>`;
 const HOME_ICON_KEY = "level_up_home_icon";
