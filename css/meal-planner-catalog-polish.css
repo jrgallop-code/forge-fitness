@@ -427,3 +427,18 @@ html[data-theme] .mp-recipe-rate-actions{display:flex;gap:9px;align-items:center
 html[data-theme] .mp-recipe-rate-actions button{display:grid;place-items:center;width:45px;height:43px;background:var(--surface-raised)!important;border:1px solid var(--line)!important;border-radius:12px;color:var(--accent)!important}
 html[data-theme] .mp-recipe-rate-actions button.active{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 14%,var(--card))!important}
 html[data-theme] .mp-recipe-rate-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Unverified recipe-index entries: never show a random unrelated photo. */
+.mp-catalog .mp-photo-pending,
+.mp-recipe-detail .mp-photo-pending,
+.mp-calendar .mp-photo-pending,
+.mp-week-recipe .mp-photo-pending {
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ gap:7px!important;text-align:center!important;
+ background:linear-gradient(135deg,var(--surface-raised,#eaf1fa),var(--card,#fff))!important;
+ border:1px dashed var(--line,#cbd5e1);color:var(--muted,#526079)!important;
+ background-image:none!important;box-sizing:border-box;min-height:100%;
+}
+.mp-photo-pending>span{font-size:clamp(26px,6vw,44px);line-height:1}
+.mp-photo-pending>small{font:650 clamp(9px,2.5vw,13px)/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;max-width:95%;overflow-wrap:break-word}
+.mp-week-recipe .mp-photo-pending{gap:2px}.mp-week-recipe .mp-photo-pending>span{font-size:21px}.mp-week-recipe .mp-photo-pending>small{font-size:8px}
