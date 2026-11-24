@@ -314,3 +314,72 @@ html[data-theme="arctic"] .ios-quick-log-weight #ios-quick-log-date:focus-visibl
   outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--accent-soft, rgba(23,105,224,.1)) !important;
 }
+
+/* Native: five glass tabs plus an independent side-by-side Quick Log orb.
+   Do not apply the tab-selected crimson background to the + button. */
+.bottom-nav.ios-quick-log-nav-enabled {
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  left:max(10px,env(safe-area-inset-left))!important;
+  right:auto!important;
+  width:calc(100vw - 102px - env(safe-area-inset-left) - env(safe-area-inset-right))!important;
+  max-width:none!important;
+  transform:none!important;
+  gap:0!important;
+  padding:8px 3px 10px!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn {
+  min-width:0!important;
+  padding:5px 0!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn span {
+  font-size:clamp(8px,2vw,11px)!important;
+  white-space:nowrap;
+  letter-spacing:-.03em;
+}
+.bottom-nav.ios-quick-log-nav-enabled [data-page="energy"] { display:flex!important; }
+body > .ios-quick-log-nav {
+  position:fixed!important;
+  z-index:30001;
+  right:max(10px,env(safe-area-inset-right))!important;
+  bottom:max(2px,calc(env(safe-area-inset-bottom) - 10px))!important;
+  width:72px;height:72px;
+  display:grid;place-items:center;
+  padding:0!important;margin:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+body > .ios-quick-log-nav > span {
+  display:grid;place-items:center;
+  width:66px!important;height:66px!important;
+  min-width:66px!important;min-height:66px!important;
+  margin:0!important;padding:0 0 4px!important;
+  border-radius:50%!important;
+  background:var(--accent,#1769e9)!important;
+  color:var(--accent-contrast,#fff)!important;
+  font:300 48px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.2)!important;
+}
+body > .ios-quick-log-nav::before,
+body > .ios-quick-log-nav::after {
+  content:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+body > .ios-quick-log-nav:focus:not(:focus-visible) { outline:none!important; }
+body > .ios-quick-log-nav:focus-visible { outline:2px solid var(--accent,#1769e9);outline-offset:2px; }
+@media (max-width:360px) {
+  .bottom-nav.ios-quick-log-nav-enabled {
+    width:calc(100vw - 88px - env(safe-area-inset-left) - env(safe-area-inset-right))!important;
+  }
+  body > .ios-quick-log-nav {width:62px;height:62px;}
+  body > .ios-quick-log-nav > span {
+    width:58px!important;height:58px!important;
+    min-width:58px!important;min-height:58px!important;
+  }
+}
