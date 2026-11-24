@@ -517,9 +517,10 @@ html[data-theme="traverse"] .dashboard-command-weekly .dashboard-weekly-metric:n
 html[data-theme="traverse"] .dashboard-command-weekly .dashboard-weekly-metric:nth-child(3) .dashboard-weekly-bar span {
   background:var(--traverse-terracotta)!important;
 }
-html[data-theme="traverse"] .dashboard-food-summary-card .dashboard-macro-progress--fat span,
-html[data-theme="traverse"] .food-daily-summary .macro-fat .progress-fill{
-  background:var(--traverse-terracotta)!important;
+/* Only the fill receives a macro colour; never colour its text label. */
+html[data-theme="traverse"] .dashboard-food-summary-card .dashboard-macro-progress--fat > i > b,
+html[data-theme="traverse"] .food-daily-summary .macro-fat .progress-fill {
+  background:var(--traverse-macro-fat)!important;
 }
 html[data-theme="traverse"] .dashboard-food-summary-card .dashboard-calorie-arc-overflow{
   stroke:var(--traverse-terracotta)!important;
@@ -549,4 +550,69 @@ html[data-theme="traverse"] :is(button,input,select,textarea):focus-visible{
 }
 html[data-theme="traverse"] .appearance-theme-card.theme-preview-traverse.is-selected{
   box-shadow:0 0 0 2px var(--accent-soft)!important;
+}
+
+/* Traverse macro semantics — one mapping for all food and macro charts.
+   Carbs = sage green, Fat = terracotta, Protein = coastal grey.
+   Scope these to Traverse; other appearance palettes remain unchanged. */
+html[data-theme="traverse"] {
+  --traverse-macro-carbs:#909962;
+  --traverse-macro-fat:#c67e50;
+  --traverse-macro-protein:#a4b2b0;
+  --macro-carbs-color:var(--traverse-macro-carbs);
+  --macro-fat-color:var(--traverse-macro-fat);
+  --macro-protein-color:var(--traverse-macro-protein);
+}
+html[data-theme="traverse"] .dashboard-macro-progress--carbs { --macro-color:var(--traverse-macro-carbs)!important; }
+html[data-theme="traverse"] .dashboard-macro-progress--fat { --macro-color:var(--traverse-macro-fat)!important; }
+html[data-theme="traverse"] .dashboard-macro-progress--protein { --macro-color:var(--traverse-macro-protein)!important; }
+html[data-theme="traverse"] .dashboard-macro-summary .dashboard-macro-progress > span,
+html[data-theme="traverse"] .dashboard-macro-summary .dashboard-macro-progress > strong,
+html[data-theme="traverse"] .dashboard-macro-summary .dashboard-macro-progress > strong small {
+  background:transparent!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+html[data-theme="traverse"] .dashboard-macro-summary .dashboard-macro-progress > i {
+  background:rgba(48,43,45,.13)!important;
+}
+html[data-theme="traverse"] .dashboard-macro-progress--carbs > i > b,
+html[data-theme="traverse"] .food-macro-total--carbs i > b,
+html[data-theme="traverse"] .calorie-stat-macro--carbs .calorie-stat-macro-trend i,
+html[data-theme="traverse"] .food-edit-macro--carbs em {
+  background:var(--traverse-macro-carbs)!important;
+}
+html[data-theme="traverse"] .dashboard-macro-progress--fat > i > b,
+html[data-theme="traverse"] .food-macro-total--fat i > b,
+html[data-theme="traverse"] .calorie-stat-macro--fat .calorie-stat-macro-trend i,
+html[data-theme="traverse"] .food-edit-macro--fat em {
+  background:var(--traverse-macro-fat)!important;
+}
+html[data-theme="traverse"] .dashboard-macro-progress--protein > i > b,
+html[data-theme="traverse"] .food-macro-total--protein i > b,
+html[data-theme="traverse"] .calorie-stat-macro--protein .calorie-stat-macro-trend i,
+html[data-theme="traverse"] .food-edit-macro--protein em {
+  background:var(--traverse-macro-protein)!important;
+}
+html[data-theme="traverse"] .food-macro-total--carbs,
+html[data-theme="traverse"] .food-edit-macro--carbs { --macro-color:var(--traverse-macro-carbs)!important; }
+html[data-theme="traverse"] .food-macro-total--fat,
+html[data-theme="traverse"] .food-edit-macro--fat { --macro-color:var(--traverse-macro-fat)!important; }
+html[data-theme="traverse"] .food-macro-total--protein,
+html[data-theme="traverse"] .food-edit-macro--protein { --macro-color:var(--traverse-macro-protein)!important; }
+html[data-theme="traverse"] .macro-goals-layout {
+  --macro-carbs-color:var(--traverse-macro-carbs)!important;
+  --macro-fat-color:var(--traverse-macro-fat)!important;
+  --macro-protein-color:var(--traverse-macro-protein)!important;
+}
+html[data-theme="traverse"] .food-edit-calorie-ring {
+  background:conic-gradient(var(--traverse-macro-carbs) 0 var(--carb-end),
+    var(--traverse-macro-fat) var(--carb-end) var(--fat-end),
+    var(--traverse-macro-protein) var(--fat-end) 100%)!important;
+}
+html[data-theme="traverse"] .food-edit-macro :is(em,strong,small) {
+  color:var(--text)!important;
+}
+html[data-theme="traverse"] :is(.food-macro-total,.calorie-stat-macro) :is(span,strong,small) {
+  color:var(--text)!important;
 }
