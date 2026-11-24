@@ -20,6 +20,15 @@ function localDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+// Anchor calorie reviews to the user's Wednesday check-in schedule.
+function wednesdayOnOrAfter(key) {
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(key || ""))) return null;
+    const date = new Date(`${key}T12:00:00`);
+    if (!Number.isFinite(date.getTime())) return null;
+    date.setDate(date.getDate() + (3 - date.getDay() + 7) % 7);
+    return localDateKey(date);
+}
+
 function parseDate(value) {
     const time = new Date(`${value}T12:00:00`).getTime();
     return Number.isFinite(time) ? time : null;
@@ -91,7 +100,9 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
     const earliestReviewDate = reviewed === null ? null : localDateKey(new Date(reviewed + CHECK_IN_DAYS * DAY));
     const scheduledCheckDate = adaptiveMetrics?.trend?.checkDate;
     const nextScheduledCheckDate = adaptiveMetrics?.trend?.nextCheckDate;
-    let nextEligibleScheduledDate = scheduledCheckDate;
+    // Phase dates may come from an older Monday anchor. Move them forward,
+    // never backward, so nothing becomes actionable before Wednesday.
+    let nextEligibleScheduledDate = wednesdayOnOrAfter(scheduledCheckDate || nextScheduledCheckDate || localDateKey(now));
     if (earliestReviewDate && nextEligibleScheduledDate) {
         while (nextEligibleScheduledDate < earliestReviewDate) {
             const date = new Date(`${nextEligibleScheduledDate}T12:00:00`);
@@ -99,10 +110,11 @@ export function getMaintenanceCheckIn({ estimate, currentMaintenance, currentTar
             nextEligibleScheduledDate = localDateKey(date);
         }
     } else if (earliestReviewDate) {
-        nextEligibleScheduledDate = nextScheduledCheckDate || earliestReviewDate;
+        nextEligibleScheduledDate = wednesdayOnOrAfter(nextScheduledCheckDate || earliestReviewDate);
     }
     const due = daysSinceReview >= CHECK_IN_DAYS
-        && (!nextEligibleScheduledDate || localDateKey(now) >= nextEligibleScheduledDate);
+        && Boolean(nextEligibleScheduledDate)
+        && localDateKey(now) >= nextEligibleScheduledDate;
     const coordinatedTargetChange = Number(coordinatedUpdate?.targetCalories) - Number(target);
     // A review is meaningful when either maintenance moved or measured pace
     // calls for a target change. Requiring a TDEE change hid valid reviews.
