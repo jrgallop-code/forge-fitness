@@ -26,7 +26,7 @@ function shiftDateKey(value, days) {
 
 // Review days are calendar Wednesdays, not the phase-start weekday.
 function wednesdayOnOrAfter(key) {
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(key || ""))) return null;
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(key || ""))) return null;
     const date = new Date(`${key}T12:00:00`);
     if (!Number.isFinite(date.getTime())) return null;
     date.setDate(date.getDate() + (3 - date.getDay() + 7) % 7);
