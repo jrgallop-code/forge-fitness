@@ -126,6 +126,12 @@ export function toggleFavorite(id){
 }
 export function photoMarkup(recipe,cls=""){
  const photo=recipePhoto(recipe);
+ // Do not represent an unrelated atlas tile as the meal in the recipe card.
+ // A truthful visual placeholder is better until its exact image is approved.
+ if(!photo?.primary){
+  const name=String(recipe?.name||"meal");
+  return '<span class="mp-real-photo mp-photo-pending '+esc(cls)+'" role="img" aria-label="Photo being prepared for '+esc(name)+'"><span aria-hidden="true">🍽</span><small>Photo pending</small></span>';
+ }
  const style="background-image:url("+photo.primary+");background-size:"+photo.backgroundSize+";background-position:"+photo.x+"% "+photo.y+"%;";
  const label=(photo.exactMatch?"AI-generated image for ":"Representative generated food illustration for ")+String(recipe?.name||"meal");
  return '<span class="mp-real-photo mp-ai-photo '+esc(cls)+'" style="'+esc(style)+'" role="img" aria-label="'+esc(label)+'"></span>';
