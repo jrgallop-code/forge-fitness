@@ -376,6 +376,13 @@ function updateDashboardWeight() {
     if (value && last) value.textContent = `${displayMass(last.weight,1)} ${massUnit()}`;
 }
 function handleClick(event) {
+    // Quick Log's food-entry sheet can leave the glass bar visible.
+    // Dismiss that sheet before switching tabs or opening another quick action.
+    if (document.body.classList.contains("ios-quick-food-entry")
+        && event.target.closest(".bottom-nav .nav-btn, .ios-quick-log-nav")) {
+        document.querySelector('[data-food-sheet] [data-food-close]')?.click();
+        document.body.classList.remove("ios-quick-food-entry");
+    }
     if (event.target.closest(".ios-quick-log-nav, [data-ios-log-weight]")) {
         event.preventDefault();
         event.stopPropagation();
