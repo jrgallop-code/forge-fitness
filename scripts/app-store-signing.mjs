@@ -142,6 +142,23 @@ async function createSigningAssets() {
     if (!selected) {
       throw new Error('Specified certificate was not verifiably a Level Up CI Distribution certificate. No certificates were revoked.');
     }
+    // Do not rotate a certificate while Apple may still be processing a
+    // recently uploaded Level Up build. A revoked signer can invalidate an IPA.
+    const appMatches = await api('/apps?filter%5BbundleId%5D=com.leveluphypertrophy.app&limit=10');
+    const appIds = (appMatches?.data || []).filter(item => item.attributes?.bundleId === 'com.leveluphypertrophy.app');
+    if (appIds.length !== 1) {
+      throw new Error('Could not verify the Level Up app before certificate rotation. No certificates were revoked.');
+    }
+    const recentBuilds = await api(`/builds?filter%5Bapp%5D=${encodeURIComponent(appIds[0].id)}&limit=100`);
+    const pending = (recentBuilds?.data || []).filter(item => {
+      const state = String(item.attributes?.processingState || '').toUpperCase();
+      const uploadedAt = Date.parse(item.attributes?.uploadedDate || '');
+      const recent = !Number.isFinite(uploadedAt) || Date.now() - uploadedAt < 24 * 60 * 60 * 1000;
+      return recent && !['VALID', 'FAILED', 'INVALID'].includes(state);
+    });
+    if (pending.length) {
+      throw new Error(`Apple still reports ${pending.length} recently uploaded build(s) as pending/unknown. Certificate rotation is blocked to protect them.`);
+    }
     await api(`/certificates/${selected.id}`, { method: 'DELETE' });
     await new Promise(resolve => setTimeout(resolve, 1500));
     certificate = await api('/certificates', certificateRequest);
