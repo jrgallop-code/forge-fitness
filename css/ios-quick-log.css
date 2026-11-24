@@ -383,3 +383,42 @@ body > .ios-quick-log-nav:focus-visible { outline:2px solid var(--accent,#1769e9
     min-width:58px!important;min-height:58px!important;
   }
 }
+
+/* The restored Nutrition tab must stack glyph and caption like every other
+   tab. The earlier override set display:flex but omitted column direction. */
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:64px!important;
+  box-sizing:border-box!important;
+  overflow:visible;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn .nav-icon {
+  display:block!important;
+  flex:0 0 23px!important;
+  width:23px!important;
+  height:23px!important;
+  margin:0 auto!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn > span:not(.ios-tab-glass) {
+  display:block!important;
+  position:static!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:center!important;
+  font-size:clamp(8px,1.85vw,10px)!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > .nav-btn[data-page="energy"] {
+  display:flex!important;
+  flex-direction:column!important;
+}
