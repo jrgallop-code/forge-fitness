@@ -125,7 +125,7 @@ function openMenu() {
         <div class="ios-quick-log-handle"></div><div class="ios-quick-log-heading"><h2 id="ios-ql-heading">Quick Log</h2><button type="button" aria-label="Close quick log" data-ql-close>×</button></div>
         <div class="ios-quick-log-grid${showNutrition ? "" : " is-five"}">
           <button type="button" data-ql-action="weight">${icon("weight")}<strong>Weight</strong></button>
-          ${showNutrition ? `<button type="button" data-ql-action="food">${icon("food")}<strong>Nutrition</strong></button>` : ""}
+          ${showNutrition ? `<button type="button" data-ql-action="food">${icon("food")}<strong>Log Food</strong></button>` : ""}
           <button type="button" data-ql-action="water">${icon("water")}<strong>Water</strong></button>
           <button type="button" data-ql-action="measurements">${icon("measurements")}<strong>Body Metrics</strong></button>
           <button type="button" data-ql-action="photos">${icon("photos")}<strong>Progress Photos</strong></button>
@@ -316,29 +316,31 @@ function handleQuickWorkout(action, source) {
 
 function openExisting(destination) {
     closeSheet();
-    // Photos is a dedicated Progress destination, like Steps. Render the
-    // Photos journal as the initial visible panel, not the generic overview.
-    const page = destination === "food" ? "energy" : destination === "photos" ? "progress-photos" : destination;
-    const navPage = page === "progress-photos" ? "progress" : page;
+    const page = destination === "food" ? "energy" : destination === "photos" ? "progress" : destination;
     document.querySelectorAll(".bottom-nav .nav-btn[data-page]").forEach(btn =>
-        btn.classList.toggle("active", btn.dataset.page === navPage));
-    document.dispatchEvent(new CustomEvent("levelup:navigate", {
-        detail: { page }
-    }));
+        btn.classList.toggle("active", btn.dataset.page === page));
+    document.dispatchEvent(new CustomEvent("levelup:navigate", { detail: { page } }));
+    if (destination === "photos") {
+        requestAnimationFrame(() => document.getElementById("photo-log-tab")?.click());
+    }
+    if (destination === "food") {
+        // Bypass Nutrition overview and open the normal food-entry sheet.
+        requestAnimationFrame(() => document.querySelector("[data-food-add]")?.click());
+    }
 }
 function ensureNavigation() {
     const nav = document.querySelector(".bottom-nav");
-    if (!nav || nav.querySelector(".ios-quick-log-nav")) return;
-    // Keep existing nutrition routing; remove only its redundant bottom tab on iOS.
-    nav.querySelector('[data-page="energy"]')?.remove();
+    if (!nav || document.body.querySelector(":scope > .ios-quick-log-nav")) return;
+    const nutrition = nav.querySelector('[data-page="energy"]');
+    const progress = nav.querySelector('[data-page="progress"]');
+    if (nutrition && progress) nav.insertBefore(nutrition, progress);
     nav.classList.add("ios-quick-log-nav-enabled");
     const button = document.createElement("button");
     button.type = "button";
     button.className = "ios-quick-log-nav";
     button.setAttribute("aria-label", "Quick Log");
     button.innerHTML = '<span aria-hidden="true">+</span>';
-    const progress = nav.querySelector('[data-page="progress"]');
-    nav.insertBefore(button, progress);
+    document.body.append(button);
 }
 function hideProgressAddWeight() {
     // Retain history editing; only hide the redundant new-entry control.
