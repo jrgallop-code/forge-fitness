@@ -15,7 +15,7 @@ import { renderProfileAppearance, initializeProfileAppearance } from "./profile-
 import { renderDynamicWarmupSettings, initializeDynamicWarmupSettings } from "./dynamic-warmup-settings.js?v=dynamic-warmup-settings-1";
 import { openLessonLibrary } from "./learn-level-up.js?v=food-log-macro-bars-1";
 import { openExploreResearch } from "./explore-research.js?v=food-log-macro-bars-1";
-import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=home-icons-1";
+import { appearanceMenuIcon, renderAppearanceSettings, initializeAppearanceSettings } from "./appearance-settings.js?v=traverse-pwa-1";
 import { renderAppFeatureSettings, initializeAppFeatureSettings } from "./app-feature-settings.js?v=nutrition-feature-choice-1";
 import { renderRestTimerGameSettings, initializeRestTimerGameSettings } from "./rest-timer-game-settings.js?v=level-up-arcade-pwa-1";
 
