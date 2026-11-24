@@ -408,3 +408,54 @@ body > .ios-quick-log-nav > span {
   }
   body > .ios-quick-log-nav > span { font-size:40px!important; }
 }
+
+/* 2026-11-24: Enforce identical stacked icon/label layout for all five PWA tabs.
+   In particular the restored Nutrition tab must never display inline text
+   beside its fork/knife SVG. JS orders it Workout, Nutrition, Progress. */
+.bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:64px!important;
+  margin:0!important;
+  padding:5px 0!important;
+  text-align:center!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] > svg.nav-icon {
+  display:block!important;
+  flex:0 0 auto!important;
+  width:clamp(22px,5.7vw,25px)!important;
+  height:clamp(22px,5.7vw,25px)!important;
+  margin:0 auto!important;
+}
+.bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] > span {
+  display:block!important;
+  position:static!important;
+  flex:0 0 auto!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:center!important;
+  font-size:clamp(9px,2.35vw,12px)!important;
+  line-height:1.2!important;
+  letter-spacing:-.035em!important;
+  white-space:nowrap!important;
+}
+@media (max-width:360px) {
+  .bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] {
+    gap:3px!important;
+  }
+  .bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] > svg.nav-icon {
+    width:21px!important;height:21px!important;
+  }
+  .bottom-nav.ios-quick-log-nav-enabled > button.nav-btn[data-page] > span {
+    font-size:clamp(8.5px,2.5vw,10px)!important;
+  }
+}
