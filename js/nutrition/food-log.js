@@ -1,4 +1,4 @@
-import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=mpm-300-catalog-20261122";
+import {renderMealPlannerShell,initializeMealPlanner} from "./meal-planner-ui.js?v=swap-photo-audit-20261124";
 import {createFoodSpeechSession} from './food-speech.js';
 import {voiceIngredients,accurateVoiceMatch,voicePortion,replacementVoicePortion} from './voice-food-model.js';
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
