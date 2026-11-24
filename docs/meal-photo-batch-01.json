@@ -1,0 +1,39 @@
+{
+  "batch": "source-recipe-photo-batch-01",
+  "updated": "2026-11-24",
+  "status": "images-committed-to-ios-branch",
+  "note": "Recipe-specific generated-photo thumbnails; not original source website photography. Larger detail-screen assets remain desirable.",
+  "items": [
+    {
+      "name": "Big Boy Korean BBQ Beef Bowls",
+      "path": "/assets/meal-photos/source-recreations/big-boy-korean-bbq-beef-bowls.webp",
+      "width": 120,
+      "height": 120
+    },
+    {
+      "name": "Mediterranean Spiced Beef",
+      "path": "/assets/meal-photos/source-recreations/mediterranean-spiced-beef.webp",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "name": "Broccoli Cheddar Rice",
+      "path": "/assets/meal-photos/source-recreations/broccoli-cheddar-rice.webp",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "name": "Veggie Rice",
+      "path": "/assets/meal-photos/source-recreations/veggie-rice.webp",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "name": "Creamy Cilantro Lime Chicken Bowls",
+      "path": "/assets/meal-photos/source-recreations/creamy-cilantro-lime-chicken-bowls.webp",
+      "width": 100,
+      "height": 100
+    }
+  ],
+  "unresolvedSourceRecipeEntries": 295
+}
