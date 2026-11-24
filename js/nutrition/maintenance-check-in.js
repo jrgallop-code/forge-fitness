@@ -339,7 +339,8 @@ export function initializeMaintenanceCheckInAlert() {
             applyAutomaticMaintenanceUpdate(checkIn, phase);
             return;
         }
-        const sharedReady = document.documentElement.dataset.weeklyCalorieReviewReady === "true";
+        const sharedReady = checkIn.due === true
+            && document.documentElement.dataset.weeklyCalorieReviewReady === "true";
         const previewReady = sessionStorage.getItem(WEEKLY_REVIEW_PREVIEW_KEY) === "1";
         const shouldAlert = mode !== "track" && (checkIn.ready || sharedReady || previewReady);
         const displayedCheckIn = shouldAlert === checkIn.ready ? checkIn : { ...checkIn, ready: shouldAlert };
