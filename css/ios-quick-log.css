@@ -342,7 +342,7 @@ body > .ios-quick-log-nav {
   position:fixed!important;
   z-index:30001;
   right:max(10px,env(safe-area-inset-right))!important;
-  bottom:max(2px,calc(env(safe-area-inset-bottom) - 10px))!important;
+  bottom:max(10px,calc(env(safe-area-inset-bottom) - 2px))!important;
   width:72px;height:72px;
   display:grid;place-items:center;
   padding:0!important;margin:0!important;
