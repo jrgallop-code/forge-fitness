@@ -31,7 +31,22 @@ const PHOTO_PENDING=Object.freeze({
  primary:null,source:"photo-pending",exactMatch:false,backgroundSize:null,
  x:50,y:50,tile:null,requiresReview:true
 });
+// These five photographs were independently generated for the named dishes,
+// using source descriptions and ingredient lists. Never assign by position.
+export const RECIPE_MATCHED_SOURCE_PHOTOS=Object.freeze({
+ "big boy korean bbq beef bowls":"/assets/meal-photos/source-recreations/big-boy-korean-bbq-beef-bowls.webp",
+ "mediterranean spiced beef":"/assets/meal-photos/source-recreations/mediterranean-spiced-beef.webp",
+ "broccoli cheddar rice":"/assets/meal-photos/source-recreations/broccoli-cheddar-rice.webp",
+ "veggie rice":"/assets/meal-photos/source-recreations/veggie-rice.webp",
+ "creamy cilantro lime chicken bowls":"/assets/meal-photos/source-recreations/creamy-cilantro-lime-chicken-bowls.webp"
+});
+const photoRecipeName=name=>String(name||"").normalize("NFKC").toLowerCase()
+ .replace(/[^a-z0-9]+/g," ").trim();
 export function recipePhoto(recipe){
+ const matched=RECIPE_MATCHED_SOURCE_PHOTOS[photoRecipeName(recipe?.name)];
+ if(matched)return {primary:matched,tile:0,x:50,y:50,backgroundSize:"cover",
+  source:"recipe-matched-ai-food-photograph",exactMatch:true,
+  recipeId:recipe?.id,requiresReview:false};
  // An indexed source recipe only earns a photo after manual ingredient/image
  // approval; a valid asset path alone does not establish the right dish.
  if(recipe?.indexOnly && recipe?.imageReviewed !== true)
