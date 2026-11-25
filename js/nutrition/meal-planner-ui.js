@@ -155,7 +155,7 @@ function landingMarkup(saved){
 }
 const SCHEDULE_DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 function scheduleMarkup(recipeId){
- const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===recipeId);
+ const recipe=baseRecipes().find(x=>x.id===recipeId);
  if(!recipe)return '<section class="lu-meal-planner">'+screenHeader("Recipe not found","catalog")+'</section>';
  const batch=scheduleOffsets.length*scheduleSlots.length*schedulePortions;
  const dates=scheduleOffsets.map(i=>dateForOffset(scheduleStart,i));
@@ -307,7 +307,7 @@ function render(root){
  }));
  root.querySelectorAll("[data-mp-schedule]").forEach(button=>button.addEventListener("click",()=>{
    catalogRecipeId=button.dataset.mpSchedule;
-   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
+   const recipe=baseRecipes().find(x=>x.id===catalogRecipeId);
    if(plannerScreen!=="recipe"){scheduleSlots=[recipe?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();}
    plannerScreen="schedule";render(root);
  }));
@@ -326,7 +326,7 @@ function render(root){
    schedulePortions=Math.max(1,Math.min(12,Math.floor(Number(event.target.value)||1)));renderWithoutScrollJump(root);
  });
  const saveSelectedRecipe=()=>{
-   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===catalogRecipeId);
+   const recipe=baseRecipes().find(x=>x.id===catalogRecipeId);
    try{
      for(const i of scheduleOffsets)for(const slot of scheduleSlots){
        const date=dateForOffset(scheduleStart,i);
