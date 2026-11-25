@@ -1,0 +1,46 @@
+name: Enhance five source meal photos
+on:
+  workflow_dispatch:
+  push:
+    branches: [ios/capacitor-app-store]
+    paths:
+      - .github/run-recipe-photo-upscale
+permissions:
+  contents: write
+jobs:
+  upscale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image enhancement tools
+        run: pip install "opencv-contrib-python-headless==4.10.0.84" "numpy<2" pillow
+      - name: Enlarge five original recipe photos with ESPCN
+        run: python tools/upscale-source-recipe-photos.py
+      - name: Verify source photographs are larger than 800 pixels
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          files=list(Path("assets/meal-photos/source-recreations").glob("*.webp"))
+          assert len(files)>=5
+          for path in files:
+              w,h=Image.open(path).size
+              assert min(w,h)>=800, (path,w,h)
+          print("Verified",len(files),"enhanced recipe photos")
+          PY
+      - name: Commit enhanced assets to iOS branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/meal-photos/source-recreations/*.webp
+          if git diff --cached --quiet; then
+            echo "No image changes"
+          else
+            git commit -m "assets: enhance five recipe photos to 800px"
+            git push origin HEAD:ios/capacitor-app-store
+          fi
