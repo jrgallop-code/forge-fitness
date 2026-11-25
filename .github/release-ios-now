@@ -768,3 +768,5 @@ Release request 2026-11-24: fix My Week SVG overflow layout, route Swap to full 
 Release 485 retry: exact CI certificate verified from 484 inventory; all meal-menu, catalogue-swap, ingredient quantities, and generated illustration changes included. Protect non-CI certificates.
 
 Recipe image correction: include five locally hosted, recipe-matched AI photorealistic WebP assets for Korean BBQ beef, Mediterranean beef, broccoli cheddar rice, veggie rice, and creamy cilantro-lime chicken; verify exact-name photo map and avoid arbitrary atlas substitution.
+
+2026-11-24: Restore the previous recipe day/meal/serving controls for five source meals. Ship AI-enhanced 800px recipe photo assets with cache bust and preserve source ingredient statements.
