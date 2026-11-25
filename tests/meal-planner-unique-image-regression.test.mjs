@@ -21,6 +21,7 @@ test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
  });
  assert.equal(recipes.length,51); // 48 originals/featured plus three newly schedulable indexed dishes
  assert.ok(baseRecipes().filter(r=>r.indexOnly).every(r=>r.photoStatus==="awaiting-licensed-image"||r.photoStatus==="not-created"));
+ if(new Set(keys).size!==keys.length){ const duplicates=keys.filter((key,index)=>keys.indexOf(key)!==index); console.error("Duplicate recipe image:",duplicates.map(key=>({key,names:recipes.filter(recipe=>{const p=recipePhoto(recipe);return p.primary.slice(0,40)+"|"+p.backgroundSize+"|"+p.tile===key}).map(x=>x.name)}))); }
  assert.equal(new Set(keys).size,keys.length,
    "Two different recipes may not point to the same image tile");
  assert.ok(FEATURED_RECIPES.length>=12);
