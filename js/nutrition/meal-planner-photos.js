@@ -44,7 +44,7 @@ const photoRecipeName=name=>String(name||"").normalize("NFKC").toLowerCase()
  .replace(/[^a-z0-9]+/g," ").trim();
 export function recipePhoto(recipe){
  const matched=RECIPE_MATCHED_SOURCE_PHOTOS[photoRecipeName(recipe?.name)];
- if(matched)return {primary:matched,tile:0,x:50,y:50,backgroundSize:"cover",
+ if(matched)return {primary:matched+"?v=source-photo-sr-800-20261124",tile:0,x:50,y:50,backgroundSize:"cover",
   source:"recipe-matched-ai-food-photograph",exactMatch:true,
   recipeId:recipe?.id,requiresReview:false};
  // An indexed source recipe only earns a photo after manual ingredient/image
