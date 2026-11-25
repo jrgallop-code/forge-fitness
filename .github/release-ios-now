@@ -774,3 +774,5 @@ Recipe image correction: include five locally hosted, recipe-matched AI photorea
 2026-11-25: iOS TestFlight release requested — fix selecting meal cards in Swap Meal, preserve the scheduled date/slot/servings; commit 70c13657.
 
 2026-11-25: Retry TestFlight meal-swap fix after updating regression assertion (commit b34214d94caa792deadad7efdfd636715c7260f0). Previous run 45674031886 failed test before signing.
+
+2026-11-25: iOS release retry #493 requested after fixing stale CI certificate ID/serial/expiration from successful release 490. Signing safeguards remain enabled; do not revoke personal certificates.
