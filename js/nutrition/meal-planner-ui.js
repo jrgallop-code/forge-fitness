@@ -480,6 +480,15 @@ function render(root){
   });
  }
  bindImages(root);
+ // Catalog and recipe-detail swap actions must be bound before the calendar-only return.
+ // Previously these listeners were registered only on the calendar screen, so tapping
+ // "Swap to this meal" in the catalog had no effect.
+ root.querySelector("[data-mp-swap-cancel]")?.addEventListener("click",()=>{
+  swapTarget=null;plannerScreen="calendar";render(root);
+ });
+ root.querySelectorAll("[data-mp-swap-choose]").forEach(button=>button.addEventListener("click",()=>{
+  applyMealSwap(button.dataset.mpSwapChoose,root);
+ }));
  if(page!=="calendar")return;
  root.querySelectorAll("[data-mp-date]").forEach(btn=>btn.addEventListener("click",()=>{selectedPlanDate=btn.dataset.mpDate;render(root)}));
  root.querySelectorAll("[data-mp-day-nav]").forEach(btn=>btn.addEventListener("click",()=>{
@@ -501,12 +510,6 @@ function render(root){
   swapTarget={date,slot};
   catalogSlot="All";catalogFilter="All recipes";catalogFoodType="All foods";catalogSearch="";
   favoritesOnly=false;plannerScreen="catalog";render(root);
- }));
- root.querySelector("[data-mp-swap-cancel]")?.addEventListener("click",()=>{
-  swapTarget=null;plannerScreen="calendar";render(root);
- });
- root.querySelectorAll("[data-mp-swap-choose]").forEach(button=>button.addEventListener("click",()=>{
-  applyMealSwap(button.dataset.mpSwapChoose,root);
  }));
  root.querySelectorAll("[data-meal-remove]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
