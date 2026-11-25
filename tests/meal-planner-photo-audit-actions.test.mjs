@@ -20,7 +20,10 @@ test("scheduled meals expose Swap and Remove actions on the dot menu",()=>{
  assert.match(ui,/plannerScreen="catalog";render\(root\)/);
  assert.match(ui,/data-mp-swap-choose/);
  assert.match(ui,/class="mp-week-menu-panel"/);
- assert.match(ui,/scheduleRecipe\(plan,recipe,\{startDate:date,dayOffsets:\[0\],slots:\[slot\]/);
+ assert.match(ui,/function applyMealSwap\(recipeId,root\)/);
+ assert.match(ui,/scheduleRecipe\(plan,recipe,\{startDate:target\.date,dayOffsets:\[0\],slots:\[target\.slot\]/);
+ assert.match(ui,/if\(swapTarget\)\{applyMealSwap\(catalogRecipeId,root\);return;\}/);
+ assert.match(ui,/applyMealSwap\(button\.dataset\.mpSwapChoose,root\)/);
  assert.match(polish,/\.mp-week-menu-panel/);
  assert.match(ui,/<svg viewBox=/);
 });
