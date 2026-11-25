@@ -6,6 +6,7 @@ import {getRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {recipePhoto} from "./meal-planner-photos.js?v=recipe-real-photo-5-20261124";
 import {recipeSteps} from "./meal-planner-media.js?v=2";
 import {sourceRecipeSteps} from "./meal-planner-source-prep.js?v=ingredient-drafts-20261124";
+import {promoteSourceMeal} from "./meal-planner-source-schedulable.js?v=1";
 import {cloudRecipe,cloudRecipes} from "./meal-planner-cloud-catalog.js?v=1";
 import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-units-20261121";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -148,7 +149,7 @@ export function baseRecipes(){
  const seen=new Set();
  const source=MPM_CATALOG_300.map(raw=>{
   const recipe=cloudSourceRecipe(raw);
-  return promoted.get(normalizedRecipeName(recipe.name))||recipe;
+  return promoted.get(normalizedRecipeName(recipe.name))||promoteSourceMeal(recipe)||recipe;
  });
  return [...source,...adaptations,...originals].filter(recipe=>{
   const key=normalizedRecipeName(recipe.name);
@@ -288,9 +289,9 @@ function featuredRecipeDetail(recipe,scale=1){
  const m=recipe.publishedEstimate;
  const groups=recipe.groups.map(group=>'<section><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,(item.grams/Math.max(1,recipe.servings))*scale,item.unit))+'</strong></li>').join("")+'</ul></section>').join("");
  return '<section class="lu-meal-planner mp-recipe-detail mp-standalone"><header class="mp-screen-header"><button type="button" data-mp-open="catalog" aria-label="Back to catalog">‹</button><h2>Recipe</h2><span></span></header><div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
- '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · Dinner · '+(Number.isFinite(Number(recipe.prepMinutes))&&Number(recipe.prepMinutes)>0?recipe.prepMinutes+' minutes':'Timing varies')+' · original batch '+recipe.servings+' servings</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong> (scaled from the original recipe).</p>'+
+ '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · '+esc(displaySlot(recipe.slot))+' · '+(Number.isFinite(Number(recipe.prepMinutes))&&Number(recipe.prepMinutes)>0?recipe.prepMinutes+' minutes':'Timing varies')+' · original batch '+recipe.servings+' servings</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong> (scaled from the original recipe).</p>'+
  recipeMacroSummary(recipe)+recipeRatingMarkup(recipe)+
- groups+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
+ groups+(recipe.originalIngredientStatements?.length?'<section class="mp-original-amounts"><h3>Original recipe batch amounts</h3><p class="mp-disclaimer">Amounts below are from the source recipe. Scaled shopping quantities above are estimates.</p><ul>'+recipe.originalIngredientStatements.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ul></section>':'')+(recipe.optionalSeasonings?.length?'<section><h3>Optional seasonings &amp; garnishes</h3><ul>'+recipe.optionalSeasonings.map(item=>'<li>'+esc(item)+'</li>').join("")+'</ul><p class="mp-disclaimer">Quantities have not been confirmed. These additions are not included in scaled groceries or nutrition until measured.</p></section>':'')+'<section><h3>Cooking directions</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol></section>'+
  '<section><h3>Meal prep & storage</h3><p>'+esc(recipe.storage)+'</p></section>'+
  '<p class="mp-disclaimer">Nutrition and portions are estimates. Review ingredients for your own dietary needs.</p>'+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Schedule this recipe</button>'+'<p class="mp-disclaimer">You can mark this meal eaten from My Week. Nutrition is a published estimate and has not been independently verified.</p></div></section>';
