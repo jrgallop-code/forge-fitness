@@ -102,6 +102,23 @@ function showWizardStep(root,next){
 
 let plannerScreen="home",catalogSlot="All",catalogFilter="Meal Prep Manual (300)",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let swapTarget=null;
+function applyMealSwap(recipeId,root){
+ const target=swapTarget,plan=read();
+ const recipe=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===recipeId);
+ const old=plan?.entries?.find(x=>x.date===target?.date&&x.slot===target?.slot);
+ if(!target||!old){window.alert("The selected meal is no longer on your calendar.");return false;}
+ if(!recipe||recipe.indexOnly||!(recipe.ingredients?.length||recipe.groups?.some(g=>g.ingredients?.length))){
+  window.alert("This recipe is not yet available for meal planning.");return false;
+ }
+ if(hasConsumedMeal(target.date,target.slot)){
+  window.alert("This meal has already been logged. Undo the log before swapping.");return false;
+ }
+ try{
+  const next=scheduleRecipe(plan,recipe,{startDate:target.date,dayOffsets:[0],slots:[target.slot],portionsPerDay:old.servings||1});
+  if(!write(next))throw new Error("Could not save meal swap.");
+  selectedPlanDate=target.date;swapTarget=null;plannerScreen="calendar";render(root);return true;
+ }catch(error){window.alert(error?.message||"Unable to swap this meal.");return false;}
+}
 
 let scheduleStart=nextMonday(),scheduleOffsets=[0],scheduleSlots=["Dinner"],schedulePortions=1;
 const groceryCategories=[
@@ -373,7 +390,9 @@ function render(root){
   button.setAttribute("aria-label",active?"Remove favorite":"Save favorite");
  }));
  root.querySelectorAll("[data-mp-recipe]").forEach(button=>button.addEventListener("click",()=>{
-  catalogRecipeId=button.dataset.mpRecipe;const picked=baseRecipes().find(x=>x.id===catalogRecipeId);scheduleSlots=[picked?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();plannerScreen="recipe";render(root);
+  catalogRecipeId=button.dataset.mpRecipe;
+  if(swapTarget){applyMealSwap(catalogRecipeId,root);return;}
+  const picked=baseRecipes().find(x=>x.id===catalogRecipeId);scheduleSlots=[picked?.slot||"Dinner"];scheduleOffsets=[0];schedulePortions=1;scheduleStart=nextMonday();plannerScreen="recipe";render(root);
  }));
  root.querySelector("[data-mp-use-recipe]")?.addEventListener("click",()=>{
   const id=root.querySelector("[data-mp-use-recipe]").dataset.mpUseRecipe;
@@ -487,16 +506,7 @@ function render(root){
   swapTarget=null;plannerScreen="calendar";render(root);
  });
  root.querySelectorAll("[data-mp-swap-choose]").forEach(button=>button.addEventListener("click",()=>{
-  if(!swapTarget)return;
-  const {date,slot}=swapTarget,plan=read();
-  const old=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
-  const recipe=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===button.dataset.mpSwapChoose);
-  if(!recipe||recipe.indexOnly||!old)return;
-  try {
-   const updated=scheduleRecipe(plan,recipe,{startDate:date,dayOffsets:[0],slots:[slot],portionsPerDay:old.servings||1});
-   if(!write(updated))throw new Error("Could not save meal swap.");
-   swapTarget=null;plannerScreen="calendar";render(root);
-  } catch(error){window.alert(error?.message||"Unable to swap this meal.");}
+  applyMealSwap(button.dataset.mpSwapChoose,root);
  }));
  root.querySelectorAll("[data-meal-remove]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
