@@ -14,7 +14,7 @@ on:
       - tests/food-log-meals-ui.test.mjs
       - tests/meal-planner-cooking-measures.test.mjs tests/meal-planner-home-ios.test.mjs
       - tests/meal-planner-home-ios.test.mjs
-      - tests/meal-planner-persistent-nav-batch.test.mjs
+      - tests/meal-planner-persistent-nav-batch.test.mjs tests/meal-planner-source-schedule.test.mjs
       - tests/meal-planner-consumption.test.mjs
       - js/nutrition/meal-planner-ratings.js
       - tests/meal-planner-ratings-ui.test.mjs
@@ -56,6 +56,7 @@ jobs:
           node --check js/nutrition/food-log.js
           node --check js/nutrition/meal-planner-ui.js
           node --check js/nutrition/meal-planner-catalog-ui.js
+          node --check js/nutrition/meal-planner-source-schedulable.js
           node --check js/nutrition/meal-planner-measurements.js
           node --check js/nutrition/meal-planner-measurements.js
           node --check js/nutrition/meal-planner-photos.js
