@@ -27,6 +27,14 @@ test("scheduled meals expose Swap and Remove actions on the dot menu",()=>{
  assert.match(polish,/\.mp-week-menu-panel/);
  assert.match(ui,/<svg viewBox=/);
 });
+test("catalog swap buttons bind before calendar-only early return",()=>{
+ const handlerStart=ui.indexOf('root.querySelectorAll("[data-mp-swap-choose]")');
+ const cancelStart=ui.indexOf('root.querySelector("[data-mp-swap-cancel]")');
+ const calendarGuard=ui.indexOf('if(page!=="calendar")return;');
+ assert.ok(handlerStart>=0&&handlerStart<calendarGuard,"swap buttons must be bound on catalog pages");
+ assert.ok(cancelStart>=0&&cancelStart<calendarGuard,"catalog cancel must work outside calendar page");
+ assert.match(ui,/applyMealSwap\(button\.dataset\.mpSwapChoose,root\)/);
+});
 test("unreviewed source-index recipe cannot receive arbitrary atlas tile",()=>{
  assert.doesNotMatch(photos,/function illustrationTile/);
  assert.match(photos,/recipe\?\.indexOnly && recipe\?\.imageReviewed !== true/);
