@@ -19,7 +19,7 @@ test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
   assert.ok(p.backgroundSize);
   return p.primary.slice(0,40)+"|"+p.backgroundSize+"|"+p.tile;
  });
- assert.equal(recipes.length,48);
+ assert.equal(recipes.length,51); // 48 originals/featured plus three newly schedulable indexed dishes
  assert.ok(baseRecipes().filter(r=>r.indexOnly).every(r=>r.photoStatus==="awaiting-licensed-image"||r.photoStatus==="not-created"));
  assert.equal(new Set(keys).size,keys.length,
    "Two different recipes may not point to the same image tile");
