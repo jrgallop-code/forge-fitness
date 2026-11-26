@@ -35,6 +35,25 @@ test("catalog swap buttons bind before calendar-only early return",()=>{
  assert.ok(cancelStart>=0&&cancelStart<calendarGuard,"catalog cancel must work outside calendar page");
  assert.match(ui,/applyMealSwap\(button\.dataset\.mpSwapChoose,root\)/);
 });
+test("swap keeps the selected recipe identity and its per-serving nutrition",()=>{
+ const manual=read("js/nutrition/meal-planner-manual.js");
+ assert.match(ui,/const recipe=baseRecipes\(\)\.find\(x=>x\.id===recipeId\)/);
+ assert.match(ui,/const nutrition=recipe\.publishedEstimate\|\|macrosForIngredients\(recipe\.ingredients\)/);
+ assert.match(ui,/if\(!\(Number\(nutrition\?\.calories\)>=100\)\)/);
+ assert.match(manual,/recipeName:recipe\.name/);
+ assert.match(manual,/recipePublishedEstimate:recipe\.publishedEstimate\?\{\.\.\.recipe\.publishedEstimate\}:null/);
+ assert.match(ui,/const published=entry\.recipePublishedEstimate\|\|recipe\?\.publishedEstimate/);
+ assert.match(ui,/entry\.recipeName\|\|recipe\?\.name\|\|'Planned meal'/);
+});
+test("schedule cards open a recipe and its actual saved ingredients",()=>{
+ const detailHandler=ui.indexOf('root.querySelectorAll("[data-mp-planned-detail]")');
+ const calendarGuard=ui.indexOf('if(page!=="calendar")return;');
+ assert.ok(detailHandler>=0&&detailHandler<calendarGuard);
+ assert.match(ui,/plannerScreen="planned-detail";render\(root\)/);
+ assert.match(ui,/function renderPlannedMealDetail\(plan,date,slot\)/);
+ assert.match(ui,/entry\.ingredients\|\|\[\]/);
+ assert.match(read("js/nutrition/meal-planner-manual.js"),/recipeSteps:Array\.isArray\(recipe\.steps\)/);
+});
 test("unreviewed source-index recipe cannot receive arbitrary atlas tile",()=>{
  assert.doesNotMatch(photos,/function illustrationTile/);
  assert.match(photos,/recipe\?\.indexOnly && recipe\?\.imageReviewed !== true/);
