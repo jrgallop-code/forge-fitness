@@ -102,9 +102,24 @@ function showWizardStep(root,next){
 
 let plannerScreen="home",catalogSlot="All",catalogFilter="Meal Prep Manual (300)",catalogFoodType="All foods",catalogSearch="",catalogRecipeId="",favoritesOnly=false;
 let swapTarget=null;
+function findScheduledRecipe(entry){
+ const catalog=[...baseRecipes(),...FEATURED_RECIPES,...MEAL_CATALOG];
+ // The current catalogue contains cloud adaptations and promoted source recipes
+ // not present in MEAL_CATALOG. Prefer the exact saved title for older IDs.
+ return catalog.find(r=>r.id===entry.recipeId&&(!entry.recipeName||r.name===entry.recipeName))
+  ||catalog.find(r=>r.id===entry.recipeId)
+  ||null;
+}
+function plannedNutrition(entry,recipe){
+ const published=entry.recipePublishedEstimate||recipe?.publishedEstimate;
+ if(published&&Number(published.calories)>0)return published;
+ const estimated=macrosForIngredients(entry.ingredients);
+ // A handful of recognized spices cannot stand in for an entire meal's nutrition.
+ return estimated.calories>=100?estimated:null;
+}
 function applyMealSwap(recipeId,root){
  const target=swapTarget,plan=read();
- const recipe=[...baseRecipes(),...MEAL_CATALOG].find(x=>x.id===recipeId);
+ const recipe=baseRecipes().find(x=>x.id===recipeId);
  const old=plan?.entries?.find(x=>x.date===target?.date&&x.slot===target?.slot);
  if(!target||!old){window.alert("The selected meal is no longer on your calendar.");return false;}
  if(!recipe||recipe.indexOnly||!(recipe.ingredients?.length||recipe.groups?.some(g=>g.ingredients?.length))){
@@ -112,6 +127,10 @@ function applyMealSwap(recipeId,root){
  }
  if(hasConsumedMeal(target.date,target.slot)){
   window.alert("This meal has already been logged. Undo the log before swapping.");return false;
+ }
+ const nutrition=recipe.publishedEstimate||macrosForIngredients(recipe.ingredients);
+ if(!(Number(nutrition?.calories)>=100)){
+  window.alert("This recipe does not yet have reliable full-meal nutrition. Choose a complete recipe with a calorie estimate.");return false;
  }
  try{
   const next=scheduleRecipe(plan,recipe,{startDate:target.date,dayOffsets:[0],slots:[target.slot],portionsPerDay:old.servings||1});
@@ -480,6 +499,10 @@ function render(root){
   });
  }
  bindImages(root);
+ root.querySelectorAll("[data-mp-planned-detail]").forEach(button=>button.addEventListener("click",()=>{
+  plannedDetailDate=button.dataset.date;plannedDetailSlot=button.dataset.slot;
+  selectedPlanDate=plannedDetailDate;plannerScreen="planned-detail";render(root);
+ }));
  // Catalog and recipe-detail swap actions must be bound before the calendar-only return.
  // Previously these listeners were registered only on the calendar screen, so tapping
  // "Swap to this meal" in the catalog had no effect.
@@ -499,7 +522,7 @@ function render(root){
  root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset,entry=read()?.entries?.find(x=>x.date===date&&x.slot===slot);
   if(!entry)return;
-  const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
+  const recipe=findScheduledRecipe(entry);
   const result=recipe?.groups?markFeaturedMealConsumed(date,slot,recipe,entry.ingredients,entry.servings||1):markPlannedMealConsumed(date,slot,entry.ingredients,entry.servings||1);
   if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log meal: "+result.reason);
  }));
@@ -597,22 +620,36 @@ function renderDays(plan) {
  const dates=[...new Set([...week,...scheduled])].sort();
  return '<div class="mp-week-scroll-list">'+dates.map(date=>{
   const today=entries.filter(x=>x.date===date);
-  const calories=today.reduce((sum,entry)=>{const r=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId),m=r?.groups&&r.publishedEstimate?r.publishedEstimate:macrosForIngredients(entry.ingredients);return sum+(Number(m?.calories)||0)*(Number(entry.servings)||1)},0);
+  const calories=today.reduce((sum,entry)=>{const r=findScheduledRecipe(entry),m=plannedNutrition(entry,r);return sum+(Number(m?.calories)||0)*(Number(entry.servings)||1)},0);
   return '<section class="lu-meal-day mp-week-compact"><div class="mp-week-date"><div><h3>'+esc(new Date(date+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"}))+'</h3><p>'+(today.length?Math.round(calories)+' kcal planned':'No meals scheduled')+'</p></div><button type="button" class="mp-week-add" data-mp-open="catalog" aria-label="Browse recipes to schedule for '+esc(date)+'">+</button></div><div class="mp-week-compact-list">'+today.map(entry=>{
-   const recipe=[...FEATURED_RECIPES,...MEAL_CATALOG].find(x=>x.id===entry.recipeId);
-   const m=recipe?.groups&&recipe.publishedEstimate?recipe.publishedEstimate:macrosForIngredients(entry.ingredients);
-   const cal=Number(m?.calories),total=Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
+   const recipe=findScheduledRecipe(entry);
+   const m=plannedNutrition(entry,recipe);
+   const cal=Number(m?.calories),total=m&&Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
    const image=recipe?photoMarkup(recipe):'<span aria-hidden="true">🍽</span>';
-   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(recipe?.name||entry.recipeName||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><div class="mp-week-menu-panel" role="group" aria-label="Meal actions"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M10 14 21 3m-7 0h7v7"/></svg><span>View recipe & ingredients</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details></article>';
+   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(entry.recipeName||recipe?.name||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><div class="mp-week-menu-panel" role="group" aria-label="Meal actions"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M10 14 21 3m-7 0h7v7"/></svg><span>View recipe & ingredients</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details></article>';
   }).join("")+'</div></section>';
  }).join("")+'</div>';
 }
 function renderPlannedMealDetail(plan,date,slot) {
  const entry=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
  if(!entry)return '<section class="lu-meal-planner mp-standalone">'+screenHeader("Meal details","calendar")+'<p>Meal no longer scheduled.</p></section>';
- const previous=selectedPlanDate;selectedPlanDate=date;
- const details=renderDaysFull({...plan,entries:[entry]});selectedPlanDate=previous;
- return '<section class="lu-meal-planner mp-standalone mp-calendar mp-planned-detail">'+screenHeader("Meal details","calendar")+'<div class="lu-meal-days">'+details+'</div></section>';
+ const recipe=findScheduledRecipe(entry),nutrition=plannedNutrition(entry,recipe);
+ const servings=Math.max(1,Number(entry.servings)||1);
+ const name=entry.recipeName||recipe?.name||"Scheduled meal";
+ const image=recipe?photoMarkup(recipe,"mp-recipe-hero"):'<span aria-hidden="true">🍽</span>';
+ const values=nutrition?'<div class="mp-recipe-macro-grid">'+
+  [["Calories",Math.round(nutrition.calories*servings)],["Protein",Math.round((nutrition.protein||0)*servings)+"g"],["Carbs",Math.round((nutrition.carbs||0)*servings)+"g"],["Fat",Math.round((nutrition.fat||0)*servings)+"g"]]
+   .map(([label,value])=>'<div><strong>'+esc(value)+'</strong><small>'+label+'</small></div>').join("")+'</div>':
+  '<p>Full nutrition is not available for this recipe. The ingredient list remains below.</p>';
+ const ingredients=(entry.ingredients||[]).map(item=>
+  '<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,Number(item.grams)*servings,item.unit||"g"))+'</strong></li>').join("");
+ const steps=entry.recipeSteps?.length?entry.recipeSteps:recipe?.steps?.length?recipe.steps:recipe?recipeSteps(recipe):[];
+ return '<section class="lu-meal-planner mp-standalone mp-planned-detail mp-recipe-detail">'+
+  screenHeader("Scheduled recipe","calendar")+'<div class="mp-recipe-content">'+image+
+  '<h1>'+esc(name)+'</h1><p>'+esc(slot)+' · '+esc(date)+' · '+servings+' serving'+(servings===1?'':'s')+'</p>'+
+  values+'<section><h3>Ingredients</h3><ul>'+ingredients+'</ul></section>'+
+  '<section><h3>Cooking instructions</h3>'+(steps.length?'<ol>'+steps.map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol>':'<p>Cooking instructions are not available for this recipe.</p>')+
+  '</section></div></section>';
 }
 
 export function renderMealPlannerShell(){return `
