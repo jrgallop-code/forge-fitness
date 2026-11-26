@@ -23,6 +23,10 @@ export function scheduleRecipe(plan,recipe,{startDate,dayOffsets,slots,portionsP
  const generated=days.flatMap(i=>safeSlots.map(slot=>({
    date:dateForOffset(startDate,i),slot,recipeId:recipe.id,recipeVersion:recipe.recipeVersion||1,
    servings:portions,ingredients:recipeSnapshot.map(x=>({...x})),batchId,
+   recipeName:recipe.name,
+   recipePublishedEstimate:recipe.publishedEstimate?{...recipe.publishedEstimate}:null,
+   recipeSteps:Array.isArray(recipe.steps)?recipe.steps.slice():[],
+   recipeSourceName:recipe.sourceName||null,
    batchCookDate:dateForOffset(startDate,days[0]),sourceStatus:recipe.reviewStatus||recipe.nutritionStatus||"estimated-not-verified",
    nutritionVerified:false,manuallyScheduled:true
  })));
