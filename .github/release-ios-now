@@ -778,3 +778,5 @@ Recipe image correction: include five locally hosted, recipe-matched AI photorea
 2026-11-25: iOS release retry #493 requested after fixing stale CI certificate ID/serial/expiration from successful release 490. Signing safeguards remain enabled; do not revoke personal certificates.
 
 2026-11-25: Release request for corrected exact recipe swap identity, preserved publisher calorie/macro estimate, and clickable scheduled meal detail/ingredients; includes regression tests. Commit 2e8079a.
+
+Release adaptive expenditure and Flux Range (2026-11-26).
