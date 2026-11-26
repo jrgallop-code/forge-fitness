@@ -164,7 +164,7 @@ function patchCurrentCard(state) {
     const copyBlocks = card.querySelectorAll(".expenditure-summary-copy");
     setText(copyBlocks[0]?.querySelector("strong"), "Current Expenditure");
     if (state.currentMode === "updating") {
-        setText(copyBlocks[0]?.querySelector("p"), "Your current daily expenditure estimate from logged intake and smoothed Trend Weight.");
+        setText(copyBlocks[0]?.querySelector("p"), "Your adaptive daily expenditure estimate from logged intake and smoothed Trend Weight.");
     } else if (state.currentMode === "holding") {
         const date = state.heldEstimateDate ? ` from ${formatDate(state.heldEstimateDate)}` : "";
         setText(copyBlocks[0]?.querySelector("p"), `Using your last estimate${date} while Level Up collects new weigh-ins and food logs.`);
@@ -206,10 +206,10 @@ function decorateGraphCard(card, state) {
     const legend = card.querySelector(".expenditure-chart-legend");
     if (legend) {
         const generic = Number.isFinite(state.profileEstimate) ? '<span><i class="is-profile"></i>Generic expenditure</span>' : "";
-        const next = `<span class="expenditure-state-legend-label">Expenditure:</span><span><i class="is-updating"></i>Updating</span><span><i class="is-holding"></i>Holding</span>${generic}`;
+        const next = `<span class="expenditure-state-legend-label">Expenditure:</span><span><i class="is-updating"></i>Updating</span><span><i class="is-holding"></i>Holding</span>${generic}<span><i style="background:var(--accent);opacity:.22;width:16px;height:9px;border-radius:2px"></i>Flux Range</span>`;
         if (legend.innerHTML !== next) legend.innerHTML = next;
     }
-    setText(card.querySelector(".expenditure-chart-hint"), "Tap or drag for the daily expenditure calculation and state. Double-tap to close.");
+    setText(card.querySelector(".expenditure-chart-hint"), "Tap or drag for expenditure, Flux Range and state. The range shows alternative response paths, not a confidence interval.");
 }
 
 function markerStride(count) {
@@ -252,7 +252,7 @@ function installGraph(card, state) {
 
         const plotWidth = width - padding.left - padding.right;
         const plotHeight = height - padding.top - padding.bottom;
-        const values = state.points.map(point => point.expenditureCalories);
+        const values = state.points.flatMap(point => [point.expenditureCalories, point.fluxLow, point.fluxHigh].filter(Number.isFinite));
         const { yMin, yMax } = expenditureAxis(values);
         const x = point => padding.left + ((new Date(`${point.date}T12:00:00`).getTime() - startMs) / Math.max(1, endMs - startMs)) * plotWidth;
         const y = value => padding.top + (1 - (Number(value) - yMin) / (yMax - yMin)) * plotHeight;
@@ -288,6 +288,23 @@ function installGraph(card, state) {
             context.moveTo(padding.left, y(state.profileEstimate));
             context.lineTo(width - padding.right + 4, y(state.profileEstimate));
             context.stroke();
+            context.restore();
+        }
+
+        // Draw the envelope of the slow and fast response paths behind the line.
+        for (let index = 1; index < state.points.length; index += 1) {
+            const a = state.points[index - 1], b = state.points[index];
+            if (![a.fluxLow, a.fluxHigh, b.fluxLow, b.fluxHigh].every(Number.isFinite)) continue;
+            context.save();
+            context.fillStyle = accent;
+            context.globalAlpha = .16;
+            context.beginPath();
+            context.moveTo(x(a), y(a.fluxHigh));
+            context.lineTo(x(b), y(b.fluxHigh));
+            context.lineTo(x(b), y(b.fluxLow));
+            context.lineTo(x(a), y(a.fluxLow));
+            context.closePath();
+            context.fill();
             context.restore();
         }
 
@@ -373,7 +390,7 @@ function installGraph(card, state) {
         const point = state.points[selectedIndex];
         const updating = point.mode === "updating";
         tooltip.hidden = false;
-        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>${formatNumber(point.expenditureCalories)} cal/day</span><small class="expenditure-tooltip-state">${updating ? "Updating" : "Holding"}</small><small>${updating ? "Daily TDEE calculated from the evidence available on this date" : "Last usable expenditure carried forward"}</small>${Number.isFinite(state.profileEstimate) ? `<small>${signedCalories(point.expenditureCalories - state.profileEstimate)} vs generic expenditure</small>` : ""}`;
+        tooltip.innerHTML = `<strong>${formatDate(point.date)}</strong><span>${formatNumber(point.expenditureCalories)} cal/day</span>${Number.isFinite(point.fluxLow) && Number.isFinite(point.fluxHigh) ? `<small>Flux Range: ${formatNumber(point.fluxLow)}–${formatNumber(point.fluxHigh)} cal/day</small>` : ""}<small class="expenditure-tooltip-state">${updating ? "Updating" : "Holding"}</small><small>${updating ? "Daily TDEE calculated from the evidence available on this date" : "Last usable expenditure carried forward"}</small>${Number.isFinite(state.profileEstimate) ? `<small>${signedCalories(point.expenditureCalories - state.profileEstimate)} vs generic expenditure</small>` : ""}`;
         const desiredLeft = relative < bounds.width / 2 ? relative + 10 : relative - 140;
         tooltip.style.left = `${Math.max(8, Math.min(bounds.width - 132, desiredLeft))}px`;
         draw();
