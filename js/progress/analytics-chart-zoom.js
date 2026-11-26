@@ -1,6 +1,6 @@
 import { displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
 import { calculateTrendWeightSeries, normalizeWeightEntries } from "../core/weight-trend.js?v=smoothed-visible-trend-1";
-import { getCalculatedMaintenanceEstimate, getCalculatedMaintenanceHistory } from "../nutrition/calculated-maintenance.js?v=food-log-macro-bars-1";
+import { getEnergyBalanceState } from "../nutrition/energy-balance-state.js?v=adaptive-flux-2";
 import { calculateTdee } from "../nutrition/tdee-calculator.js?v=nutrition-phase-1";
 import { getNutritionProfile } from "../nutrition/nutrition-storage.js?v=nutrition-phase-1";
 
@@ -195,36 +195,18 @@ function profileMaintenance() {
 }
 function expenditureData(startDate = null) {
     try {
-        const formula = profileMaintenance();
-        const current = getCalculatedMaintenanceEstimate(formula);
-        const raw = (getCalculatedMaintenanceHistory(formula, startDate ? { startDate } : undefined) || []).map(point => ({ ...point }));
-        const today = localDateString();
-        const currentLive = positive(current?.liveMaintenanceCalories);
-        const currentReviewed = positive(current?.maintenanceCalories);
-        const todayPoint = raw.find(point => point?.date === today);
-        if (todayPoint) {
-            if (currentLive !== null) todayPoint.liveMaintenanceCalories = currentLive;
-            if (currentReviewed !== null) todayPoint.maintenanceCalories = currentReviewed;
-        } else if (currentLive !== null || currentReviewed !== null) {
-            raw.push({ date: today, liveMaintenanceCalories: currentLive, maintenanceCalories: currentReviewed });
-        }
-        raw.sort((a, b) => String(a.date).localeCompare(String(b.date)));
-        let lastUsable = null;
-        const points = raw.map(point => {
-            const live = positive(point.liveMaintenanceCalories);
-            const reviewed = positive(point.maintenanceCalories);
-            if (live !== null) {
-                lastUsable = live;
-                return { date: point.date, value: live, mode: "updating" };
-            }
-            const held = lastUsable ?? reviewed;
-            if (held !== null) {
-                lastUsable = held;
-                return { date: point.date, value: held, mode: "holding" };
-            }
-            return null;
-        }).filter(Boolean);
-        return { formula, current, points };
+        const state = getEnergyBalanceState({ endDate: localDateString() });
+        return {
+            formula: state.profileEstimate,
+            current: state.current,
+            points: state.visible.map(point => ({
+                date: point.date,
+                value: point.expenditureCalories,
+                fluxLow: point.fluxLow,
+                fluxHigh: point.fluxHigh,
+                mode: point.mode
+            }))
+        };
     } catch {
         return { formula: null, current: null, points: [] };
     }
@@ -764,14 +746,14 @@ function drawExpenditure(instance, state, scaleOverride = null) {
     const prepared = prepareCanvas(instance, 250);
     if (!prepared) return { points: [], scale: null };
     const { context, width, height } = prepared;
-    const data = expenditureData(shiftDate(state.start, -28));
+    const data = expenditureData();
     const points = data.points.filter(point => point.date >= state.start && point.date <= state.end);
     updateExpenditureSummary(instance, state.start, state.end, points);
     if (!points.length) {
         drawEmpty(context, "No expenditure data in these dates.");
         return { points: [], scale: scaleOverride };
     }
-    const values = points.map(point => point.value);
+    const values = points.flatMap(point => [point.value, point.fluxLow, point.fluxHigh].filter(Number.isFinite));
     if (Number.isFinite(data.formula)) values.push(data.formula);
     const targetScale = expenditureScale(values);
     const scale = scaleOverride || targetScale;
@@ -815,6 +797,25 @@ function drawExpenditure(instance, state, scaleOverride = null) {
     }
     const accent = themeColor("--accent", "#ff3b4b");
     const cardColor = themeColor("--card", "#1b1b1f");
+    // Draw the alternate smoothing envelope behind the existing line and markers.
+    context.save();
+    context.beginPath();
+    context.rect(padding.left, padding.top, plotWidth, plotHeight);
+    context.clip();
+    for (let index = 1; index < points.length; index += 1) {
+        const a = points[index - 1], b = points[index];
+        if (![a.fluxLow, a.fluxHigh, b.fluxLow, b.fluxHigh].every(Number.isFinite)) continue;
+        context.beginPath();
+        context.moveTo(x(a), y(a.fluxHigh));
+        context.lineTo(x(b), y(b.fluxHigh));
+        context.lineTo(x(b), y(b.fluxLow));
+        context.lineTo(x(a), y(a.fluxLow));
+        context.closePath();
+        context.fillStyle = accent;
+        context.globalAlpha = .32;
+        context.fill();
+    }
+    context.restore();
     for (let index = 1; index < points.length; index += 1) {
         const previous = points[index - 1];
         const point = points[index];
@@ -995,7 +996,7 @@ function showNearestPoint(instance, clientX) {
     const extra = Number.isFinite(trendShown)
         ? `Trend: ${trendShown.toFixed(1)} ${unit} · ${shown - trendShown > 0 ? "+" : ""}${(shown - trendShown).toFixed(1)} vs trend`
         : instance.kind === "expenditure"
-            ? (nearest.mode === "holding" ? "Holding last usable estimate" : "Updating from current evidence")
+            ? (nearest.mode === "holding" ? "Holding last usable estimate" : "Updating from current evidence") + (Number.isFinite(nearest.fluxLow) && Number.isFinite(nearest.fluxHigh) ? ` · Flux Range: ${Math.round(nearest.fluxLow).toLocaleString()}–${Math.round(nearest.fluxHigh).toLocaleString()} cal/day` : "")
             : "";
     stableText(instance.tooltipExtra, extra);
     instance.tooltipExtra.hidden = !extra;
