@@ -20,19 +20,21 @@ function weekDates(plan){
  return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return key(d)});
 }
 function recipeNutrition(recipe,entry){
- if(!recipe)return null;
- if(entry?.ingredients?.length)return macrosForIngredients(entry.ingredients);
- if(recipe?.publishedEstimate)return recipe.publishedEstimate;
- return recipe?.ingredients?.length?macrosForIngredients(recipe.ingredients):null;
+ if(entry?.recipePublishedEstimate?.calories>0)return entry.recipePublishedEstimate;
+ if(recipe?.publishedEstimate?.calories>0)return recipe.publishedEstimate;
+ const ingredients=entry?.ingredients?.length?entry.ingredients:recipe?.ingredients;
+ if(!ingredients?.length)return null;
+ const result=macrosForIngredients(ingredients);
+ return result.calories>=100?result:null;
 }
 function recipeCard(recipe,entry,photoMarkup,favs){
  const m=recipeNutrition(recipe,entry);
- const calories=Number.isFinite(m?.calories)?Math.round(m.calories):null;
+ const calories=Number.isFinite(m?.calories)?Math.round(m.calories*(entry?.servings||1)):null;
  const macros=Number.isFinite(m?.protein)&&Number.isFinite(m?.carbs)&&Number.isFinite(m?.fat)
- ?'<div class="mp-home-macros"><span><strong>'+Math.round(m.protein)+'g</strong><small>Protein</small></span><span><strong>'+Math.round(m.carbs)+'g</strong><small>Carbs</small></span><span><strong>'+Math.round(m.fat)+'g</strong><small>Fat</small></span></div>':'';
+ ?'<div class="mp-home-macros"><span><strong>'+Math.round(m.protein*(entry?.servings||1))+'g</strong><small>Protein</small></span><span><strong>'+Math.round(m.carbs*(entry?.servings||1))+'g</strong><small>Carbs</small></span><span><strong>'+Math.round(m.fat*(entry?.servings||1))+'g</strong><small>Fat</small></span></div>':'';
  return '<article class="mp-home-recipe">'+
- '<button type="button" class="mp-home-recipe-open" data-mp-recipe="'+esc(recipe.id)+'" aria-label="View '+esc(recipe.name)+'">'+photoMarkup(recipe,"mp-home-recipe-photo")+
- '<span class="mp-home-recipe-info"><strong>'+esc(recipe.name)+'</strong><small>'+(calories!==null?'≈ '+calories+' kcal':'Recipe nutrition under review')+'</small>'+macros+'</span></button>'+
+ '<button type="button" class="mp-home-recipe-open" '+(entry?'data-mp-planned-detail data-date="'+esc(entry.date)+'" data-slot="'+esc(entry.slot)+'"':'data-mp-recipe="'+esc(recipe.id)+'"')+' aria-label="View '+esc(entry?.recipeName||recipe.name)+'">'+photoMarkup(recipe,"mp-home-recipe-photo")+
+ '<span class="mp-home-recipe-info"><strong>'+esc(entry?.recipeName||recipe.name)+'</strong><small>'+(calories!==null?'≈ '+calories+' kcal':'Recipe nutrition under review')+'</small>'+macros+'</span></button>'+
  '<button type="button" class="mp-home-heart'+(favs.has(recipe.id)?" active":"")+'" data-mp-favorite="'+esc(recipe.id)+'" aria-label="'+(favs.has(recipe.id)?"Remove":"Save")+' favorite">'+(favs.has(recipe.id)?"♥":"♡")+'</button></article>';
 }
 export function mealPlannerShortcutMarkup(active=""){
@@ -43,7 +45,7 @@ export function mealPlannerHomeMarkup({plan,selectedDate="",recipes,photoMarkup,
  const dates=weekDates(plan);
  const active=dates.includes(selectedDate)?selectedDate:dates[0];
  const savedEntries=(plan?.entries||[]).filter(x=>x.date===active);
- const scheduled=savedEntries.map(e=>({recipe:recipes.find(r=>r.id===e.recipeId),entry:e})).filter(x=>x.recipe);
+ const scheduled=savedEntries.map(e=>({recipe:recipes.find(r=>r.id===e.recipeId&&(!e.recipeName||r.name===e.recipeName))||recipes.find(r=>r.id===e.recipeId)||{id:e.recipeId,name:e.recipeName||"Scheduled meal"},entry:e}));
  const recommendations=["Chicken rice bowl","Lean beef rice skillet","Turkey avocado wrap","Salmon and sweet potato"].map(name=>recipes.find(r=>r.name===name)).filter(Boolean);
  const highlights=scheduled.length?scheduled:recommendations.map(recipe=>({recipe,entry:null}));
  const favorites=new Set(favoriteIds);
