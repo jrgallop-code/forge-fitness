@@ -54,6 +54,13 @@ test("schedule cards open a recipe and its actual saved ingredients",()=>{
  assert.match(ui,/entry\.ingredients\|\|\[\]/);
  assert.match(read("js/nutrition/meal-planner-manual.js"),/recipeSteps:Array\.isArray\(recipe\.steps\)/);
 });
+test("meal planner home shows full recipe nutrition and opens scheduled meal detail",()=>{
+ const home=read("js/nutrition/meal-planner-home.js");
+ assert.match(home,/entry\?\.recipePublishedEstimate\?\.calories>0/);
+ assert.match(home,/result\.calories>=100\?result:null/);
+ assert.match(home,/data-mp-planned-detail data-date/);
+ assert.match(home,/entry\?\.recipeName\|\|recipe\.name/);
+});
 test("unreviewed source-index recipe cannot receive arbitrary atlas tile",()=>{
  assert.doesNotMatch(photos,/function illustrationTile/);
  assert.match(photos,/recipe\?\.indexOnly && recipe\?\.imageReviewed !== true/);
