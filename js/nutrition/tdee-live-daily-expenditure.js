@@ -1,4 +1,4 @@
-import { getEnergyBalanceState } from "./energy-balance-state.js?v=held-history-1";
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=adaptive-flux-2";
 
 const TDEE_RANGE_KEY = "level_up_tdee_chart_range_v1";
 const STYLE_ID = "level-up-live-daily-expenditure-styles";
@@ -203,11 +203,14 @@ function decorateGraphCard(card, state) {
         setText(metrics[1].querySelector("b"), !Number.isFinite(change) ? "Waiting" : change > 0 ? "Increase" : change < 0 ? "Decrease" : "No change");
     }
 
-    const legend = card.querySelector(".expenditure-chart-legend");
+    let legend = card.querySelector(".expenditure-chart-legend");
+    if (!legend) { legend = document.createElement("div"); legend.className = "expenditure-chart-legend"; card.querySelector(".expenditure-chart-shell")?.after(legend); }
+    const last = available.at(-1);
+    const rangeLabel = Number.isFinite(last?.fluxLow) && Number.isFinite(last?.fluxHigh) ? ` (${formatNumber(last.fluxLow)}–${formatNumber(last.fluxHigh)} cal)` : " (awaiting data)";
     if (legend) {
         const generic = Number.isFinite(state.profileEstimate) ? '<span><i class="is-profile"></i>Generic expenditure</span>' : "";
-        const next = `<span class="expenditure-state-legend-label">Expenditure:</span><span><i class="is-updating"></i>Updating</span><span><i class="is-holding"></i>Holding</span>${generic}<span><i style="background:var(--accent);opacity:.22;width:16px;height:9px;border-radius:2px"></i>Flux Range</span>`;
-        if (legend.innerHTML !== next) legend.innerHTML = next;
+        const next = `<span class="expenditure-state-legend-label">Expenditure:</span><span><i class="is-updating"></i>Updating</span><span><i class="is-holding"></i>Holding</span>${generic}<span><i style="background:var(--accent);opacity:.42;width:16px;height:9px;border-radius:2px"></i>Flux Range${rangeLabel}</span>`;
+        if (legend.dataset.fluxLegend !== next || !legend.textContent.includes("Flux Range")) { legend.innerHTML = next; legend.dataset.fluxLegend = next; }
     }
     setText(card.querySelector(".expenditure-chart-hint"), "Tap or drag for expenditure, Flux Range and state. The range shows alternative response paths, not a confidence interval.");
 }
@@ -297,7 +300,7 @@ function installGraph(card, state) {
             if (![a.fluxLow, a.fluxHigh, b.fluxLow, b.fluxHigh].every(Number.isFinite)) continue;
             context.save();
             context.fillStyle = accent;
-            context.globalAlpha = .16;
+            context.globalAlpha = .32;
             context.beginPath();
             context.moveTo(x(a), y(a.fluxHigh));
             context.lineTo(x(b), y(b.fluxHigh));
