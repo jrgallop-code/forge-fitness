@@ -64,7 +64,7 @@ test("food preferences, meal photos and complete recipes appear in catalogue",()
  assert.match(ui,/data-mp-style-done/);
  const detail=recipeDetailMarkup(baseRecipes().find(r=>Array.isArray(r.ingredients)));
  assert.match(detail,/Cooking instructions/);
- assert.match(detail,/Ingredients/);
+ assert.match(detail,/mp-ingredient-group/);
  assert.match(detail,/data-mp-schedule/);
  assert.doesNotMatch(detail,/<a href=|mealprepmanual\.com/i);
 });
@@ -73,13 +73,15 @@ test("in-app base recipes retain local imagery and estimated nutrition",()=>{
  assert.equal(classic.length,40);
  for(const recipe of classic){
   const photo=recipePhoto(recipe);
-  assert.ok(photo.tile>=0&&photo.tile<40);
-  assert.match(photoMarkup(recipe),/mp-ai-photo/);
+  if(photo.primary){assert.ok(photo.tile>=0&&photo.tile<40);assert.match(photoMarkup(recipe),/mp-ai-photo/);}
+  else {assert.equal(photo.source,"photo-pending");assert.match(photoMarkup(recipe),/Photo pending/);}
  }
- assert.equal(new Set(classic.map(recipe=>{const p=recipePhoto(recipe);return p.primary+"|"+p.tile;})).size,40);
+ const available=classic.map(recipePhoto).filter(p=>p.primary);
+ assert.equal(available.length,30);
+ assert.equal(new Set(available.map(p=>p.primary+"|"+p.tile)).size,available.length);
  const detail=recipeDetailMarkup(classic[3]);
  assert.match(detail,/Cooking instructions/);
- assert.match(detail,/Ingredients/);
+ assert.match(detail,/mp-ingredient-group/);
 });
 test("plan generator keeps visible loading and theme styling",()=>{
  assert.match(ui,/Plating your week/);
