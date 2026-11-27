@@ -29,9 +29,11 @@ test("thumbs ratings persist per recipe and can be toggled off",()=>{
  assert.equal(getRecipeRating(id),null);
  assert.equal(Object.keys(readRecipeRatings()).length,0);
 });
-test("complete featured meals now expose Mark Eaten and use composite ingredient-preserving logging",async()=>{
+test("complete featured meals now expose Mark consumed and use composite ingredient-preserving logging",async()=>{
  const s=await readFile(new URL("../js/nutrition/meal-planner-ui.js",import.meta.url),"utf8");
- assert.match(s,/markFeaturedMealConsumed\(date,slot,recipe,entry.ingredients,entry.servings\|\|1\)/);
+ assert.match(s,/markFeaturedMealConsumed\(date,slot,\{id:entry.recipeId,name:entry.recipeName\|\|recipe\?\.name\|\|slot,publishedEstimate:published\},ingredients,servings\)/);
+ assert.match(s,/Mark consumed/);
+ assert.match(s,/window.confirm\("Log "/);
  assert.match(s,/sourcePending=featured&&!recipe\?\.publishedEstimate/);
  assert.match(s,/data-meal-consume/);
  const css=await readFile(new URL("../css/meal-planner-catalog-polish.css",import.meta.url),"utf8");
