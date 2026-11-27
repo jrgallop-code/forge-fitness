@@ -5,7 +5,7 @@ import {formatIngredientMeasure} from "./meal-planner-measurements.js?v=kitchen-
 import {FEATURED_RECIPES,featuredIngredients} from "./meal-planner-featured-recipes.js?v=1";
 import {getRecipeRating,setRecipeRating} from "./meal-planner-ratings.js?v=1";
 import {nextMonday,dateForOffset,scheduleRecipe,batchPortionCount,removeScheduledMeal} from "./meal-planner-manual.js?v=remove-planned-meal-20261122";
-import {photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites,selectedRecipeStyles,saveRecipeStyles} from "./meal-planner-catalog-ui.js?v=recipe-real-photo-5-20261124";
+import {ingredientCategory,photoMarkup,catalogMarkup,recipeDetailMarkup,toggleFavorite,baseRecipes,matchesCatalog,storedFavorites,selectedRecipeStyles,saveRecipeStyles} from "./meal-planner-catalog-ui.js?v=recipe-real-photo-5-20261124";
 import {ingredientIllustration,dietIllustration,recipeIllustration} from "./meal-planner-food-art.js?v=2";
 import {MEAL_PLANNER_HERO} from "./meal-planner-hero.js?v=1";
 import {GENERATED_MEAL_ATLAS} from "./meal-planner-art.js?v=1";
@@ -512,19 +512,30 @@ function render(root){
  root.querySelectorAll("[data-mp-swap-choose]").forEach(button=>button.addEventListener("click",()=>{
   applyMealSwap(button.dataset.mpSwapChoose,root);
  }));
+ root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
+  const {date,slot}=button.dataset,entry=read()?.entries?.find(x=>x.date===date&&x.slot===slot);
+  if(!entry)return;
+  const recipe=findScheduledRecipe(entry), nutrition=plannedNutrition(entry,recipe), servings=Number(entry.servings)||1;
+  const ingredients=entry.ingredients||[];
+  const published=entry.recipePublishedEstimate||recipe?.publishedEstimate;
+  if(!ingredients.length||!nutrition){window.alert("Complete ingredient quantities and nutrition are required before logging.");return;}
+  const summary=ingredients.map(x=>x.food+" — "+formatIngredientMeasure(x.food,Number(x.grams)*servings,x.unit||"g")).join("\n");
+  if(!window.confirm("Log "+(entry.recipeName||recipe?.name||slot)+" for "+date+" ("+servings+" serving(s))?\n\n"+summary+"\n\n"+(published?"Nutrition uses the published meal estimate; individual ingredient nutrients are not verified.":"Ingredients will be logged individually using estimated reference nutrition.")))return;
+  const result=published?markFeaturedMealConsumed(date,slot,{id:entry.recipeId,name:entry.recipeName||recipe?.name||slot,publishedEstimate:published},ingredients,servings):markPlannedMealConsumed(date,slot,ingredients,servings);
+  if(result.ok)render(root);else window.alert("Could not log meal: "+result.reason);
+ }));
+ root.querySelectorAll("[data-meal-undo]").forEach(button=>button.addEventListener("click",()=>{
+  const {date,slot}=button.dataset;
+  if(window.confirm("Remove food-log entries created by this planned meal?")){
+   const result=undoPlannedMealConsumed(date,slot);if(result.ok)render(root);
+  }
+ }));
  if(page!=="calendar")return;
  root.querySelectorAll("[data-mp-date]").forEach(btn=>btn.addEventListener("click",()=>{selectedPlanDate=btn.dataset.mpDate;render(root)}));
  root.querySelectorAll("[data-mp-day-nav]").forEach(btn=>btn.addEventListener("click",()=>{
   const days=[...new Set(read()?.entries?.map(x=>x.date)||[])],index=days.indexOf(selectedPlanDate);
   selectedPlanDate=days[Math.max(0,Math.min(days.length-1,index+Number(btn.dataset.mpDayNav)))]||selectedPlanDate;
   render(root);
- }));
- root.querySelectorAll("[data-meal-consume]").forEach(button=>button.addEventListener("click",()=>{
-  const {date,slot}=button.dataset,entry=read()?.entries?.find(x=>x.date===date&&x.slot===slot);
-  if(!entry)return;
-  const recipe=findScheduledRecipe(entry);
-  const result=recipe?.groups?markFeaturedMealConsumed(date,slot,recipe,entry.ingredients,entry.servings||1):markPlannedMealConsumed(date,slot,entry.ingredients,entry.servings||1);
-  if(result.ok)render(root);else if(result.reason!=="already_logged")window.alert("Could not log meal: "+result.reason);
  }));
  root.querySelectorAll("[data-meal-swap]").forEach(button=>button.addEventListener("click",()=>{
   const {date,slot}=button.dataset;
@@ -546,12 +557,6 @@ function render(root){
   if(next===current)return;
   if(write(next))render(root);
   else window.alert("Could not remove the planned meal from this device.");
- }));
- root.querySelectorAll("[data-meal-undo]").forEach(button=>button.addEventListener("click",()=>{
-  const {date,slot}=button.dataset;
-  if(window.confirm("Remove food-log entries created by this planned meal?")){
-   const result=undoPlannedMealConsumed(date,slot);if(result.ok)render(root);
-  }
  }));
  root.querySelectorAll("[data-meal-replace]").forEach(select=>select.addEventListener("change",()=>{
   const {date,slot}=select.dataset;
@@ -611,6 +616,13 @@ function renderDaysFull(plan){
  }).join("");
 }
 
+function consumptionActions(entry,recipe){
+ const date=esc(entry.date),slot=esc(entry.slot);
+ const attrs=' data-date="'+date+'" data-slot="'+slot+'"';
+ if(hasConsumedMeal(entry.date,entry.slot))return '<span class="lu-meal-eaten">✓ Consumed</span><button type="button" data-meal-undo'+attrs+'>Undo log</button>';
+ if(!plannedNutrition(entry,recipe)||!entry.ingredients?.length)return '<small class="mp-disclaimer">Ingredient or nutrition review required before logging.</small>';
+ return '<button type="button" class="primary-btn mp-consume-action" data-meal-consume'+attrs+'>Mark consumed</button>';
+}
 function renderDays(plan) {
  const entries=Array.isArray(plan?.entries)?plan.entries:[];
  if(!entries.length)return '<div class="mp-week-empty"><h3>Your week is empty</h3><p>Choose a recipe and schedule its days.</p><button type="button" data-mp-open="catalog">Browse recipes</button></div>';
@@ -626,9 +638,14 @@ function renderDays(plan) {
    const m=plannedNutrition(entry,recipe);
    const cal=Number(m?.calories),total=m&&Number.isFinite(cal)?Math.round(cal*(Number(entry.servings)||1)):null;
    const image=recipe?photoMarkup(recipe):'<span aria-hidden="true">🍽</span>';
-   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(entry.recipeName||recipe?.name||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><div class="mp-week-menu-panel" role="group" aria-label="Meal actions"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M10 14 21 3m-7 0h7v7"/></svg><span>View recipe & ingredients</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details></article>';
+   return '<article class="mp-week-recipe"><button type="button" class="mp-week-recipe-open" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'" aria-label="View '+esc(recipe?.name||entry.slot)+' recipe and ingredients"><span class="mp-week-recipe-thumb" aria-hidden="true">'+image+'</span><span class="mp-week-recipe-copy"><small>'+esc(entry.slot)+(total!==null?' · '+total+' cal':' · Nutrition pending')+(hasConsumedMeal(date,entry.slot)?' · ✓ Eaten':'')+'</small><strong>'+esc(entry.recipeName||recipe?.name||'Planned meal')+'</strong></span><span class="mp-week-recipe-chevron" aria-hidden="true">›</span></button><details class="mp-meal-card-menu mp-week-menu"><summary aria-label="Options for '+esc(recipe?.name||entry.slot)+'">⋯</summary><div class="mp-week-menu-panel" role="group" aria-label="Meal actions"><button type="button" data-meal-swap data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h15m0 0-4-4m4 4-4 4M20 17H5m0 0 4-4m-4 4 4 4"/></svg><span>Swap meal</span></button><button type="button" data-mp-planned-detail data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M10 14 21 3m-7 0h7v7"/></svg><span>View recipe & ingredients</span></button><button type="button" class="mp-menu-danger" data-meal-remove data-date="'+esc(date)+'" data-slot="'+esc(entry.slot)+'"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove meal</span></button></div></details><div class="mp-week-consume">'+consumptionActions(entry,recipe)+'</div></article>';
   }).join("")+'</div></section>';
  }).join("")+'</div>';
+}
+function groupedPlannedIngredients(items,servings){
+ const groups=new Map();
+ for(const item of items||[]){const label=item.group||ingredientCategory(item.food);if(!groups.has(label))groups.set(label,[]);groups.get(label).push(item);}
+ return [...groups].map(([label,rows])=>'<section class="mp-ingredient-group"><h3>'+esc(label)+'</h3><ul>'+rows.map(item=>'<li><span>'+esc(item.food)+'</span><strong>'+esc(formatIngredientMeasure(item.food,Number(item.grams)*servings,item.unit||"g"))+'</strong></li>').join("")+'</ul></section>').join("");
 }
 function renderPlannedMealDetail(plan,date,slot) {
  const entry=plan?.entries?.find(x=>x.date===date&&x.slot===slot);
@@ -647,7 +664,7 @@ function renderPlannedMealDetail(plan,date,slot) {
  return '<section class="lu-meal-planner mp-standalone mp-planned-detail mp-recipe-detail">'+
   screenHeader("Scheduled recipe","calendar")+'<div class="mp-recipe-content">'+image+
   '<h1>'+esc(name)+'</h1><p>'+esc(slot)+' · '+esc(date)+' · '+servings+' serving'+(servings===1?'':'s')+'</p>'+
-  values+'<section><h3>Ingredients</h3><ul>'+ingredients+'</ul></section>'+
+  values+'<div class="lu-meal-actions">'+consumptionActions(entry,recipe)+'</div>'+groupedPlannedIngredients(entry.ingredients,servings)+
   '<section><h3>Cooking instructions</h3>'+(steps.length?'<ol>'+steps.map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol>':'<p>Cooking instructions are not available for this recipe.</p>')+
   '</section></div></section>';
 }
@@ -655,7 +672,7 @@ function renderPlannedMealDetail(plan,date,slot) {
 export function renderMealPlannerShell(){return `
 <style>
 
-.mp-week-scroll-list{display:grid;gap:18px;padding-bottom:32px}
+.mp-week-recipe{flex-wrap:wrap}.mp-week-consume{flex:0 0 100%;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 0 8px}.mp-week-consume .mp-consume-action{width:auto;min-height:38px;padding:8px 14px}.mp-week-scroll-list{display:grid;gap:18px;padding-bottom:32px}
 .mp-week-compact{padding:16px!important;background:var(--card,var(--surface,#fff))!important;border:1px solid var(--card-border,var(--line,#d8e1ee))!important;border-radius:20px!important;box-shadow:none!important}
 .mp-week-date{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:12px;margin:0 0 12px;border-bottom:1px solid var(--line,#d8e1ee)}
 .mp-week-add{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line,#d8e1ee);background:var(--surface-raised,#edf3fb);color:var(--text,#10203a);font-size:1.7rem;cursor:pointer}
