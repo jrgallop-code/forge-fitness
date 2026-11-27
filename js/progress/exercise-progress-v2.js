@@ -1,4 +1,3 @@
-import { exerciseThumbnail } from "../workouts/exercise-thumbnails.js";
 import { isStaticHold } from "../workouts/static-holds.js";
 import { holdProgressRecords, holdComparison } from "./hold-progress-model.js";
 import { UNIT_KINDS, displayMass, massUnit } from "../core/unit-system.js?v=granular-units-1";
@@ -714,6 +713,7 @@ function renderHoldComparison(container, records) {
 const PICKER_RECENT_KEY = "level_up_progress_exercise_recent_v1";
 const pickerBindings = new WeakMap();
 const pickerSearchIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>';
+const pickerDumbbell = '<span class="pep-dumbbell" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/></svg></span>';
 const pickerChevron = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
 
 export function filterProgressExerciseOptions(items, query = "", muscle = "") {
@@ -761,7 +761,7 @@ function ensureProgressPickerStyles() {
       .pep-results{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
       .pep-section{font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 6px}
       .pep-row{width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:10px 0;border:0;border-bottom:1px solid var(--border,rgba(128,128,128,.18));border-radius:0;background:transparent;color:var(--text);font:inherit;min-height:66px}
-      .pep-row .routine-thumbnail,.progress-exercise-trigger .routine-thumbnail{flex:none;border-radius:9px;background:var(--bg,var(--card))}
+      .pep-row .pep-dumbbell{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:9px;background:var(--bg,var(--card));color:var(--text)} .pep-row .pep-dumbbell svg{width:24px;height:24px;display:block}
       .pep-row .pep-copy{flex:1;min-width:0;display:grid;gap:4px}
       .pep-row strong{font-size:15px;line-height:1.3;overflow-wrap:anywhere;color:inherit}
       .pep-row small{font-size:12px;color:var(--muted)}
@@ -819,7 +819,7 @@ function installProgressExercisePicker(select) {
         const status = overlay.querySelector(".pep-status");
         const groups = ["", ...new Set(items.map(item=>item.muscle))];
         filters.innerHTML = groups.map(group=>'<button type="button" data-pep-muscle="'+escapeHtml(group)+'" aria-pressed="'+String(!group)+'">'+escapeHtml(group || "All")+'</button>').join("");
-        const row = item => '<button type="button" class="pep-row" data-pep-id="'+escapeHtml(item.id)+'" aria-current="'+String(item.id===select.value)+'">'+exerciseThumbnail(item.exercise || {id:item.id,name:item.name,muscleGroup:item.muscle})+'<span class="pep-copy"><strong>'+escapeHtml(item.name)+'</strong><small>'+escapeHtml([item.muscle,item.equipment].filter(Boolean).join(" · "))+'</small></span>'+(item.id===select.value?'<span class="pep-check" aria-hidden="true">✓</span>':pickerChevron)+'</button>';
+        const row = item => '<button type="button" class="pep-row" data-pep-id="'+escapeHtml(item.id)+'" aria-current="'+String(item.id===select.value)+'">'+pickerDumbbell+'<span class="pep-copy"><strong>'+escapeHtml(item.name)+'</strong><small>'+escapeHtml([item.muscle,item.equipment].filter(Boolean).join(" · "))+'</small></span>'+(item.id===select.value?'<span class="pep-check" aria-hidden="true">✓</span>':pickerChevron)+'</button>';
         const render = () => {
             matches = filterProgressExerciseOptions(items,input.value,muscle);
             clear.hidden = !input.value;
