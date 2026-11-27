@@ -1,3 +1,4 @@
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=adaptive-flux-2";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=nutrition-authority-sync-2";
 import { getActiveNutritionPhase, getActivePhaseMetrics } from "./nutrition-phase.js?v=nutrition-authority-sync-2";
 import { resolvePhaseMaintenance } from "./new-phase-maintenance.js?v=new-phase-current-expenditure-1";
@@ -61,7 +62,8 @@ function finite(value) {
 }
 
 function currentExpenditure(estimate) {
-    return positive(estimate?.liveMaintenanceCalories)
+    return positive(getEnergyBalanceState().currentExpenditure)
+        ?? positive(estimate?.liveMaintenanceCalories)
         ?? positive(estimate?.maintenanceCalories)
         ?? positive(estimate?.profileEstimate);
 }
