@@ -27,5 +27,7 @@ test("My Week renders a three-dot remove menu and keeps Food Log ingredients",as
  assert.match(ui,/data-meal-remove/);
  assert.match(ui,/removeScheduledMeal\(current,date,slot\)/);
  assert.match(ui,/already logged in Food Log will be kept/);
- assert.match(ui,/markPlannedMealConsumed\(date,slot,entry\.ingredients,entry\.servings\|\|1\)/);
+ assert.match(ui,/markPlannedMealConsumed\(date,slot,ingredients,servings\)/);
+ assert.match(ui,/consumptionActions\(entry,recipe\)/);
+ assert.ok(ui.indexOf('root.querySelectorAll("[data-meal-consume]")')<ui.indexOf('if(page!=="calendar")return;'));
 });
