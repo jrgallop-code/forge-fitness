@@ -76,11 +76,12 @@ test("first missing-recipe drafts are ingredient-grounded and flagged pending re
  assert.equal(lines.length,301);
 });
 
-test("source entries show categorized quantity rows and only ingredient-grounded images",()=>{
+test("source entries show categorized quantity rows and no cartoon fallback",()=>{
  assert.match(catalog,/function sourceIngredientSections/);
  assert.match(catalog,/function splitSourceStatement/);
- assert.match(catalog,/function ingredientIllustrationMarkup/);
- assert.match(catalog,/Array\.isArray\(recipe\?\.ingredientStatements\)/);
+ const photoFunction=catalog.slice(catalog.indexOf("export function photoMarkup"),catalog.indexOf("export function photoMarkup")+1800);
+ assert.doesNotMatch(photoFunction,/return ingredientIllustrationMarkup/);
+ assert.match(photoFunction,/Photo pending/);
  assert.match(catalog,/groupIngredientRows\(ingredients\)/);
  assert.match(polish,/\.mp-ingredient-group li/);
  assert.match(polish,/\.mp-ingredient-illustration svg/);
