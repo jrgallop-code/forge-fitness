@@ -1,3 +1,4 @@
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=adaptive-flux-2";
 import { getCalculatedMaintenanceEstimate } from "./calculated-maintenance.js?v=independent-tdee-staged-target-1";
 import { getActiveNutritionPhase, getActivePhaseMetrics, saveNutritionPhase } from "./nutrition-phase.js?v=calorie-authority-recovery-1";
 import { setCurrentCalories } from "./nutrition-storage.js?v=nutrition-phase-1";
@@ -312,7 +313,8 @@ export function initializeMaintenanceCheckInAlert() {
         const phase = getActiveNutritionPhase();
         const currentMaintenance = Number(phase?.maintenanceCalories);
         const currentTarget = Number(phase?.currentCalories ?? phase?.startCalories);
-        const estimate = getCalculatedMaintenanceEstimate();
+        const rawEstimate = getCalculatedMaintenanceEstimate();
+    const estimate = { ...rawEstimate, maintenanceCalories: getEnergyBalanceState().currentExpenditure };
         const adaptiveMetrics = phase ? getActivePhaseMetrics(phase, { rolling: true }) : null;
         const adjustmentHold = readAdjustmentHold({ phase, currentCalories: currentTarget });
         const checkIn = getMaintenanceCheckIn({

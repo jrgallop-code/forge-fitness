@@ -1,10 +1,12 @@
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=adaptive-flux-2";
 function positive(value) {
     const number = Number(value);
     return Number.isFinite(number) && number > 0 ? number : null;
 }
 
 export function currentExpenditureFromEstimate(estimate) {
-    return positive(estimate?.liveMaintenanceCalories)
+    return positive(getEnergyBalanceState().currentExpenditure)
+        ?? positive(estimate?.liveMaintenanceCalories)
         ?? positive(estimate?.maintenanceCalories)
         ?? positive(estimate?.profileEstimate);
 }

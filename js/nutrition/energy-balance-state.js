@@ -5,6 +5,29 @@ import { readCompletedFoodDays, readFoodLog } from "./food-log-data.js?v=fatsecr
 
 export const ENERGY_BALANCE_WINDOW_DAYS = 7;
 
+// Causal daily adaptive filter. Held observations never advance the filter.
+export function createExpenditureFilter() {
+    let center = null, slow = null, fast = null, priorRaw = null, direction = 0, run = 0;
+    return (raw, updating = true) => {
+        if (updating && Number.isFinite(raw) && raw > 0) {
+            if (center === null) center = slow = fast = raw;
+            else {
+                const delta = raw - priorRaw;
+                const sign = Math.abs(delta) >= 5 ? Math.sign(delta) : 0;
+                run = sign && sign === direction ? run + 1 : sign ? 1 : 0;
+                direction = sign;
+                const alpha = Math.min(.4, Math.max(.1, .25 + .05 * Math.min(3, run) - (sign && Math.sign(raw-center) !== sign ? .15 : 0)));
+                center += alpha * (raw-center);
+                slow += .1 * (raw-slow);
+                fast += .4 * (raw-fast);
+            }
+            priorRaw = raw;
+        }
+        return center === null ? null : { calories: center, fluxLow: Math.min(center,slow,fast), fluxHigh: Math.max(center,slow,fast) };
+    };
+}
+
+
 export function energyDateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -58,18 +81,20 @@ export function summarizeEnergyRange({
         || endDate;
     const historyByDate = new Map(ordered.map(point => [point.date, point]));
     let lastUsable = null;
+    const filter = createExpenditureFilter();
 
     const expenditureFor = point => {
         const live = positive(point?.liveMaintenanceCalories);
         const reviewed = positive(point?.maintenanceCalories);
         if (live !== null) {
-            lastUsable = live;
-            return { calories: live, mode: "updating" };
+            const filtered = filter(live);
+            lastUsable = filtered.calories;
+            return { ...filtered, mode: "updating" };
         }
         const held = lastUsable ?? reviewed;
         if (held !== null) {
             lastUsable = held;
-            return { calories: held, mode: "holding" };
+            return { ...(filter(null, false) || { calories: held }), mode: "holding" };
         }
         return { calories: null, mode: "learning" };
     };
@@ -87,6 +112,8 @@ export function summarizeEnergyRange({
             ...(source || {}),
             date,
             expenditureCalories: positive(expenditure.calories),
+            fluxLow: expenditure.fluxLow ?? null,
+            fluxHigh: expenditure.fluxHigh ?? null,
             intakeCalories: positive(intakeCalories),
             mode: expenditure.mode
         });
@@ -125,7 +152,7 @@ export function getEnergyBalanceState({ startDate = null, endDate = energyDateKe
     const profileEstimate = profileMaintenance();
     const current = getCalculatedMaintenanceEstimate(profileEstimate);
     const currentLive = positive(current?.liveMaintenanceCalories);
-    const historyStart = startDate && currentLive !== null ? shiftEnergyDateKey(startDate, -28) : null;
+    const historyStart = null; // Same filter initialization for every chart range.
     const history = getCalculatedMaintenanceHistory(profileEstimate, { startDate: historyStart }).map(point => ({ ...point }));
     const today = energyDateKey();
 
@@ -145,7 +172,7 @@ export function getEnergyBalanceState({ startDate = null, endDate = energyDateKe
         positive(point.liveMaintenanceCalories) !== null ||
         (point.recorded && positive(point.maintenanceCalories) !== null)
     ));
-    const currentExpenditure = currentLive
+    const currentExpenditure = state.visible.at(-1)?.expenditureCalories ?? currentLive
         ?? positive(lastEstimate?.liveMaintenanceCalories)
         ?? positive(lastEstimate?.maintenanceCalories)
         ?? positive(current?.maintenanceCalories);
