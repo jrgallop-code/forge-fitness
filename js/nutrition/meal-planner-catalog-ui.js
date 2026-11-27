@@ -88,7 +88,7 @@ function cloudSourceRecipe(recipe){
   cloudStatus:row.status,
   indexOnly:true,canSchedule:false};
 }
-function ingredientCategory(name){
+export function ingredientCategory(name){
  const t=String(name||"").toLowerCase();
  if(/broth|stock|vinegar|seasoning|powder|extract/.test(t))return "Sauces, oils & seasonings";
  if(/chicken|turkey|beef|pork|salmon|fish|shrimp|egg|tofu|tempeh|sausage|bacon/.test(t))return "Protein";
@@ -120,7 +120,7 @@ function sourceIngredientSections(facts){
 function groupIngredientRows(ingredients){
  const groups=new Map();
  for(const item of ingredients){
-  const label=ingredientCategory(item.food);
+  const label=item.group||ingredientCategory(item.food);
   if(!groups.has(label))groups.set(label,[]);
   groups.get(label).push(item);
  }
@@ -130,7 +130,7 @@ function cloudAdaptation(row){
  if(!row?.canSchedule||!Array.isArray(row.ingredients)||!Array.isArray(row.instructions)||!row.instructions.length)return null;
  const servings=Math.max(1,Number(row.servings)||1);
  const ingredients=row.ingredients.filter(x=>Array.isArray(x)&&x.length>=3&&Number.isFinite(Number(x[1])))
-  .map(x=>({food:String(x[0]),grams:Math.max(0,Number(x[1]))*servings,unit:String(x[2]||"g")}));
+  .map(x=>({food:String(x[0]),grams:Math.max(0,Number(x[1]))*servings,unit:String(x[2]||"g"),group:typeof x[3]==="string"?x[3]:undefined}));
  if(!ingredients.length)return null;
  return {id:row.id,name:row.name,slot:row.slot,servings,cuisine:"Level Up adaptation",
   sourceName:row.sourceName||"Level Up",sourceUrl:row.sourceUrl||null,
@@ -210,8 +210,6 @@ export function photoMarkup(recipe,cls=""){
  // Do not represent an unrelated atlas tile as the meal in the recipe card.
  // A truthful visual placeholder is better until its exact image is approved.
  if(!photo?.primary){
-  if(Array.isArray(recipe?.ingredientStatements)&&recipe.ingredientStatements.length)
-   return ingredientIllustrationMarkup(recipe,cls);
   const name=String(recipe?.name||"meal");
   return '<span class="mp-real-photo mp-photo-pending '+esc(cls)+'" role="img" aria-label="Photo being prepared for '+esc(name)+'"><span aria-hidden="true">🍽</span><small>Photo pending</small></span>';
  }
@@ -318,7 +316,7 @@ export function recipeDetailMarkup(recipe,hasPlan=false,scale=1){
  '<div class="mp-recipe-content">'+photoMarkup(recipe,"mp-recipe-hero")+
  '<h1>'+esc(recipe.name)+'</h1><p>'+esc(recipe.cuisine)+' · '+displaySlot(recipe.slot)+' · '+recipe.prepMinutes+' minutes</p><p class="mp-recipe-scale-note">Ingredient quantities for <strong>'+scale+' planned meal'+(scale===1?'':'s')+'</strong>.</p>'+
  recipeMacroSummary(recipe)+recipeRatingMarkup(recipe)+
- '<section><h3>Ingredients</h3><ul>'+recipe.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams*scale,'g'))+'</strong></li>').join("")+'</ul></section>'+
+ groupIngredientRows(recipe.ingredients).map(group=>'<section class="mp-ingredient-group"><h3>'+esc(group.label)+'</h3><ul>'+group.ingredients.map(x=>'<li><span>'+esc(x.food)+'</span><strong>'+esc(formatIngredientMeasure(x.food,x.grams*scale,x.unit||"g"))+'</strong></li>').join("")+'</ul></section>').join("")+
  '<section><h3>Cooking instructions</h3><ol>'+recipeSteps(recipe).map(step=>'<li>'+esc(step)+'</li>').join("")+'</ol></section>'+
  '<button type="button" class="primary-btn mp-recipe-use" data-mp-schedule="'+esc(recipe.id)+'">Choose days &amp; meals</button>'+
  '<p class="mp-disclaimer">AI-generated food photographs are illustrative, and recipes and nutrition remain estimates.</p></div></section>';
