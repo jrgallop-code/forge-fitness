@@ -1,3 +1,4 @@
+import { exerciseThumbnail } from "../workouts/exercise-thumbnails.js";
 import { exerciseContext, eligibleStrengthSet } from "../workouts/strength-context.js";
 import { isStaticHold } from "../workouts/static-holds.js";
 import { holdProgressRecords, holdComparison } from "./hold-progress-model.js";
@@ -54,6 +55,7 @@ function addAllHistoryExercises() {
 }
 
 function bindControls() {
+    installProgressExercisePicker(document.getElementById("exercise-progress-select"));
     bindOnce(document.getElementById("exercise-progress-select"), "change", renderExerciseProgressV2);
     bindOnce(document.getElementById("lifting-tab"), "click", () => requestAnimationFrame(renderExerciseProgressV2));
     bindOnce(document.getElementById("progress-range"), "change", renderExerciseProgressV2);
@@ -86,6 +88,7 @@ function renderExerciseProgressV2() {
     const select = document.getElementById("exercise-progress-select");
     const history = document.getElementById("exercise-history-body");
     if (!host || !select || !history) return;
+    installProgressExercisePicker(select);
     const hold = isStaticHold(select.value);
     document.querySelectorAll('[data-exercise-metric]').forEach(button => {
         const metric = button.dataset.exerciseMetric;
@@ -762,4 +765,161 @@ function renderHoldComparison(container, records) {
         <div class="exercise-volume-stat is-summary"><span>Previous</span><strong>${previous ? formatValue(previousValue) : '—'}</strong><small>${previous ? sets(previous.sets) : 'First workout'}</small></div>
         <div class="exercise-volume-stat is-summary"><span>Change</span><strong class="${changeToneClass(change)}">${change === null ? '—' : signedValue(change)}</strong>${percent(summary.percent)}</div>
         <p class="exercise-progress-baseline"><span>Since baseline</span><strong class="${changeToneClass(baselineChange)}">${baselineChange === null ? 'Baseline set' : `${signedValue(baselineChange)}${summary.baselinePercent === null ? '' : ` · ${signedPercent(summary.baselinePercent)}`}`}</strong><small>${formatValue(baselineValue)} · ${formatDate(first.date)}</small></p>`;
+}
+
+const PICKER_RECENT_KEY = "level_up_progress_exercise_recent_v1";
+const pickerBindings = new WeakMap();
+const pickerSearchIcon = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>';
+const pickerChevron = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+
+export function filterProgressExerciseOptions(items, query = "", muscle = "") {
+    const normalize = value => String(value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const terms = normalize(query).split(/[^a-z0-9]+/).filter(Boolean);
+    return items.filter(item => (!muscle || item.muscle === muscle) &&
+        terms.every(term => normalize([item.name, item.muscle, item.equipment, item.id].join(" ")).includes(term)));
+}
+
+function pickerRecent() {
+    try { const value = JSON.parse(localStorage.getItem(PICKER_RECENT_KEY) || "[]"); return Array.isArray(value) ? value.filter(id => typeof id === "string") : []; }
+    catch { return []; }
+}
+
+function pickerItems(select) {
+    return [...select.options].filter(option => option.value && !option.disabled).map(option => {
+        const exercise = getExerciseById(option.value);
+        return { id: option.value, name: exercise?.name || option.textContent.trim(), muscle: exercise?.muscleGroup || "Other", equipment: exercise?.equipment || "", exercise };
+    }).sort((a,b) => a.name.localeCompare(b.name));
+}
+
+function ensureProgressPickerStyles() {
+    if (document.getElementById("progress-exercise-picker-style")) return;
+    const style = document.createElement("style");
+    style.id = "progress-exercise-picker-style";
+    style.textContent = `
+      #exercise-progress-select[data-picker-enhanced]{display:none!important}
+      .progress-exercise-trigger{width:100%;min-height:54px;display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border,rgba(128,128,128,.25));border-radius:12px;background:var(--card);color:var(--text);text-align:left;font:inherit;box-sizing:border-box}
+      .progress-exercise-trigger .pep-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+      .progress-exercise-trigger:disabled{opacity:.55}
+      .pep-overlay{position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,.48);display:flex;align-items:flex-end;justify-content:center;overscroll-behavior:contain}
+      .pep-overlay[hidden]{display:none!important}
+      .pep-sheet{width:100%;max-width:680px;height:min(76dvh,660px);max-height:100%;display:flex;flex-direction:column;background:var(--card,var(--bg));color:var(--text);border-radius:24px 24px 0 0;padding:8px 16px max(12px,env(safe-area-inset-bottom));box-sizing:border-box;overflow:hidden}
+      .pep-handle{width:36px;height:4px;border-radius:4px;background:var(--muted);opacity:.6;margin:0 auto 12px;flex:none}
+      .pep-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex:none}
+      .pep-header h2{font-size:20px;margin:0;color:inherit}
+      .pep-icon{background:transparent!important;color:inherit!important;border:0!important;padding:8px!important;min-width:40px;min-height:40px;display:grid;place-items:center}
+      .pep-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border,rgba(128,128,128,.25));background:var(--bg,var(--card));border-radius:12px;padding:0 10px;flex:none;color:var(--muted)}
+      .pep-search:focus-within{border-color:var(--accent)}
+      .pep-search input{background:transparent!important;color:var(--text)!important;border:0!important;outline:none!important;box-shadow:none!important;font-size:16px!important;flex:1;min-width:0;width:100%;padding:12px 0!important;margin:0!important}
+      .pep-search input::-webkit-search-cancel-button{display:none}
+      .pep-filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex:none;padding:12px 0 8px}
+      .pep-filters button{white-space:nowrap;border:1px solid var(--border,rgba(128,128,128,.25));background:var(--bg,var(--card));color:var(--text);border-radius:20px;padding:8px 13px;font:inherit;font-size:13px;min-height:36px}
+      .pep-filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-contrast,#fff)}
+      .pep-results{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+      .pep-section{font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 6px}
+      .pep-row{width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:10px 0;border:0;border-bottom:1px solid var(--border,rgba(128,128,128,.18));border-radius:0;background:transparent;color:var(--text);font:inherit;min-height:66px}
+      .pep-row .routine-thumbnail,.progress-exercise-trigger .routine-thumbnail{flex:none;border-radius:9px;background:var(--bg,var(--card))}
+      .pep-row .pep-copy{flex:1;min-width:0;display:grid;gap:4px}
+      .pep-row strong{font-size:15px;line-height:1.3;overflow-wrap:anywhere;color:inherit}
+      .pep-row small{font-size:12px;color:var(--muted)}
+      .pep-row[aria-current="true"] .pep-check{color:var(--accent);font-weight:700}
+      .pep-empty{padding:28px 8px;text-align:center;color:var(--muted)}
+      .pep-status{font-size:12px;color:var(--muted);padding:4px 0;flex:none}
+      @media(prefers-reduced-motion:no-preference){.pep-sheet{animation:pep-enter .18s ease-out}@keyframes pep-enter{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}}
+    `;
+    document.head.append(style);
+}
+
+function installProgressExercisePicker(select) {
+    if (!select) return;
+    if (pickerBindings.has(select)) { pickerBindings.get(select)(); return; }
+    ensureProgressPickerStyles();
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "progress-exercise-trigger";
+    trigger.setAttribute("aria-haspopup","dialog");
+    trigger.setAttribute("aria-expanded","false");
+    select.before(trigger);
+    select.dataset.pickerEnhanced = "true";
+    select.setAttribute("aria-hidden","true");
+    select.tabIndex = -1;
+    const sync = () => {
+        const item = pickerItems(select).find(item => item.id === select.value);
+        const label = item?.name || "No exercise data yet";
+        if (trigger.dataset.label !== label || trigger.dataset.id !== select.value) {
+            trigger.innerHTML = pickerSearchIcon + '<span class="pep-label">' + escapeHtml(label) + '</span>' + pickerChevron;
+            trigger.dataset.label = label;
+            trigger.dataset.id = select.value;
+        }
+        trigger.disabled = !pickerItems(select).length;
+        trigger.setAttribute("aria-label", "Select exercise: " + label);
+    };
+    pickerBindings.set(select, sync);
+    select.addEventListener("change", sync);
+    const observer = new MutationObserver(sync);
+    observer.observe(select, {childList:true,subtree:true,attributes:true,attributeFilter:["selected","disabled"]});
+    trigger.addEventListener("click", () => {
+        document.querySelector(".pep-overlay")?.remove();
+        const items = pickerItems(select);
+        if (!items.length) return;
+        let muscle = "";
+        let matches = [];
+        const overlay = document.createElement("div");
+        overlay.className = "pep-overlay";
+        overlay.innerHTML = '<section class="pep-sheet" role="dialog" aria-modal="true" aria-labelledby="pep-title"><div class="pep-handle"></div><header class="pep-header"><h2 id="pep-title">Select exercise</h2><button type="button" class="pep-icon" data-pep-close aria-label="Close exercise selector">✕</button></header><div class="pep-search">' + pickerSearchIcon + '<input type="search" placeholder="Search exercises…" autocomplete="off" spellcheck="false" aria-label="Search logged exercises"><button type="button" class="pep-icon" data-pep-clear aria-label="Clear search" hidden>✕</button></div><div class="pep-filters" role="group" aria-label="Muscle group"></div><div class="pep-status" role="status" aria-live="polite"></div><div class="pep-results"></div></section>';
+        document.body.append(overlay);
+        const sheet = overlay.querySelector(".pep-sheet");
+        const input = overlay.querySelector("input");
+        const results = overlay.querySelector(".pep-results");
+        const filters = overlay.querySelector(".pep-filters");
+        const clear = overlay.querySelector("[data-pep-clear]");
+        const status = overlay.querySelector(".pep-status");
+        const groups = ["", ...new Set(items.map(item=>item.muscle))];
+        filters.innerHTML = groups.map(group=>'<button type="button" data-pep-muscle="'+escapeHtml(group)+'" aria-pressed="'+String(!group)+'">'+escapeHtml(group || "All")+'</button>').join("");
+        const row = item => '<button type="button" class="pep-row" data-pep-id="'+escapeHtml(item.id)+'" aria-current="'+String(item.id===select.value)+'">'+exerciseThumbnail(item.exercise || {id:item.id,name:item.name,muscleGroup:item.muscle})+'<span class="pep-copy"><strong>'+escapeHtml(item.name)+'</strong><small>'+escapeHtml([item.muscle,item.equipment].filter(Boolean).join(" · "))+'</small></span>'+(item.id===select.value?'<span class="pep-check" aria-hidden="true">✓</span>':pickerChevron)+'</button>';
+        const render = () => {
+            matches = filterProgressExerciseOptions(items,input.value,muscle);
+            clear.hidden = !input.value;
+            status.textContent = matches.length + (matches.length === 1 ? " exercise" : " exercises") + " with workout history";
+            const recentIds = !input.value.trim() && !muscle ? pickerRecent().slice(0,5) : [];
+            const recent = recentIds.map(id=>matches.find(item=>item.id===id)).filter(Boolean);
+            const rest = matches.filter(item=>!recent.some(recentItem=>recentItem.id===item.id));
+            results.innerHTML = matches.length ? (recent.length ? '<div class="pep-section">Recently viewed</div>'+recent.map(row).join("") : "")+(rest.length?'<div class="pep-section">'+(input.value.trim()?"Results":"Logged exercises")+'</div>'+rest.map(row).join(""):"") : '<p class="pep-empty">No matching logged exercises. Try another search or muscle group.</p>';
+            results.scrollTop = 0;
+        };
+        const oldOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        trigger.setAttribute("aria-expanded","true");
+        const viewport = window.visualViewport;
+        const resize = () => { if(viewport){overlay.style.height=viewport.height+"px";overlay.style.top=viewport.offsetTop+"px";sheet.style.height=Math.min(viewport.height,Math.max(300,viewport.height*.90))+"px";} };
+        const close = () => { viewport?.removeEventListener("resize",resize);viewport?.removeEventListener("scroll",resize); document.removeEventListener("keydown", keydown); input.blur();overlay.remove();document.body.style.overflow=oldOverflow;trigger.setAttribute("aria-expanded","false");if(trigger.isConnected)trigger.focus({preventScroll:true}); };
+        const choose = id => {
+            if (![...select.options].some(option=>option.value===id)) return;
+            try {localStorage.setItem(PICKER_RECENT_KEY,JSON.stringify([id,...pickerRecent().filter(value=>value!==id)].slice(0,12)));} catch {}
+            select.value=id;
+            close();
+            select.dispatchEvent(new Event("change",{bubbles:true}));
+            sync();
+        };
+        const keydown = event => {
+            if(event.key==="Escape"){event.preventDefault();close();}
+            else if(event.key==="Enter" && event.target===input && matches.length===1){event.preventDefault();choose(matches[0].id);}
+            else if(event.key==="Tab"){const nodes=[...sheet.querySelectorAll("button:not([hidden]),input")].filter(node=>!node.disabled);const first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}
+        };
+        document.addEventListener("keydown",keydown);
+        viewport?.addEventListener("resize",resize);
+        viewport?.addEventListener("scroll",resize);
+        overlay.addEventListener("click",event=>{
+            if(event.target===overlay||event.target.closest("[data-pep-close]")){close();return;}
+            if(event.target.closest("[data-pep-clear]")){input.value="";render();input.focus();return;}
+            const chip=event.target.closest("[data-pep-muscle]");
+            if(chip){muscle=chip.dataset.pepMuscle;filters.querySelectorAll("button").forEach(button=>button.setAttribute("aria-pressed",String(button===chip)));render();return;}
+            const result=event.target.closest("[data-pep-id]");
+            if(result)choose(result.dataset.pepId);
+        });
+        input.addEventListener("input",render);
+        render();
+        // Do not summon the keyboard until the user taps search, so recent items remain visible.
+        overlay.querySelector("[data-pep-close]").focus({preventScroll:true});
+    });
+    sync();
 }
