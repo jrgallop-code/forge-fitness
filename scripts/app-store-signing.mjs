@@ -123,7 +123,30 @@ async function createSigningAssets() {
     // Doing so invalidates other apps and can invalidate an IPA that Apple is
     // still processing. A CI-only certificate may be rotated explicitly by ID,
     // after confirming no pending uploads depend on it.
-    const selectedCertificateId = (process.env.LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE || '').trim();
+    // Resolve the certificate from the exact provisioning profile of a verified
+    // completed Level Up release, not from its display name or age.
+    let selectedCertificateId = (process.env.LEVEL_UP_CI_CERTIFICATE_ID_TO_REVOKE || '').trim();
+    let expectedSerial = (process.env.LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE || '').trim();
+    let expectedExpiration = (process.env.LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE || '').trim();
+    const priorRun = (process.env.LEVEL_UP_VERIFIED_PRIOR_RUN || '').trim();
+    if (priorRun) {
+      if (!/^\d+-\d+$/.test(priorRun)) throw new Error('Invalid verified prior release label.');
+      const name = `Level Up App Store ${priorRun}`;
+      const profiles = await api(`/profiles?filter%5Bname%5D=${encodeURIComponent(name)}&limit=20`);
+      const matches = (profiles?.data || []).filter(item => item.attributes?.name === name && item.attributes?.profileType === 'IOS_APP_STORE');
+      if (matches.length !== 1) throw new Error('Cannot uniquely identify the verified prior CI provisioning profile. No certificates were revoked.');
+      const profileId = encodeURIComponent(matches[0].id);
+      const bundle = await api(`/profiles/${profileId}/bundleId`);
+      if (bundle?.data?.attributes?.identifier !== required('APP_BUNDLE_IDENTIFIER')) throw new Error('Prior profile belongs to a different app. No certificates were revoked.');
+      const certificates = await api(`/profiles/${profileId}/certificates`);
+      const candidates = (certificates?.data || []).filter(item => item.attributes?.certificateType === 'DISTRIBUTION');
+      if (candidates.length !== 1) throw new Error('Cannot uniquely identify prior CI signer. No certificates were revoked.');
+      selectedCertificateId = candidates[0].id;
+      expectedSerial = candidates[0].attributes?.serialNumber || '';
+      expectedExpiration = candidates[0].attributes?.expirationDate || '';
+      if (!expectedSerial || !expectedExpiration || ['2PQXW64273', '4VZXM6R4DW'].includes(selectedCertificateId)) throw new Error('Prior CI signer could not be verified or is protected. No certificates were revoked.');
+      console.log('Verified prior Level Up CI certificate via exact app provisioning profile:', selectedCertificateId);
+    }
     if (!selectedCertificateId) {
       throw new Error(
         'Apple distribution certificate limit reached. No certificates were revoked. ' +
@@ -136,8 +159,8 @@ async function createSigningAssets() {
       item.id === selectedCertificateId &&
       item.attributes?.certificateType === 'DISTRIBUTION' &&
       (item.attributes?.displayName || item.attributes?.name) === 'John Gallop' &&
-      item.attributes?.serialNumber === (process.env.LEVEL_UP_CI_CERTIFICATE_SERIAL_TO_REVOKE || '') &&
-      item.attributes?.expirationDate === (process.env.LEVEL_UP_CI_CERTIFICATE_EXPIRATION_TO_REVOKE || '')
+      item.attributes?.serialNumber === expectedSerial &&
+      item.attributes?.expirationDate === expectedExpiration
     );
     if (!selected) {
       throw new Error('Specified certificate was not verifiably a Level Up CI Distribution certificate. No certificates were revoked.');
