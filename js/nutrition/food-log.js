@@ -1,3 +1,4 @@
+import { renderMealPlannerShell, initializeMealPlanner } from "./meal-planner-ui.js?v=meal-planner-eval-1";
 import { withFoodWeightUnits, validFoodAmount } from "./food-portion-units.js";
 import { foodAmountMarkup, foodHeroMarkup, bindFoodAmountEditor, restoreFoodAmount } from "./food-portion-editor.js";
 import {
@@ -87,9 +88,11 @@ export function renderCaloriesHub(planMarkup) {
             <div class="calories-tabs" role="tablist" aria-label="Calories sections">
                 <button type="button" class="active" role="tab" aria-selected="true" data-calories-tab="log">Food Log</button>
                 <button type="button" role="tab" aria-selected="false" data-calories-tab="plan">Goals &amp; Plan</button>
+                <button type="button" role="tab" aria-selected="false" data-calories-tab="meals">Meal Planner</button>
             </div>
             <div data-calories-panel="log">${renderFoodLogShell()}</div>
             <div data-calories-panel="plan" hidden>${planMarkup}</div>
+            <div data-calories-panel="meals" hidden>${renderMealPlannerShell()}</div>
         </section>
         ${renderFoodSheet()}
     `;
@@ -214,6 +217,7 @@ export function initializeFoodLog() {
     if (!hub) return;
     ensureBarcodeStyles();
     bindHubTabs(hub);
+    initializeMealPlanner();
     hub.querySelector("[data-food-add]")?.addEventListener("click", openFoodSheet);
     hub.querySelectorAll("[data-food-date-shift]").forEach(button => button.addEventListener("click", () => shiftDate(Number(button.dataset.foodDateShift))));
     const calendarToggle = hub.querySelector("[data-food-calendar-toggle]");
@@ -305,7 +309,7 @@ function ensureBarcodeStyles() {
 
 function bindHubTabs(hub) {
     const showTab = tab => {
-        const safeTab = tab === "plan" ? "plan" : "log";
+        const safeTab = ["plan", "meals"].includes(tab) ? tab : "log";
         hub.querySelectorAll("[data-calories-tab]").forEach(item => {
             const active = item.dataset.caloriesTab === safeTab;
             item.classList.toggle("active", active);
