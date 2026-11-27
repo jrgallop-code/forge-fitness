@@ -3,7 +3,6 @@
 // recipe intentionally retain the same image, as they are not distinct dishes.
 // Featured adaptations use eight distinct AI-generated food concept images;
 // these are visual concepts, not photos of the exact cooked recipes.
-import { GENERATED_MEAL_ATLAS } from "./meal-planner-art.js?v=1";
 // Each featured recipe uses a distinct tile of the full-resolution local AVIF asset.
 export const FEATURED_HQ_ATLAS="/assets/meal-photos/featured8-hq.avif?v=3";
 export const AI_ATLAS="/assets/meal-photos/generated-001-020.png";
@@ -51,15 +50,8 @@ export function recipePhoto(recipe){
  // approval; a valid asset path alone does not establish the right dish.
  if(recipe?.indexOnly && recipe?.imageReviewed !== true)
   return {...PHOTO_PENDING,recipeId:recipe?.id};
- const cloudImage=recipe?.image;
- if(cloudImage && typeof cloudImage==="object" && String(cloudImage.asset||"").startsWith("/assets/meal-photos/") && [".avif",".png",".webp"].some(ext=>String(cloudImage.asset).endsWith(ext))){
-  const cols=Math.max(1,Math.min(10,Number(cloudImage.columns)||1));
-  const rows=Math.max(1,Math.min(10,Number(cloudImage.rows)||1));
-  const tile=Math.max(0,Math.min(cols*rows-1,Number(cloudImage.tile)||0));
-  return {primary:cloudImage.asset,tile,x:cols>1?(tile%cols)/(cols-1)*100:50,
-   y:rows>1?Math.floor(tile/cols)/(rows-1)*100:50,source:"generated-representative-photo",
-   exactMatch:false,recipeId:recipe?.id,backgroundSize:(cols*100)+"% "+(rows*100)+"%"};
- }
+ // Unreviewed cloud mosaics can contain cartoons, unrelated dishes and low-resolution tiles.
+ // Use approved named photographs or a neutral pending state until each asset is reviewed.
 
  if(recipe?.indexOnly || (!/^lu-meal-/.test(String(recipe?.id||"")) && !Object.prototype.hasOwnProperty.call(FEATURED_TILES,recipe?.id))){
   return {...PHOTO_PENDING,recipeId:recipe?.id};
@@ -81,11 +73,7 @@ export function recipePhoto(recipe){
   y:Math.floor(i/5)/3*100,source:PHOTO_SOURCE,
   exactMatch:true,recipeId:recipe?.id,backgroundSize:"500% 400%"
  };
- return {
-  primary:GENERATED_MEAL_ATLAS,tile:i,x:(i%8)/7*100,
-  y:Math.floor(i/8)/4*100,source:PHOTO_SOURCE,
-  exactMatch:true,recipeId:recipe?.id,backgroundSize:"800% 500%"
- };
+ return {...PHOTO_PENDING,recipeId:recipe?.id};
 }
 export function dietPhoto(diet){
  const baseByDiet={balanced:7,"high-protein":13,"whole-food":8,
