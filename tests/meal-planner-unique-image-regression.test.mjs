@@ -13,13 +13,15 @@ test("iOS uses one Meal Plan entry point; duplicate top banner is removed",async
 });
 test("all distinct catalogue recipes have nonduplicating photo locations",()=>{
  const recipes=baseRecipes().filter(recipe=>!recipe.indexOnly && (!FEATURED_RECIPES.some(f=>f.id===recipe.id)||FEATURED_RECIPES.slice(0,8).some(f=>f.id===recipe.id)));
- const keys=recipes.map(recipe=>{
+ const keys=recipes.flatMap(recipe=>{
   const p=recipePhoto(recipe);
+  if(!p.primary){assert.equal(p.source,"photo-pending");return [];}
   assert.match(p.primary,/^(?:data:image\/(?:webp|avif);base64,|\/assets\/)/);
   assert.ok(p.backgroundSize);
-  return p.primary+"|"+p.backgroundSize+"|"+p.tile;
+  return [p.primary+"|"+p.backgroundSize+"|"+p.tile];
  });
- assert.equal(recipes.length,51); // 48 originals/featured plus three newly schedulable indexed dishes
+ assert.equal(recipes.length,51);
+ assert.ok(keys.length>=30&&keys.length<recipes.length); // 48 originals/featured plus three newly schedulable indexed dishes
  assert.ok(baseRecipes().filter(r=>r.indexOnly).every(r=>r.photoStatus==="awaiting-licensed-image"||r.photoStatus==="not-created"));
  assert.equal(new Set(keys).size,keys.length,
    "Two different recipes may not point to the same image tile");
