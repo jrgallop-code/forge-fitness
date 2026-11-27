@@ -1,3 +1,4 @@
+import { getEnergyBalanceState } from "./energy-balance-state.js?v=adaptive-flux-2";
 import { recentWeightGuardCopy } from './recent-weight-guard.js?v=recent-weight-guard-1';
 import {
     getActiveNutritionPhase,
@@ -216,7 +217,7 @@ function restoreIndependentReviewMaintenance(phase) {
         || (holdSource === "coordinated-tdee-and-adaptive-update" && reviewState?.action === "coordinated-weekly-review");
     if (!hold || !isAcceptedReview) return phase;
     const estimate = getCalculatedMaintenanceEstimate();
-    const independentMaintenance = Math.round(Number(estimate?.maintenanceCalories));
+    const independentMaintenance = Math.round(Number(hold.maintenanceCalories ?? phase.maintenanceCalories));
     if (!Number.isFinite(independentMaintenance) || independentMaintenance <= 0 || estimate?.reviewSynchronized === true) return phase;
     if (Math.round(Number(phase.maintenanceCalories)) === independentMaintenance) return phase;
     const saved = saveNutritionPhase({
@@ -248,7 +249,7 @@ function buildSharedRecommendation(metrics, phase, { preview = false } = {}) {
     const liveUpdate = buildLiveExpenditureUpdate({
         currentMaintenance,
         currentTarget,
-        expenditure: estimate?.liveMaintenanceCalories ?? estimate?.maintenanceCalories,
+        expenditure: getEnergyBalanceState().currentExpenditure,
         targetRate: metrics?.targetRateLbPerWeek
     });
     const update = liveUpdate ?? buildCoordinatedWeeklyUpdate({
