@@ -219,7 +219,7 @@ jobs:
           # Never select the two older personal distribution certificates.
           # Signing script checks exact ID, serial and expiry and refuses to
           # rotate if any recent upload is still processing.
-          LEVEL_UP_VERIFIED_PRIOR_RUN: '45918899044-1'
+          LEVEL_UP_VERIFIED_PRIOR_RUN: '46002164412-1'
         run: |
           echo "SIGNING_DIR=$SIGNING_DIR" >> "$GITHUB_ENV"
           echo "SIGNING_STATE_PATH=$SIGNING_DIR/state.json" >> "$GITHUB_ENV"
